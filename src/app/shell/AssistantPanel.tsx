@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { ArrowUp, Sparkles, X } from 'lucide-react'
 import { useOs } from '@/app/os/use-os'
-import { applications } from '@/app/registry/applicationRegistry'
+import { listApps } from '@/app/registry/applicationRegistry'
 import type { AppId, WindowParams } from '@/app/registry/types'
 import { useMockServices } from '@/app/services/use-mock-services'
+import { useStudio } from '@/app/studio/use-studio'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { executions } from '@/data/platform.mock'
@@ -24,16 +25,23 @@ interface Message {
   actions?: AssistantAction[]
 }
 
-const suggestions = ['What needs my approval?', 'What is running right now?', 'Why did something fail?', 'Open Document AI']
+const suggestions = ['Create an application', 'What needs my approval?', 'What is running right now?', 'Why did something fail?', 'Open Document AI']
 
 /**
  * Phase 1 assistant: deterministic, scripted responses over mock data.
  * No language model is called. Replace `respond` with the OS assistant service later.
  */
-function respond(input: string, pending: Claim[]): Omit<Message, 'id' | 'role'> {
+function respond(input: string, pending: Claim[], drafts: number): Omit<Message, 'id' | 'role'> {
   const q = input.toLowerCase()
 
-  const app = applications.find(
+  if (/(create|build|new app|generate|make an? app)/.test(q)) {
+    return {
+      text: `Opening Application Studio. Describe the business problem in your own words and I will design the application with you.${drafts ? ` You also have ${drafts} draft${drafts === 1 ? '' : 's'} you can reopen there.` : ''}`,
+      actions: [{ label: 'Create application', appId: 'application-studio', params: { new: String(Date.now()) } }],
+    }
+  }
+
+  const app = listApps().find(
     (a) => a.id !== 'folder-browser' && (q.includes(a.name.toLowerCase()) || q.includes(a.id.replace('-', ' '))),
   )
   if (app) {
@@ -60,20 +68,15 @@ function respond(input: string, pending: Claim[]): Omit<Message, 'id' | 'role'> 
       actions: [{ label: 'Open DOC-7812', appId: 'document-ai', params: { doc: 'DOC-7812' } }],
     }
   }
-  if (/(create|build|new app|generate|make an? app)/.test(q)) {
-    return {
-      text: 'Creating applications from a business description is planned for a later phase. For now you can explore the applications already on this desktop.',
-      actions: [{ label: 'Browse applications', appId: 'system-explorer', params: { section: 'applications' } }],
-    }
-  }
   return {
-    text: 'In this prototype I can open applications, summarise pending approvals, show what is running and explain failures. Try one of the suggestions below.',
+    text: 'In this prototype I can create an application with you, open applications, summarise pending approvals, show what is running and explain failures. Try one of the suggestions below.',
   }
 }
 
 export function AssistantPanel() {
   const { assistantOpen, setAssistantOpen, openApp } = useOs()
   const { pendingApprovals } = useMockServices()
+  const studio = useStudio()
   const [messages, setMessages] = useState<Message[]>([])
   const [draft, setDraft] = useState('')
   const nextId = useRef(1)
@@ -102,7 +105,7 @@ export function AssistantPanel() {
   const ask = (text: string) => {
     const trimmed = text.trim()
     if (!trimmed) return
-    const reply = respond(trimmed, pendingApprovals)
+    const reply = respond(trimmed, pendingApprovals, studio.state.projects.length)
     setMessages((list) => [
       ...list,
       { id: nextId.current++, role: 'user', text: trimmed },

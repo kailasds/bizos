@@ -28,7 +28,7 @@ export interface WindowManagerState {
 }
 
 export type WindowAction =
-  | { type: 'open'; appId: AppId; params?: WindowParams; area: Size; size: Size }
+  | { type: 'open'; appId: AppId; params?: WindowParams; area: Size; size: Size; maximized?: boolean }
   | { type: 'close'; id: string }
   | { type: 'focus'; id: string }
   | { type: 'minimize'; id: string }
@@ -102,8 +102,8 @@ export function windowReducer(state: WindowManagerState, action: WindowAction): 
         appId: action.appId,
         params: action.params ?? {},
         bounds: initialBounds(state, action.area, action.size),
-        status: 'normal',
-        restoreStatus: 'normal',
+        status: action.maximized ? 'maximized' : 'normal',
+        restoreStatus: action.maximized ? 'maximized' : 'normal',
         z: state.nextZ,
       }
       return { windows: [...state.windows, window], nextZ: state.nextZ + 1 }

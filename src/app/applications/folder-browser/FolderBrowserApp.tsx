@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Folder, FolderOpen, LayoutGrid } from 'lucide-react'
 import { useOs } from '@/app/os/use-os'
 import { appsInFolder, businessApps, folders, getFolder } from '@/app/registry/applicationRegistry'
+import { useApplications } from '@/app/registry/use-applications'
 import { useParamsChange } from '@/app/windows/use-params-change'
 import type { AppProps, DomainId } from '@/app/registry/types'
 import { AppIcon } from '@/components/os/AppIcon'
@@ -21,7 +22,9 @@ export function FolderBrowserApp({ params }: AppProps) {
 
   useParamsChange(params, (p) => setLocation(toLocation(p.folder)))
 
-  const apps = location === 'all' ? businessApps : appsInFolder(location)
+  const registered = useApplications()
+  const allBusiness = businessApps(registered)
+  const apps = location === 'all' ? allBusiness : appsInFolder(location, registered)
   const folder = location === 'all' ? null : getFolder(location)
 
   return (
@@ -31,12 +34,12 @@ export function FolderBrowserApp({ params }: AppProps) {
         value={location}
         onChange={setLocation}
         items={[
-          { id: 'all', label: 'All applications', icon: LayoutGrid, meta: businessApps.length },
+          { id: 'all', label: 'All applications', icon: LayoutGrid, meta: allBusiness.length },
           ...folders.map((f) => ({
             id: f.id,
             label: f.name,
             icon: f.id === location ? FolderOpen : Folder,
-            meta: appsInFolder(f.id).length,
+            meta: appsInFolder(f.id, registered).length,
           })),
         ]}
       />

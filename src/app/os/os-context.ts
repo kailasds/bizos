@@ -44,6 +44,7 @@ export interface OsContextValue {
   markAllNotificationsRead: () => void
   dismissNotification: (id: string) => void
   clearNotifications: () => void
+  pushNotification: (notification: Omit<OsNotification, 'id' | 'read'>) => void
 
   // Preferences
   widgetPreferences: WidgetPreferences

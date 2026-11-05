@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react'
 import { Activity, AppWindow, Bot, Cpu, History, Library, Plug, Workflow } from 'lucide-react'
 import { useOs } from '@/app/os/use-os'
-import { applications, getApp } from '@/app/registry/applicationRegistry'
+import { getApp } from '@/app/registry/applicationRegistry'
+import { useApplications } from '@/app/registry/use-applications'
 import { useParamsChange } from '@/app/windows/use-params-change'
 import type { AppProps } from '@/app/registry/types'
 import { AppIcon } from '@/components/os/AppIcon'
@@ -105,6 +106,7 @@ function Overview() {
 
 function Applications() {
   const { windows, openApp } = useOs()
+  const applications = useApplications()
   return (
     <>
       <SectionHeader title="Application registry" source="Every application and system workspace registered with this OS." />

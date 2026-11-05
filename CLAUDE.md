@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This repository is the **Enterprise AI OS** frontend (built on the claude-react-starter foundation). Read `context.md` before product, UX or architecture work — it is the shared product context. Current scope: Phase 1 desktop shell with mock data only (no backend, LLM, agent or worker integrations).
+This repository is the **Enterprise AI OS** frontend (built on the claude-react-starter foundation). Read `context.md` before product, UX or architecture work — it is the shared product context. Current scope: desktop shell + Application Studio (Milestone 2), mock data and deterministic mock intelligence only (no backend, LLM, agent or worker integrations).
 
 ## Architecture rules
 
@@ -9,6 +9,9 @@ This repository is the **Enterprise AI OS** frontend (built on the claude-react-
 - Mock data lives in `src/data/*.mock.ts`. Any surface showing fabricated data must carry `MockBadge` (or sit in a container that does).
 - Status is always shown with the shared `StatusBadge` (`src/components/os/`).
 - Every visible control must work; if a feature is out of scope, omit the control or label it clearly as a placeholder.
+- Generated applications are data, not code: the Application Blueprint (`src/app/blueprint/types.ts`) is the source of truth and `ExperienceRenderer` interprets it with trusted components. Never generate or execute code.
+- Studio state changes go through `studioReducer` actions. A change to an earlier stage must invalidate later stages (`invalidateAfter`), never silently rewrite them.
+- Window content is a container-query context (`@container` on the window body); size app layouts with `@…:` variants, not viewport breakpoints.
 
 ## Stack
 

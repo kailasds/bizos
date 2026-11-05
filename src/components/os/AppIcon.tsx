@@ -1,6 +1,7 @@
 import { cva } from 'class-variance-authority'
 import { Folder } from 'lucide-react'
 import { appsInFolder } from '@/app/registry/applicationRegistry'
+import { useApplications } from '@/app/registry/use-applications'
 import type { AppDefinition, AppTint, DomainId } from '@/app/registry/types'
 import { cn } from '@/lib/utils'
 
@@ -38,7 +39,7 @@ export function AppIcon({ app, size = 'md', className }: { app: AppDefinition; s
 
 /** Folder: a card squircle previewing up to four member app icons. */
 export function FolderIcon({ folderId, size = 'lg', className }: { folderId: DomainId; size?: 'md' | 'lg'; className?: string }) {
-  const members = appsInFolder(folderId).slice(0, 4)
+  const members = appsInFolder(folderId, useApplications()).slice(0, 4)
   return (
     <span
       aria-hidden

@@ -1,6 +1,7 @@
-import { Sparkles } from 'lucide-react'
+import { FilePlus2, Sparkles } from 'lucide-react'
 import { useOs } from '@/app/os/use-os'
 import { folders, launcherApps } from '@/app/registry/applicationRegistry'
+import { useApplications } from '@/app/registry/use-applications'
 import type { AppId, WindowParams } from '@/app/registry/types'
 import { AppIcon, FolderIcon } from '@/components/os/AppIcon'
 import {
@@ -24,8 +25,9 @@ export function ApplicationLauncher() {
     setLauncherOpen(false)
   }
 
-  const business = launcherApps.filter((a) => a.kind === 'application')
-  const system = launcherApps.filter((a) => a.kind === 'system')
+  const apps = launcherApps(useApplications())
+  const business = apps.filter((a) => a.kind === 'application')
+  const system = apps.filter((a) => a.kind === 'system')
 
   return (
     <CommandDialog
@@ -39,6 +41,23 @@ export function ApplicationLauncher() {
         <CommandInput placeholder="Search applications and workspaces…" />
         <CommandList className="max-h-[min(26rem,60vh)]">
           <CommandEmpty>No applications match that search.</CommandEmpty>
+          <CommandGroup heading="Create">
+            <CommandItem
+              value="Create application"
+              keywords={['new', 'build', 'generate', 'studio', 'design']}
+              onSelect={() => launch('application-studio', { new: String(Date.now()) })}
+              className="gap-3 py-2"
+            >
+              <span className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                <FilePlus2 className="size-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="font-medium">Create application</div>
+                <div className="truncate text-xs text-muted-foreground">Describe a business problem; Application Studio designs and publishes the application.</div>
+              </div>
+            </CommandItem>
+          </CommandGroup>
+          <CommandSeparator />
           <CommandGroup heading="Applications">
             {business.map((app) => (
               <CommandItem

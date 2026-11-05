@@ -129,7 +129,7 @@ export function WindowFrame({ win, app, title, focused, area, compact, children 
         </div>
       </header>
 
-      <div className="relative min-h-0 flex-1">{children}</div>
+      <div className="@container relative min-h-0 flex-1">{children}</div>
 
       {!maximized && (
         <div

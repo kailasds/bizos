@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
+import { Plus } from 'lucide-react'
 import { useOs } from '@/app/os/use-os'
 import { appsInFolder, desktopShortcuts, folders } from '@/app/registry/applicationRegistry'
+import { useApplications } from '@/app/registry/use-applications'
 import { AppIcon, FolderIcon } from '@/components/os/AppIcon'
 import { DesktopWidgets } from '@/app/widgets/DesktopWidgets'
 
@@ -41,13 +43,14 @@ function IconGroup({ title, children }: { title: string; children: ReactNode }) 
 
 export function DesktopCanvas() {
   const { openApp } = useOs()
+  const apps = useApplications()
 
   return (
     <div className="absolute inset-0 isolate flex flex-col gap-8 overflow-y-auto p-6 md:flex-row md:overflow-hidden">
       <div className="flex flex-col gap-6 md:w-[25rem] md:shrink-0">
         <IconGroup title="Domains">
           {folders.map((folder) => {
-            const count = appsInFolder(folder.id).length
+            const count = appsInFolder(folder.id, apps).length
             return (
               <DesktopIcon
                 key={folder.id}
@@ -60,7 +63,17 @@ export function DesktopCanvas() {
           })}
         </IconGroup>
         <IconGroup title="Applications">
-          {desktopShortcuts.map((app) => (
+          <DesktopIcon
+            label="Create Application"
+            detail="opens Application Studio"
+            icon={
+              <span aria-hidden className="flex size-13 items-center justify-center rounded-xl border-2 border-dashed border-primary/50 bg-card text-primary">
+                <Plus className="size-6" />
+              </span>
+            }
+            onOpen={() => openApp('application-studio', { new: String(Date.now()) })}
+          />
+          {desktopShortcuts(apps).map((app) => (
             <DesktopIcon
               key={app.id}
               label={app.name}

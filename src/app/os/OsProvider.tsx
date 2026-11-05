@@ -59,7 +59,8 @@ export function OsProvider({ children }: { children: ReactNode }) {
 
   const openApp = useCallback(
     (appId: AppId, params?: WindowParams) => {
-      dispatch({ type: 'open', appId, params, area: desktopArea, size: getApp(appId).defaultSize })
+      const app = getApp(appId)
+      dispatch({ type: 'open', appId, params, area: desktopArea, size: app.defaultSize, maximized: app.startMaximized })
     },
     [desktopArea],
   )
@@ -95,6 +96,9 @@ export function OsProvider({ children }: { children: ReactNode }) {
     setNotifications((list) => list.filter((n) => n.id !== id))
   }, [])
   const clearNotifications = useCallback(() => setNotifications([]), [])
+  const pushNotification = useCallback((notification: Omit<OsNotification, 'id' | 'read'>) => {
+    setNotifications((list) => [{ ...notification, id: `N-${Date.now()}`, read: false }, ...list])
+  }, [])
 
   const setWidgetVisible = useCallback((id: WidgetId, visible: boolean) => {
     setWidgetPreferences((prev) => {
@@ -135,6 +139,7 @@ export function OsProvider({ children }: { children: ReactNode }) {
       markAllNotificationsRead,
       dismissNotification,
       clearNotifications,
+      pushNotification,
       widgetPreferences,
       setWidgetVisible,
       resetPreferences,
@@ -160,6 +165,7 @@ export function OsProvider({ children }: { children: ReactNode }) {
       markAllNotificationsRead,
       dismissNotification,
       clearNotifications,
+      pushNotification,
       widgetPreferences,
       setWidgetVisible,
       resetPreferences,

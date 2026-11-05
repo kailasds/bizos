@@ -1,20 +1,47 @@
 import {
+  AppWindow,
+  Blocks,
   ChartColumn,
+  ClipboardList,
   Compass,
   Folder,
+  HeartPulse,
+  Landmark,
   ScanText,
   Settings,
   ShieldCheck,
   Workflow,
+  type LucideIcon,
 } from 'lucide-react'
-import type { AppDefinition, AppId, DomainId, FolderDefinition } from './types'
+import type { ApplicationBlueprint } from '@/app/blueprint/types'
+import type { AppDefinition, AppId, AppTint, DomainId, FolderDefinition, GeneratedAppId } from './types'
 
 /**
- * Centralised application registry (mock-backed in Phase 1).
- * Metadata only — the component for each app lives in `applicationComponents.tsx`
- * so the shell can depend on metadata without importing every application.
+ * Centralised application registry (mock-backed).
+ * Built-in applications are static metadata. Applications published from
+ * Application Studio are added at runtime through `registerGeneratedApp` and
+ * persisted locally. Components live in `applicationComponents.ts` so the shell
+ * can depend on metadata without importing every application.
  */
-export const applications: AppDefinition[] = [
+const builtinApplications: AppDefinition[] = [
+  {
+    id: 'application-studio',
+    name: 'Application Studio',
+    description: 'Describe a business problem and design, generate and publish an application for it.',
+    kind: 'system',
+    icon: Blocks,
+    tint: 'graphite',
+    domains: [],
+    version: '0.2.0',
+    lifecycle: 'system',
+    owner: 'Enterprise AI OS',
+    desktopShortcut: false,
+    pinned: true,
+    inLauncher: true,
+    defaultSize: { width: 1280, height: 780 },
+    minSize: { width: 720, height: 480 },
+    startMaximized: true,
+  },
   {
     id: 'claims-intelligence',
     name: 'Claims Intelligence',
@@ -142,7 +169,107 @@ export const folders: FolderDefinition[] = [
   { id: 'banking', name: 'Banking', description: 'Lending, onboarding and risk applications.' },
 ]
 
-const byId = new Map(applications.map((app) => [app.id, app]))
+// ── Generated applications ────────────────────────────────────────────────
+
+/** Serializable registry entry for an application published from Application Studio. */
+export interface GeneratedAppRecord {
+  id: GeneratedAppId
+  name: string
+  description: string
+  domain: DomainId
+  iconKey: GeneratedIconKey
+  tint: AppTint
+  version: string
+  owner: string
+  projectId: string
+  publishedAt: string
+  /** The published blueprint, pinned at this version. */
+  blueprint: ApplicationBlueprint
+}
+
+export type GeneratedIconKey = 'claims' | 'health' | 'lending' | 'app'
+
+const generatedIcons: Record<GeneratedIconKey, LucideIcon> = {
+  claims: ClipboardList,
+  health: HeartPulse,
+  lending: Landmark,
+  app: AppWindow,
+}
+
+const STORAGE_KEY = 'enterprise-ai-os:generated-apps:v1'
+
+function loadRecords(): GeneratedAppRecord[] {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY)
+    return raw ? (JSON.parse(raw) as GeneratedAppRecord[]) : []
+  } catch {
+    return []
+  }
+}
+
+function saveRecords(list: GeneratedAppRecord[]) {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
+  } catch {
+    // Storage unavailable — the published app stays registered for this session only.
+  }
+}
+
+function toDefinition(record: GeneratedAppRecord): AppDefinition {
+  return {
+    id: record.id,
+    name: record.name,
+    description: record.description,
+    kind: 'application',
+    icon: generatedIcons[record.iconKey] ?? AppWindow,
+    tint: record.tint,
+    domains: [record.domain],
+    version: record.version,
+    lifecycle: 'published',
+    owner: record.owner,
+    desktopShortcut: true,
+    pinned: false,
+    inLauncher: true,
+    defaultSize: { width: 1120, height: 700 },
+    minSize: { width: 640, height: 420 },
+    generated: { projectId: record.projectId, publishedAt: record.publishedAt },
+  }
+}
+
+let records: GeneratedAppRecord[] = typeof window === 'undefined' ? [] : loadRecords()
+let snapshot: AppDefinition[] = [...builtinApplications, ...records.map(toDefinition)]
+let byId = new Map(snapshot.map((app) => [app.id, app]))
+const listeners = new Set<() => void>()
+
+function commit(next: GeneratedAppRecord[]) {
+  records = next
+  snapshot = [...builtinApplications, ...records.map(toDefinition)]
+  byId = new Map(snapshot.map((app) => [app.id, app]))
+  saveRecords(records)
+  listeners.forEach((listener) => listener())
+}
+
+/** Adds or updates (republishes) a generated application. */
+export function registerGeneratedApp(record: GeneratedAppRecord) {
+  const exists = records.some((r) => r.id === record.id)
+  commit(exists ? records.map((r) => (r.id === record.id ? record : r)) : [...records, record])
+}
+
+export function getGeneratedApp(id: string): GeneratedAppRecord | undefined {
+  return records.find((r) => r.id === id)
+}
+
+export function subscribeRegistry(listener: () => void) {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+
+/** Current list of every registered application (stable reference until it changes). */
+export function listApps(): AppDefinition[] {
+  return snapshot
+}
+
+// ── Queries ───────────────────────────────────────────────────────────────
 
 export function getApp(id: AppId): AppDefinition {
   const app = byId.get(id)
@@ -150,19 +277,15 @@ export function getApp(id: AppId): AppDefinition {
   return app
 }
 
-export function isAppId(value: string): value is AppId {
-  return byId.has(value as AppId)
-}
-
 export function getFolder(id: string): FolderDefinition | undefined {
   return folders.find((folder) => folder.id === id)
 }
 
-export function appsInFolder(id: DomainId): AppDefinition[] {
-  return applications.filter((app) => app.domains.includes(id))
+export function appsInFolder(id: DomainId, apps: AppDefinition[] = snapshot): AppDefinition[] {
+  return apps.filter((app) => app.domains.includes(id))
 }
 
-export const businessApps = applications.filter((app) => app.kind === 'application')
-export const pinnedApps = applications.filter((app) => app.pinned)
-export const desktopShortcuts = applications.filter((app) => app.desktopShortcut)
-export const launcherApps = applications.filter((app) => app.inLauncher)
+export const businessApps = (apps: AppDefinition[] = snapshot) => apps.filter((app) => app.kind === 'application')
+export const desktopShortcuts = (apps: AppDefinition[] = snapshot) => apps.filter((app) => app.desktopShortcut)
+export const launcherApps = (apps: AppDefinition[] = snapshot) => apps.filter((app) => app.inLauncher)
+export const pinnedApps = builtinApplications.filter((app) => app.pinned)

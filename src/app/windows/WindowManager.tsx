@@ -1,6 +1,6 @@
 import { Suspense, useLayoutEffect, useRef } from 'react'
 import { useOs } from '@/app/os/use-os'
-import { applicationComponents } from '@/app/registry/applicationComponents'
+import { resolveAppComponent } from '@/app/registry/applicationComponents'
 import { getApp } from '@/app/registry/applicationRegistry'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -39,7 +39,7 @@ export function WindowManager() {
   return (
     <div ref={rootRef} className="pointer-events-none absolute inset-0 isolate z-[1]">
       {windows.map((win) => {
-        const Component = applicationComponents[win.appId]
+        const Component = resolveAppComponent(win.appId)
         return (
           <WindowFrame
             key={win.id}

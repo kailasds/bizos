@@ -42,7 +42,7 @@ export function SidebarNav<T extends string>({
               active ? 'bg-accent font-medium text-accent-foreground' : 'hover:bg-muted',
             )}
           >
-            <Icon aria-hidden className="size-4" />
+            <Icon aria-hidden className="size-4 shrink-0" />
             <span className="flex-1">{item.label}</span>
             {item.meta && <span className="hidden text-xs text-muted-foreground @3xl:inline">{item.meta}</span>}
           </button>

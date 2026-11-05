@@ -1,11 +1,14 @@
 import { lazy, type ComponentType } from 'react'
-import type { AppId, AppProps } from './types'
+import type { AppId, AppProps, BuiltinAppId } from './types'
 
 /**
- * Maps each registered application to the UI it renders inside a window.
+ * Maps each built-in application to the UI it renders inside a window.
  * Applications load on first open, so the shell does not ship every app up front.
  */
-export const applicationComponents: Record<AppId, ComponentType<AppProps>> = {
+const builtinComponents: Record<BuiltinAppId, ComponentType<AppProps>> = {
+  'application-studio': lazy(() =>
+    import('@/app/studio/ApplicationStudioApp').then((m) => ({ default: m.ApplicationStudioApp })),
+  ),
   'claims-intelligence': lazy(() =>
     import('@/app/applications/claims-intelligence/ClaimsIntelligenceApp').then((m) => ({ default: m.ClaimsIntelligenceApp })),
   ),
@@ -23,4 +26,13 @@ export const applicationComponents: Record<AppId, ComponentType<AppProps>> = {
   'folder-browser': lazy(() =>
     import('@/app/applications/folder-browser/FolderBrowserApp').then((m) => ({ default: m.FolderBrowserApp })),
   ),
+}
+
+/** Every generated application renders through the same blueprint-driven host. */
+const GeneratedAppHost = lazy(() =>
+  import('@/app/experience/GeneratedAppHost').then((m) => ({ default: m.GeneratedAppHost })),
+)
+
+export function resolveAppComponent(appId: AppId): ComponentType<AppProps> {
+  return appId.startsWith('app-') ? GeneratedAppHost : builtinComponents[appId as BuiltinAppId]
 }

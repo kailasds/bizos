@@ -1,7 +1,8 @@
 import type { LucideIcon } from 'lucide-react'
 
-/** Stable application identity. Never use display names as identity. */
-export type AppId =
+/** Built-in application identity. Never use display names as identity. */
+export type BuiltinAppId =
+  | 'application-studio'
   | 'claims-intelligence'
   | 'document-ai'
   | 'workflow-studio'
@@ -9,6 +10,11 @@ export type AppId =
   | 'system-explorer'
   | 'settings'
   | 'folder-browser'
+
+/** Applications published from Application Studio. Stable from first generation. */
+export type GeneratedAppId = `app-${string}`
+
+export type AppId = BuiltinAppId | GeneratedAppId
 
 export type DomainId = 'insurance' | 'healthcare' | 'banking'
 
@@ -47,6 +53,10 @@ export interface AppDefinition {
   inLauncher: boolean
   defaultSize: Size
   minSize: Size
+  /** Open as a full workspace (maximized) the first time. */
+  startMaximized?: boolean
+  /** Present for applications published from Application Studio. */
+  generated?: { projectId: string; publishedAt: string }
 }
 
 export interface FolderDefinition {
