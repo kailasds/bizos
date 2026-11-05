@@ -25,14 +25,24 @@ const { chromium } = require('playwright');
     await studio.getByRole('button', { name: new RegExp('^' + label) }).waitFor({ timeout: T });
     await studio.getByRole('button', { name: new RegExp('^' + label) }).click();
     await studio.getByRole('button', { name: 'Start discovery' }).click();
-    await studio.getByRole('button', { name: /Looks right/ }).click({ timeout: T });
+    await studio.getByRole('button', { name: /Confirm understanding/ }).click({ timeout: T });
     await studio.getByRole('button', { name: 'Confirm requirements' }).click();
-    await studio.getByRole('radiogroup', { name: 'Solution approaches' }).waitFor({ timeout: T });
-    check(label + ': two approaches', await studio.getByRole('article').count() === 2);
-    await studio.getByRole('radio', { name: 'Select this approach' }).last().click();
-    await studio.getByRole('button', { name: /Use this approach/ }).click();
-    await studio.getByRole('button', { name: 'Approve and compose worker' }).click({ timeout: T });
-    await studio.getByRole('button', { name: 'Generate blueprint' }).click({ timeout: T, trial: false });
+    await studio.getByRole('tablist', { name: 'Solution approaches' }).waitFor({ timeout: T });
+    check(label + ': three approaches', await studio.getByRole('tab').count() === 3);
+    await studio.getByRole('button', { name: 'Select this approach' }).click();
+    await studio.getByRole('button', { name: /^Use .* find resources$/ }).click();
+    await studio.getByRole('button', { name: /Select all available/ }).click({ timeout: T });
+    while (await studio.getByRole('button', { name: 'Review configuration' }).count()) {
+      await studio.getByRole('button', { name: 'Review configuration' }).first().click();
+      await studio.getByRole('button', { name: 'Confirm and select' }).click();
+    }
+    await studio.getByRole('button', { name: 'Approve and compose worker' }).click();
+    if (label === 'Prior authorization') {
+      await studio.getByRole('alert').waitFor({ timeout: T });
+      check(label + ': first composition fails with a reason', (await studio.getByRole('alert').innerText()).includes('validation cases failed'));
+      await studio.getByRole('button', { name: 'Attach sample criteria and retry' }).click();
+    }
+    await studio.getByRole('button', { name: 'Generate blueprint' }).click({ timeout: T });
     await page.waitForTimeout(200);
     await studio.getByRole('button', { name: 'Continue to validation' }).click({ timeout: T });
     await studio.getByRole('button', { name: 'Run validation' }).click();

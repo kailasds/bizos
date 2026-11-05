@@ -1,54 +1,173 @@
-import { ArrowRight, Bot, BookOpen, Cpu, Plug, SearchX, Server, type LucideIcon } from 'lucide-react'
-import type { ResourceKind } from '@/app/blueprint/types'
+import { useState } from 'react'
+import { ArrowRight, BookOpen, Bot, Cpu, Info, Plug, Search, SearchX, Server, type LucideIcon } from 'lucide-react'
+import type { ResourceKind, SolutionOption } from '@/app/blueprint/types'
+import { ResourceDetailSheet } from '@/app/resources/ResourceDetailSheet'
+import { composedWorker, compositionPlan, coverageCounts, proposalFor } from '@/app/services/mock/capability-analysis-service'
+import { searchCatalogue } from '@/app/services/mock/resource-discovery-service'
+import { MockBadge } from '@/components/os/MockBadge'
 import { StatusBadge, type StatusTone } from '@/components/os/StatusBadge'
 import { Button } from '@/components/ui/button'
-import { compositionSequence } from '@/data/studio-resources.mock'
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
+import { Input } from '@/components/ui/input'
+import { availabilityLabel, resourceKindLabel, type PlatformResource } from '@/data/resources.mock'
+import { cn } from '@/lib/utils'
 import { StageFrame, StagePrerequisite } from '../components/StageFrame'
 import { StepList } from '../components/StepList'
 import { useSimulation } from '../hooks/use-simulation'
-import { composedWorker, proposalFor } from '../services/intelligence'
 import type { CapabilityMapping, MappingStatus } from '../types'
 import { useStudio } from '../use-studio'
 
-const kindMeta: Record<ResourceKind, { label: string; icon: LucideIcon }> = {
-  agent: { label: 'Agent', icon: Bot },
-  worker: { label: 'AI Worker', icon: Cpu },
-  connector: { label: 'Connector', icon: Plug },
-  knowledge: { label: 'Domain knowledge', icon: BookOpen },
-  service: { label: 'OS service', icon: Server },
-}
+const kindIcon: Record<ResourceKind, LucideIcon> = { agent: Bot, worker: Cpu, connector: Plug, knowledge: BookOpen, service: Server }
 
-const statusMeta: Record<MappingStatus, { tone: StatusTone; label: string }> = {
-  available: { tone: 'success', label: 'Available' },
-  restricted: { tone: 'warning', label: 'Available with conditions' },
+const mappingStatusMeta: Record<MappingStatus, { tone: StatusTone; label: string }> = {
+  selected: { tone: 'success', label: 'Selected' },
+  available: { tone: 'info', label: 'Available' },
+  'requires-configuration': { tone: 'warning', label: 'Requires configuration' },
   missing: { tone: 'danger', label: 'Missing' },
-  created: { tone: 'info', label: 'Created for this app' },
 }
 
-function GapResolver({ mapping, domain }: { mapping: CapabilityMapping; domain: Parameters<typeof composedWorker>[1] }) {
-  const { dispatch } = useStudio()
-  const sim = useSimulation(750)
-  const proposal = proposalFor(mapping.capabilityId)
+const stepNames = (option: SolutionOption | undefined, m: CapabilityMapping) =>
+  m.stepIds.map((id) => option?.steps.find((s) => s.id === id)?.name).filter((n): n is string => Boolean(n))
 
-  const approve = () =>
-    sim.run(compositionSequence.length, () =>
-      dispatch({
-        type: 'compose/workerCreated',
-        worker: { capabilityId: mapping.capabilityId, resource: composedWorker(mapping.capabilityId, domain), createdAt: new Date().toISOString() },
-      }),
-    )
+// ── Coverage ──────────────────────────────────────────────────────────────
+
+function CoverageRow({ mapping, option, onDetails }: { mapping: CapabilityMapping; option: SolutionOption | undefined; onDetails: (r: PlatformResource) => void }) {
+  const { dispatch } = useStudio()
+  const [reviewing, setReviewing] = useState(false)
+  const now = () => new Date().toISOString()
+  const steps = stepNames(option, mapping)
+  const r = mapping.resource
+  const Icon = kindIcon[r?.kind ?? mapping.category]
 
   return (
-    <section aria-label={`Missing capability: ${mapping.need}`} className="rounded-xl border border-danger/30 bg-card">
+    <li className="px-4 py-3">
+      <div className="grid items-start gap-3 @3xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_15rem]">
+        <div className="min-w-0">
+          <p className="text-sm font-medium">{mapping.need}</p>
+          <p className="text-xs text-muted-foreground">{steps.length ? `Supports: ${steps.join(', ')}` : 'Supports the whole application'}</p>
+        </div>
+        <div className="flex min-w-0 gap-2">
+          {r ? (
+            <>
+              <Icon aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+              <div className="min-w-0">
+                <button type="button" onClick={() => onDetails(r)} className="text-left text-sm outline-none hover:underline focus-visible:underline">
+                  {r.name}
+                </button>
+                <p className="text-xs text-muted-foreground">
+                  {resourceKindLabel[r.kind]}
+                  {mapping.created ? ' · composed for this application (simulated)' : ''}
+                </p>
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground italic">No existing resource</p>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2 @3xl:justify-end">
+          <StatusBadge tone={mappingStatusMeta[mapping.status].tone}>{mappingStatusMeta[mapping.status].label}</StatusBadge>
+          {mapping.status === 'available' && (
+            <Button size="xs" variant="outline" aria-label={`Select ${r?.name} for ${mapping.need}`} onClick={() => dispatch({ type: 'compose/select', capabilityIds: [mapping.capabilityId], now: now() })}>
+              Select
+            </Button>
+          )}
+          {mapping.status === 'requires-configuration' && (
+            <Button size="xs" variant="outline" aria-expanded={reviewing} onClick={() => setReviewing(!reviewing)}>
+              Review configuration
+            </Button>
+          )}
+          {mapping.status === 'selected' && !mapping.created && (
+            <Button size="xs" variant="ghost" aria-label={`Deselect ${r?.name}`} onClick={() => dispatch({ type: 'compose/deselect', capabilityId: mapping.capabilityId })}>
+              Deselect
+            </Button>
+          )}
+          {mapping.status === 'missing' && (
+            <Button size="xs" variant="outline" onClick={() => document.getElementById(`gap-${mapping.capabilityId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+              Resolve
+            </Button>
+          )}
+        </div>
+      </div>
+      {reviewing && mapping.status === 'requires-configuration' && r && (
+        <div className="mt-3 rounded-lg border border-warning/40 bg-warning-soft/50 p-3 text-sm">
+          <p className="font-medium text-warning-ink">Before {r.name} can be used</p>
+          <p className="mt-1">{r.configuration ?? r.note}</p>
+          <p className="mt-1 text-xs text-muted-foreground">Confirming records that this condition will be met before go-live. Nothing is configured in this prototype.</p>
+          <div className="mt-2 flex gap-2">
+            <Button
+              size="sm"
+              onClick={() => {
+                dispatch({ type: 'compose/configure', capabilityId: mapping.capabilityId, now: now() })
+                setReviewing(false)
+              }}
+            >
+              Confirm and select
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setReviewing(false)}>
+              Not now
+            </Button>
+          </div>
+        </div>
+      )}
+    </li>
+  )
+}
+
+function GapResolver({ mapping, option, alternatives, onLookAt }: { mapping: CapabilityMapping; option: SolutionOption | undefined; alternatives: SolutionOption[]; onLookAt: (id: string) => void }) {
+  const { project, dispatch } = useStudio()
+  const sim = useSimulation(700)
+  const [failure, setFailure] = useState<{ at: number; message: string } | null>(null)
+  const proposal = proposalFor(mapping.capabilityId)
+  const rejected = project?.composition?.rejected.includes(mapping.capabilityId)
+  const attempts = project?.composition?.attempts[mapping.capabilityId] ?? 0
+  const steps = stepNames(option, mapping)
+  const alternative = alternatives.find((o) => !o.steps.some((s) => s.capabilityId === mapping.capabilityId))
+  const domain = project?.discover.domain ?? 'insurance'
+  const now = () => new Date().toISOString()
+
+  const approve = () => {
+    setFailure(null)
+    const plan = compositionPlan(mapping.capabilityId, attempts)
+    if (plan.failAt !== null) {
+      sim.run(plan.failAt + 1, () => {
+        setFailure({ at: plan.failAt!, message: plan.message! })
+        dispatch({ type: 'compose/compositionFailed', capabilityId: mapping.capabilityId, message: plan.message!, now: now() })
+      })
+    } else {
+      sim.run(plan.steps.length, () =>
+        dispatch({ type: 'compose/workerCreated', worker: { capabilityId: mapping.capabilityId, resource: composedWorker(mapping.capabilityId, domain), createdAt: now() }, now: now() }),
+      )
+    }
+  }
+
+  return (
+    <section id={`gap-${mapping.capabilityId}`} aria-label={`Missing capability: ${mapping.need}`} className="scroll-mt-4 rounded-xl border border-danger/30 bg-card">
       <header className="flex items-start gap-2 border-b px-4 py-3">
         <SearchX aria-hidden className="mt-0.5 size-4 shrink-0 text-danger-ink" />
-        <div>
+        <div className="min-w-0 flex-1">
           <h3 className="text-sm font-semibold">{mapping.need} is missing</h3>
           <p className="text-sm text-muted-foreground">{proposal?.whyNeeded ?? 'The selected approach needs this capability, and no existing resource provides it.'}</p>
+          {steps.length > 0 && <p className="mt-1 text-xs text-muted-foreground">Workflow steps affected: {steps.join(', ')}</p>}
         </div>
       </header>
 
-      {proposal ? (
+      {rejected ? (
+        <div className="space-y-3 px-4 py-4 text-sm">
+          <p>
+            <span className="font-medium">You rejected the proposed {proposal?.name ?? 'worker'}.</span> {proposal?.ifRejected}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {alternative && (
+              <Button size="sm" variant="outline" onClick={() => onLookAt(alternative.id)}>
+                Look at {alternative.name}
+              </Button>
+            )}
+            <Button size="sm" variant="ghost" onClick={() => dispatch({ type: 'compose/reconsider', capabilityId: mapping.capabilityId })}>
+              Reconsider the proposal
+            </Button>
+          </div>
+        </div>
+      ) : proposal ? (
         <div className="space-y-4 px-4 py-4">
           <div>
             <h4 className="text-xs font-medium text-muted-foreground">Checked for reuse first</h4>
@@ -67,72 +186,214 @@ function GapResolver({ mapping, domain }: { mapping: CapabilityMapping; domain: 
               <span className="rounded-full border border-dashed border-foreground/30 px-2 text-xs leading-5 text-muted-foreground">Proposed — not created</span>
             </div>
             <p className="mt-1 text-sm">{proposal.purpose}</p>
-            <dl className="mt-3 grid gap-3 text-sm @3xl:grid-cols-3">
+            <dl className="mt-3 grid gap-3 text-sm @3xl:grid-cols-2">
               <div>
-                <dt className="text-xs font-medium text-muted-foreground">Skills</dt>
-                <dd>{proposal.skills.join(' · ')}</dd>
+                <dt className="text-xs font-medium text-muted-foreground">Responsibilities</dt>
+                <dd>
+                  <ul className="list-disc pl-4">
+                    {proposal.responsibilities.map((x) => (
+                      <li key={x}>{x}</li>
+                    ))}
+                  </ul>
+                </dd>
               </div>
-              <div>
-                <dt className="text-xs font-medium text-muted-foreground">Agent access</dt>
-                <dd>{proposal.agentAccess.join(' · ')}</dd>
-              </div>
-              <div>
-                <dt className="text-xs font-medium text-muted-foreground">Knowledge</dt>
-                <dd>{proposal.knowledge.join(' · ')}</dd>
+              <div className="space-y-2">
+                <div>
+                  <dt className="text-xs font-medium text-muted-foreground">Would support</dt>
+                  <dd>{steps.join(', ') || mapping.need}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium text-muted-foreground">Agent access</dt>
+                  <dd>{proposal.agentAccess.join(' · ')}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium text-muted-foreground">Knowledge</dt>
+                  <dd>{proposal.knowledge.join(' · ')}</dd>
+                </div>
               </div>
             </dl>
           </div>
 
-          {sim.running ? (
-            <div aria-busy>
-              <p className="mb-2 text-sm font-medium">Composing {proposal.name} (simulated)…</p>
-              <StepList label="Worker composition" steps={compositionSequence} current={sim.step} />
+          {sim.running || failure ? (
+            <div aria-busy={sim.running}>
+              <p className="mb-2 text-sm font-medium">{failure ? `Simulated composition of ${proposal.name} failed` : `Composing ${proposal.name} (simulated)…`}</p>
+              <StepList label="Worker composition" steps={compositionPlan(mapping.capabilityId, 0).steps} current={sim.step} failedAt={failure?.at ?? null} />
+              {failure && !sim.running && (
+                <div role="alert" className="mt-3 rounded-lg border border-danger/30 bg-danger-soft/60 p-3 text-sm">
+                  <p className="text-danger-ink">{failure.message}</p>
+                  <div className="mt-2 flex gap-2">
+                    <Button size="sm" onClick={approve}>
+                      {proposal.firstAttemptFailure?.retryLabel ?? 'Retry'}
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setFailure(null)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex flex-wrap items-center gap-2">
               <Button onClick={approve}>Approve and compose worker</Button>
-              <Button variant="ghost" onClick={() => dispatch({ type: 'stage/go', stage: 'architect' })}>
-                Choose a different approach
+              <Button variant="ghost" onClick={() => dispatch({ type: 'compose/rejectWorker', capabilityId: mapping.capabilityId, now: now() })}>
+                Reject
               </Button>
               <p className="w-full text-xs text-muted-foreground">
-                Approval is required before the OS asks the AI Workers Platform for a new worker. In this prototype nothing is created outside the browser.
+                Your approval is required before the OS asks the AI Workers Platform for a new worker. In this prototype the composition is simulated — no
+                worker is provisioned.
               </p>
             </div>
           )}
         </div>
       ) : (
         <div className="flex gap-2 px-4 py-3">
-          <Button variant="outline" onClick={() => dispatch({ type: 'stage/go', stage: 'architect' })}>
-            Choose a different approach
-          </Button>
+          {alternative && (
+            <Button variant="outline" onClick={() => onLookAt(alternative.id)}>
+              Look at {alternative.name}
+            </Button>
+          )}
         </div>
       )}
     </section>
   )
 }
 
+// ── Catalogue ─────────────────────────────────────────────────────────────
+
+const kindFilters: { id: ResourceKind | 'all'; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'worker', label: 'AI Workers' },
+  { id: 'agent', label: 'Agents' },
+  { id: 'connector', label: 'Connectors' },
+  { id: 'service', label: 'Services' },
+  { id: 'knowledge', label: 'Domain knowledge' },
+]
+
+function CatalogueBrowser({ mappings, onDetails }: { mappings: CapabilityMapping[]; onDetails: (r: PlatformResource) => void }) {
+  const { project } = useStudio()
+  const [query, setQuery] = useState('')
+  const [kind, setKind] = useState<ResourceKind | 'all'>('all')
+  const domain = project?.discover.domain ?? undefined
+  const inDomain = searchCatalogue({ domain })
+  const results = searchCatalogue({ query, kind, domain })
+  const usedFor = (id: string) => mappings.find((m) => m.resource?.id === id)
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative w-full max-w-72">
+          <Search aria-hidden className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by name or what it does" aria-label="Search resources" className="pl-8" />
+        </div>
+        <div role="group" aria-label="Resource type" className="flex flex-wrap gap-1">
+          {kindFilters.map((f) => (
+            <Button key={f.id} size="xs" variant={kind === f.id ? 'secondary' : 'ghost'} aria-pressed={kind === f.id} onClick={() => setKind(f.id)}>
+              {f.label} <span className="text-muted-foreground tabular-nums">{f.id === 'all' ? inDomain.length : inDomain.filter((r) => r.kind === f.id).length}</span>
+            </Button>
+          ))}
+        </div>
+        <MockBadge label="Mock catalogue" className="ml-auto" />
+      </div>
+      <p className="text-xs text-muted-foreground">Resources available to {domain ? `the ${domain} domain` : 'this application'}, read from their owning platforms.</p>
+      {results.length === 0 ? (
+        <Empty className="rounded-lg border border-dashed">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <SearchX />
+            </EmptyMedia>
+            <EmptyTitle>No resources match</EmptyTitle>
+            <EmptyDescription>Try another word, or show all resource types.</EmptyDescription>
+          </EmptyHeader>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setQuery('')
+              setKind('all')
+            }}
+          >
+            Clear search
+          </Button>
+        </Empty>
+      ) : (
+        <ul className="divide-y rounded-lg border bg-card">
+          {results.map((r) => {
+            const Icon = kindIcon[r.kind]
+            const m = usedFor(r.id)
+            return (
+              <li key={r.id}>
+                <button
+                  type="button"
+                  onClick={() => onDetails(r)}
+                  className="flex w-full items-start gap-3 px-4 py-3 text-left outline-none hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset"
+                >
+                  <Icon aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium">
+                      {r.name} <span className="font-normal text-muted-foreground">· {resourceKindLabel[r.kind]}</span>
+                    </span>
+                    <span className="block text-sm text-muted-foreground">{r.purpose}</span>
+                    <span className={cn('mt-1 block text-xs', m ? 'text-foreground' : 'text-muted-foreground')}>
+                      {m ? `Used here for ${m.need} · ${mappingStatusMeta[m.status].label}` : 'Not used in this application'}
+                    </span>
+                  </span>
+                  {r.availability !== 'available' && <StatusBadge tone="warning">{availabilityLabel[r.availability]}</StatusBadge>}
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+// ── Stage ─────────────────────────────────────────────────────────────────
+
 const compileSteps = ['Compiling the workflow', 'Deriving the data model', 'Building screens from the component catalogue', 'Assembling the blueprint']
 
-export function ComposeStage() {
+export function ComposeStage({ onFocusOption }: { onFocusOption: (id: string) => void }) {
   const { project, dispatch } = useStudio()
   const sim = useSimulation(600)
+  const [view, setView] = useState<'coverage' | 'catalogue'>('coverage')
+  const [detail, setDetail] = useState<PlatformResource | null>(null)
 
   if (!project?.composition || !project.discover.domain) {
     return <StagePrerequisite stage="compose" requires="architect" message="Choose a solution approach first. Resources are discovered for the approach you select." />
   }
 
   const { mappings } = project.composition
+  const option = project.architecture?.options.find((o) => o.id === project.architecture?.selectedOptionId)
+  const alternatives = project.architecture?.options.filter((o) => o.id !== option?.id) ?? []
+  const counts = coverageCounts(mappings)
   const missing = mappings.filter((m) => m.status === 'missing')
-  const reused = mappings.filter((m) => m.status === 'available' || m.status === 'restricted').length
-  const created = mappings.filter((m) => m.status === 'created').length
+  const available = mappings.filter((m) => m.status === 'available')
+  const remaining = mappings.length - counts.selected
+  const detailMapping = detail ? mappings.find((m) => m.resource?.id === detail.id) : undefined
+  const now = () => new Date().toISOString()
+  const lookAt = (id: string) => {
+    onFocusOption(id)
+    dispatch({ type: 'stage/go', stage: 'architect' })
+  }
+
+  const blockers = [
+    counts.available && `select ${counts.available} available resource${counts.available === 1 ? '' : 's'}`,
+    counts['requires-configuration'] && `confirm ${counts['requires-configuration']} configuration${counts['requires-configuration'] === 1 ? '' : 's'}`,
+    counts.missing && `resolve ${counts.missing} missing capabilit${counts.missing === 1 ? 'y' : 'ies'}`,
+  ].filter(Boolean)
 
   return (
     <StageFrame
       stage="compose"
       aside={
-        <p className="text-xs text-muted-foreground tabular-nums">
-          {mappings.length} needs · {reused} reused · {created} created · {missing.length} missing
-        </p>
+        <div role="group" aria-label="View" className="flex gap-1">
+          <Button size="sm" variant={view === 'coverage' ? 'secondary' : 'ghost'} aria-pressed={view === 'coverage'} onClick={() => setView('coverage')}>
+            Coverage
+          </Button>
+          <Button size="sm" variant={view === 'catalogue' ? 'secondary' : 'ghost'} aria-pressed={view === 'catalogue'} onClick={() => setView('catalogue')}>
+            Resource catalogue
+          </Button>
+        </div>
       }
       footer={
         sim.running ? (
@@ -141,8 +402,8 @@ export function ComposeStage() {
           </div>
         ) : (
           <>
-            {missing.length > 0 && <span className="mr-auto text-sm text-muted-foreground">Resolve the missing capability to continue.</span>}
-            <Button disabled={missing.length > 0} onClick={() => sim.run(compileSteps.length, () => dispatch({ type: 'compose/confirm', now: new Date().toISOString() }))}>
+            {remaining > 0 && <span className="mr-auto text-sm text-muted-foreground">To continue, {blockers.join(', ')}.</span>}
+            <Button disabled={remaining > 0} onClick={() => sim.run(compileSteps.length, () => dispatch({ type: 'compose/confirm', now: now() }))}>
               {project.blueprint ? 'Regenerate blueprint' : 'Generate blueprint'}
               <ArrowRight />
             </Button>
@@ -150,60 +411,53 @@ export function ComposeStage() {
         )
       }
     >
-      <div className="space-y-6">
-        <div className="overflow-x-auto rounded-lg border bg-card">
-          <table className="w-full text-sm">
-            <caption className="sr-only">Required capabilities and the resources mapped to them</caption>
-            <thead className="bg-chrome text-left text-xs text-muted-foreground">
-              <tr className="border-b">
-                <th className="px-3 py-2 font-medium">Required capability</th>
-                <th className="px-3 py-2 font-medium">Resource</th>
-                <th className="hidden px-3 py-2 font-medium @3xl:table-cell">Owned by</th>
-                <th className="px-3 py-2 font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {mappings.map((m) => {
-                const Icon = kindMeta[m.resource?.kind ?? m.category].icon
-                return (
-                  <tr key={m.id} className="border-b align-top last:border-0">
-                    <td className="px-3 py-2.5">
-                      <p className="font-medium">{m.need}</p>
-                      <p className="text-xs text-muted-foreground">{kindMeta[m.resource?.kind ?? m.category].label}</p>
-                    </td>
-                    <td className="px-3 py-2.5">
-                      {m.resource ? (
-                        <div className="flex gap-2">
-                          <Icon aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                          <div>
-                            <p>
-                              {m.resource.name} <span className="text-xs text-muted-foreground tabular-nums">{m.resource.version}</span>
-                            </p>
-                            <p className="text-xs text-muted-foreground">{m.resource.note}</p>
-                          </div>
-                        </div>
-                      ) : (
-                        <p className="text-muted-foreground italic">No existing resource</p>
-                      )}
-                    </td>
-                    <td className="hidden px-3 py-2.5 text-muted-foreground @3xl:table-cell">{m.resource?.owner ?? '—'}</td>
-                    <td className="px-3 py-2.5">
-                      <StatusBadge tone={statusMeta[m.status].tone}>{statusMeta[m.status].label}</StatusBadge>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+      {view === 'catalogue' ? (
+        <CatalogueBrowser mappings={mappings} onDetails={setDetail} />
+      ) : (
+        <div className="space-y-6">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="mr-1 text-sm font-semibold">Capability coverage{option ? ` for ${option.name}` : ''}</h3>
+            {(Object.keys(mappingStatusMeta) as MappingStatus[]).map((s) =>
+              counts[s] ? (
+                <StatusBadge key={s} tone={mappingStatusMeta[s].tone}>
+                  <span className="tabular-nums">{counts[s]}</span> {mappingStatusMeta[s].label.toLowerCase()}
+                </StatusBadge>
+              ) : null,
+            )}
+            {available.length > 0 && (
+              <Button size="sm" variant="outline" className="ml-auto" onClick={() => dispatch({ type: 'compose/select', capabilityIds: available.map((m) => m.capabilityId), now: now() })}>
+                Select all available ({available.length})
+              </Button>
+            )}
+          </div>
+          <p className="flex gap-2 text-xs text-muted-foreground">
+            <Info aria-hidden className="mt-0.5 size-3.5 shrink-0" />
+            Existing resources are preferred over new ones. Selecting a resource pins its current version into the blueprint; the owning platform keeps managing it.
+          </p>
+          <ul className="divide-y rounded-lg border bg-card" aria-label="Capability coverage">
+            {mappings.map((m) => (
+              <CoverageRow key={m.id} mapping={m} option={option} onDetails={setDetail} />
+            ))}
+          </ul>
+          {missing.map((m) => (
+            <GapResolver key={m.id} mapping={m} option={option} alternatives={alternatives} onLookAt={lookAt} />
+          ))}
         </div>
-        <p className="text-xs text-muted-foreground">
-          The OS reads these resources from their owning platforms; it does not become their source of truth. Versions are pinned when the blueprint is generated.
-        </p>
-
-        {missing.map((m) => (
-          <GapResolver key={m.id} mapping={m} domain={project.discover.domain!} />
-        ))}
-      </div>
+      )}
+      <ResourceDetailSheet
+        resource={detail}
+        onOpenChange={(open) => !open && setDetail(null)}
+        context={detailMapping ? { label: 'Supports in this application', items: stepNames(option, detailMapping).length ? stepNames(option, detailMapping) : [detailMapping.need] } : undefined}
+        actions={
+          detailMapping?.status === 'available' ? (
+            <Button onClick={() => dispatch({ type: 'compose/select', capabilityIds: [detailMapping.capabilityId], now: now() })}>Select for this application</Button>
+          ) : detailMapping?.status === 'selected' && !detailMapping.created ? (
+            <Button variant="outline" onClick={() => dispatch({ type: 'compose/deselect', capabilityId: detailMapping.capabilityId })}>
+              Deselect
+            </Button>
+          ) : undefined
+        }
+      />
     </StageFrame>
   )
 }

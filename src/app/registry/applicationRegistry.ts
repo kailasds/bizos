@@ -277,6 +277,11 @@ export function getApp(id: AppId): AppDefinition {
   return app
 }
 
+/** Like getApp, but returns undefined for ids no longer registered (e.g. after a demo reset). */
+export function findApp(id: string): AppDefinition | undefined {
+  return byId.get(id as AppId)
+}
+
 export function getFolder(id: string): FolderDefinition | undefined {
   return folders.find((folder) => folder.id === id)
 }

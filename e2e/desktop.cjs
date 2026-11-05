@@ -81,7 +81,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await page.screenshot({ path: dir + '/03-claim-detail.png' });
   await page.getByRole('button', { name: 'Approve settlement' }).click();
   await page.waitForTimeout(300);
-  check('approval reduces pending widget', (await page.locator('aside[aria-label="System overview"]').innerText()).includes('2\nawaiting'));
+  check('approval reduces pending widget', /\b2\s+decisions awaiting/.test(await page.locator('aside[aria-label="System overview"]').innerText()));
 
   // launcher search
   await page.keyboard.press('Control+k');
@@ -154,8 +154,8 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   // settings: hide widget
   await page.getByRole('navigation', { name: 'Dock' }).getByRole('button', { name: /^Settings/ }).click();
   await page.waitForTimeout(300);
-  await page.getByRole('switch', { name: /Recent activity/ }).click();
-  check('widget hidden', await page.getByRole('button', { name: /Recent activity — open/ }).count() === 0);
+  await page.getByRole('switch', { name: /Platform activity/ }).click();
+  check('widget hidden', await page.getByRole('button', { name: /Platform activity — open/ }).count() === 0);
   await page.getByRole('button', { name: 'Reset widgets' }).click();
 
   // analytics

@@ -4,8 +4,8 @@ An AI-native enterprise operating environment: describe a business problem, get 
 enterprise application. See [`context.md`](context.md) for the full product and architecture
 context.
 
-**Current state: Milestone 2 — Application Creation Workspace**, on top of the Milestone 1
-desktop foundation (window manager, dock, launcher, widgets, notifications, mock apps).
+**Current state: Milestone 3 — Intelligence experience**, on top of the Milestone 1 desktop
+foundation and the Milestone 2 Application Creation Workspace.
 
 Application Studio lets a business user describe a problem and walk it through seven
 revisitable stages — Discover, Define, Architect, Compose, Generate, Validate, Publish — to a
@@ -36,21 +36,33 @@ src/
     shell/         DesktopShell, TopBar, DesktopCanvas, Dock, ApplicationLauncher,
                    NotificationCenter, AssistantPanel
     widgets/       Desktop widgets + shared WidgetCard
-    services/      MockServicesProvider — stands in for backend state shared by apps and widgets
+    services/      MockServicesProvider (Claims Intelligence backend stand-in, persisted),
+                   app-records-store (records in published apps), demo-data (reset)
+      mock/        Typed MOCK services: intent, architecture (+ AI Architect), capability analysis,
+                   resource discovery, blueprint (diff, readiness), application registry,
+                   activity, attention — deterministic, browser-only, replaceable by real APIs
+    resources/     ResourceDetailSheet — reusable, business-first resource detail
     studio/        Application Studio: StudioProvider + pure studioReducer (stage progress,
-                   downstream invalidation, revisions), services/ (mock intelligence, architect
-                   guidance), stages/ (one component per stage), components/ (nav, panel, lists)
+                   downstream invalidation, version snapshots, decisions), lifecycle.ts,
+                   migrate.ts (older drafts), stages/ (one per stage), components/ (nav,
+                   architect panel, swimlanes, version history, lifecycle track)
     blueprint/     Application Blueprint schema (types.ts), generator + patches (generate.ts),
                    deterministic validation (validate.ts)
     experience/    ExperienceRenderer — renders blueprint pages with trusted catalogue components;
                    GeneratedAppHost — window content for every published app
     applications/  Hosted applications (claims-intelligence, document-ai, workflow-studio,
-                   analytics-workspace, system-explorer, settings, folder-browser)
+                   analytics-workspace, system-explorer incl. registry + application detail,
+                   settings incl. demo-data reset, folder-browser)
   components/
     ui/            shadcn/ui primitives (unchanged)
     os/            Shared OS micro-patterns: AppIcon, StatusBadge, MockBadge, SidebarNav
-  data/            Mock fixtures (claims, documents, platform, notifications, analytics,
-                   studio-scenarios — Insurance/Healthcare/Banking, studio-resources — catalogue)
+  data/            MOCK fixtures, one concern per file:
+                   resources.mock (single catalogue of agents, workers, connectors, services,
+                   domain knowledge + worker proposals), studio-scenarios.mock (Insurance /
+                   Healthcare / Banking understanding, questions, approaches, screens),
+                   applications.mock (built-in app profiles), activity.mock (seed activity),
+                   platform.mock (health, simulated executions, workflow definitions), claims,
+                   documents, notifications, analytics
 ```
 
 Key principles (from `context.md` §12):
@@ -76,6 +88,37 @@ Publish  ──registerGeneratedApp()──▶ registry → desktop, folder, lau
 Editing an earlier stage marks every completed later stage **Needs review** with the reason;
 confirming a stage rebuilds the next artifact. Drafts and published apps persist in
 `localStorage`; in-flight simulations never do, so a reload always lands on a stable state.
+
+## Mock-driven features (Milestone 3)
+
+Everything below is simulated in the browser; there is no backend, model or platform integration.
+
+| Feature | Where | Behaviour |
+|---|---|---|
+| Intent understanding | `services/mock/intent-service.ts` | Keyword match against three scripted scenarios; evidence quotes from your own words; unmatched descriptions get an honest fallback, never a pretend understanding |
+| Clarifying questions, suggestions | `studio-scenarios.mock.ts` | Deterministic per scenario; answers flow into requirements (e.g. approver role) |
+| Solution approaches | `architecture-service.ts` | Three operating models per scenario; facts (people on N of M steps, new resources) are counted, never scored |
+| AI Architect | `architecture-service.ts` | Scripted replies built from project state, with "based on" sources and navigation actions; unscripted questions get an honest list of what it can answer |
+| Capability coverage, worker composition | `capability-analysis-service.ts`, `resources.mock.ts` | Selected / Available / Requires configuration / Missing; composition is simulated (Healthcare fails once by design, then succeeds on retry) |
+| Validation, readiness | `blueprint/validate.ts`, `blueprint-service.ts` | Eight deterministic checks; Ready / Needs attention / Blocked / Accepted with known gaps |
+| Version history, rollback | `studioReducer.ts`, `VersionHistory.tsx` | Snapshot per version, compare by section, rollback creates a new draft version; no runtime changes |
+| Registry, activity, approvals | `application-registry-service.ts`, `activity-service.ts`, `attention-service.ts` | Derived from the registry store and Studio drafts; seed events are labelled simulated |
+
+Persisted in `localStorage` (prefix `enterprise-ai-os:`): drafts with version snapshots,
+published apps, records inside published apps, Claims Intelligence decisions, recently opened
+apps, widget preferences. Settings → Demo data → Reset clears them.
+
+## Tests
+
+Playwright smoke scripts (need the `playwright` package; not a project dependency):
+
+```bash
+npm run build && npx vite preview --port 4173 &
+node e2e/desktop.cjs          # Milestone 1 desktop
+node e2e/studio-journey.cjs   # Milestone 2 journey (Insurance), publish, reload, invalidation
+node e2e/studio-domains.cjs   # Healthcare and Banking through validation
+node e2e/intelligence.cjs     # Milestone 3 intelligence, resources, versions, registry, reset
+```
 
 ## Stack
 

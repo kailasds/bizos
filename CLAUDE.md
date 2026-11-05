@@ -1,12 +1,14 @@
 # CLAUDE.md
 
-This repository is the **Enterprise AI OS** frontend (built on the claude-react-starter foundation). Read `context.md` before product, UX or architecture work — it is the shared product context. Current scope: desktop shell + Application Studio (Milestone 2), mock data and deterministic mock intelligence only (no backend, LLM, agent or worker integrations).
+This repository is the **Enterprise AI OS** frontend (built on the claude-react-starter foundation). Read `context.md` before product, UX or architecture work — it is the shared product context. Current scope: desktop shell, Application Studio and the intelligence experience (Milestone 3) — mock data and deterministic mock intelligence only (no backend, LLM, agent or worker integrations).
 
 ## Architecture rules
 
 - Application metadata lives in `src/app/registry/applicationRegistry.ts`; the id → component map is `applicationComponents.ts`. Add an app by registering it in both — never hardcode a window/modal per app.
 - Window state is a pure reducer (`src/app/windows/windowReducer.ts`); shell components talk to it only through `useOs()`.
-- Mock data lives in `src/data/*.mock.ts`. Any surface showing fabricated data must carry `MockBadge` (or sit in a container that does).
+- Mock data lives in `src/data/*.mock.ts` (one concern per file; `resources.mock.ts` is the only resource catalogue). Any surface showing fabricated data must carry `MockBadge` (or sit in a container that does).
+- Simulated intelligence lives in typed services under `src/app/services/mock/` — UI never hardcodes scenario logic. Services must stay deterministic, must not claim a model understood something, and must not invent metrics, percentages or validation findings.
+- The OS reads platform resources (agents, workers, connectors, domain packs); it is not their registry. Registry, activity and approvals views are derived from the registry store and Studio projects — never a second copy.
 - Status is always shown with the shared `StatusBadge` (`src/components/os/`).
 - Every visible control must work; if a feature is out of scope, omit the control or label it clearly as a placeholder.
 - Generated applications are data, not code: the Application Blueprint (`src/app/blueprint/types.ts`) is the source of truth and `ExperienceRenderer` interprets it with trusted components. Never generate or execute code.

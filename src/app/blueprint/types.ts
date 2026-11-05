@@ -38,6 +38,10 @@ export interface RequirementSpec {
   outputs: SpecItem[]
   constraints: SpecItem[]
   successCriteria: SpecItem[]
+  /** Business context captured during discovery (added in Milestone 3; optional for older drafts). */
+  context?: { problem: string; processes: SpecItem[]; challenges: SpecItem[]; integrations: SpecItem[] }
+  /** Role named by the user as the approver for decisions with several candidates. */
+  approverRole?: string | null
 }
 
 export type AutomationLevel = 'assisted' | 'balanced' | 'extensive'
@@ -57,6 +61,10 @@ export interface SolutionOption {
   name: string
   tagline: string
   summary: string
+  /** One line: who does the work in this approach (added in Milestone 3). */
+  operatingModel?: string
+  /** How the approach answers the stated business problem. */
+  howItAddresses?: string
   automation: AutomationLevel
   steps: FlowStep[]
   /** Capabilities that need a resource beyond the flow steps (e.g. system access). */

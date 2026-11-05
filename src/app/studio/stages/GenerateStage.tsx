@@ -1,185 +1,341 @@
 import { useState, type ReactNode } from 'react'
-import { ArrowRight, Copy, Plus } from 'lucide-react'
+import { ArrowRight, ChevronRight, Copy, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ApplicationBlueprint, DataField, FieldType, ResourceRef } from '@/app/blueprint/types'
 import { ExperienceRenderer } from '@/app/experience/ExperienceRenderer'
-import { StatusBadge } from '@/components/os/StatusBadge'
+import { ResourceDetailSheet } from '@/app/resources/ResourceDetailSheet'
+import { readinessMeta, readinessOf, sectionStatus } from '@/app/services/mock/blueprint-service'
+import { getResource } from '@/app/services/mock/resource-discovery-service'
+import { SidebarNav } from '@/components/os/SidebarNav'
+import { StatusBadge, type StatusTone } from '@/components/os/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getScenario } from '@/data/studio-scenarios.mock'
+import type { PlatformResource } from '@/data/resources.mock'
+import { FileJson, FileText, GitBranch, History, LayoutDashboard, ListChecks, Monitor, Network, Rocket, Shield, ShieldCheck, Table2, Waypoints } from 'lucide-react'
 import { FlowDiagram } from '../components/FlowDiagram'
 import { StageFrame, StagePrerequisite } from '../components/StageFrame'
+import { VersionHistory } from '../components/VersionHistory'
+import type { BlueprintSection, StudioProject } from '../types'
 import { useStudio } from '../use-studio'
 
-export type GenerateTab = 'overview' | 'workflow' | 'resources' | 'data' | 'experience' | 'security' | 'json'
+export type GenerateTab = BlueprintSection | 'validation' | 'history' | 'json'
 
-const tabs: { id: GenerateTab; label: string }[] = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'workflow', label: 'Workflow' },
-  { id: 'resources', label: 'Resources' },
-  { id: 'data', label: 'Data model' },
-  { id: 'experience', label: 'Experience preview' },
-  { id: 'security', label: 'Security' },
-  { id: 'json', label: 'JSON' },
+const nav: { id: GenerateTab; label: string; icon: typeof FileText }[] = [
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'requirements', label: 'Business requirements', icon: ListChecks },
+  { id: 'solution', label: 'Selected solution', icon: Waypoints },
+  { id: 'workflow', label: 'Workflow', icon: GitBranch },
+  { id: 'resources', label: 'Resources', icon: Network },
+  { id: 'data', label: 'Data model', icon: Table2 },
+  { id: 'experience', label: 'Experience and screens', icon: Monitor },
+  { id: 'security', label: 'Security and governance', icon: Shield },
+  { id: 'validation', label: 'Validation', icon: ShieldCheck },
+  { id: 'deployment', label: 'Deployment', icon: Rocket },
+  { id: 'history', label: 'Version history', icon: History },
+  { id: 'json', label: 'Technical view (JSON)', icon: FileJson },
 ]
 
-const dateFormat = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+const roleName = (bp: ApplicationBlueprint, id: string | null) => (id ? (bp.security.roles.find((r) => r.id === id)?.name ?? id) : null)
 
-function Section({ title, children, description }: { title: string; description?: string; children: ReactNode }) {
+function summaryOf(tab: GenerateTab, bp: ApplicationBlueprint, project: StudioProject): string {
+  const human = bp.workflow.nodes.filter((n) => n.actor === 'human')
+  const resources = Object.values(bp.resources).flat()
+  const entity = bp.dataModel.entities[0]
+  switch (tab) {
+    case 'overview':
+      return bp.description
+    case 'requirements':
+      return `${bp.requirements.capabilities.length} capabilities for ${bp.requirements.users.length} user groups, with ${bp.requirements.constraints.length} constraints.`
+    case 'solution':
+      return bp.solutionArchitecture.summary
+    case 'workflow':
+      return `${bp.workflow.nodes.length} steps; people decide at ${human.length} of them.`
+    case 'resources':
+      return `${resources.length} resources pinned to exact versions${resources.some((r) => r.origin === 'created') ? `, ${resources.filter((r) => r.origin === 'created').length} composed for this application` : ''}.`
+    case 'data':
+      return `${entity?.name} record with ${entity?.fields.length} fields.`
+    case 'experience':
+      return `${bp.experience.pages.length} screens: ${bp.experience.pages.map((p) => p.title).join(', ')}.`
+    case 'security':
+      return `${bp.security.roles.length} roles and ${bp.security.approvals.length} approval rule${bp.security.approvals.length === 1 ? '' : 's'}; decision log ${bp.security.audit.decisionLog ? 'on' : 'off'}.`
+    case 'validation':
+      return readinessMeta[readinessOf(project)].description
+    case 'deployment':
+      return project.publication ? `Published v${project.publication.version} to the ${bp.deployment.folder} folder.` : `Not published yet. Target: desktop, ${bp.deployment.folder} folder.`
+    default:
+      return ''
+  }
+}
+
+function statusOf(tab: GenerateTab, project: StudioProject): { label: string; tone: StatusTone } | null {
+  if (tab === 'history' || tab === 'json') return null
+  if (tab === 'validation') {
+    const r = readinessOf(project)
+    return { label: readinessMeta[r].label, tone: readinessMeta[r].tone }
+  }
+  return sectionStatus(tab, project)
+}
+
+function SectionHeader({ tab, project, children }: { tab: GenerateTab; project: StudioProject; children?: ReactNode }) {
+  const status = statusOf(tab, project)
+  const title = nav.find((n) => n.id === tab)?.label
+  return (
+    <header className="mb-5 flex flex-wrap items-start gap-3">
+      <div className="min-w-0 flex-1">
+        <h3 className="text-base font-semibold">{title}</h3>
+        <p className="text-sm text-muted-foreground">{summaryOf(tab, project.blueprint!, project)}</p>
+      </div>
+      {status && <StatusBadge tone={status.tone}>{status.label}</StatusBadge>}
+      {children}
+    </header>
+  )
+}
+
+function Block({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="space-y-2">
-      <div>
-        <h3 className="text-sm font-semibold">{title}</h3>
-        {description && <p className="text-sm text-muted-foreground">{description}</p>}
-      </div>
+      <h4 className="text-xs font-medium text-muted-foreground">{title}</h4>
       {children}
     </section>
   )
 }
 
-const roleName = (bp: ApplicationBlueprint, id: string | null) => (id ? (bp.security.roles.find((r) => r.id === id)?.name ?? id) : null)
+const List = ({ items }: { items: string[] }) =>
+  items.length ? (
+    <ul className="list-disc space-y-0.5 pl-5 text-sm">
+      {items.map((i) => (
+        <li key={i}>{i}</li>
+      ))}
+    </ul>
+  ) : (
+    <p className="text-sm text-muted-foreground">None.</p>
+  )
 
-function Overview({ bp }: { bp: ApplicationBlueprint }) {
-  const { project } = useStudio()
-  const approvals = bp.security.approvals
-  const resources = Object.values(bp.resources).flat()
+// ── Sections ──────────────────────────────────────────────────────────────
+
+function Overview({ project, onOpen }: { project: StudioProject; onOpen: (t: GenerateTab) => void }) {
+  const bp = project.blueprint!
   return (
-    <div className="space-y-8">
-      <Section title="What is being created">
-        <dl className="grid gap-x-6 gap-y-3 rounded-lg border bg-card p-4 text-sm @3xl:grid-cols-2">
-          <div>
-            <dt className="text-xs text-muted-foreground">Application</dt>
-            <dd className="font-medium">{bp.name}</dd>
-          </div>
-          <div>
-            <dt className="text-xs text-muted-foreground">Domain</dt>
-            <dd className="capitalize">{bp.domain}</dd>
-          </div>
-          <div className="@3xl:col-span-2">
-            <dt className="text-xs text-muted-foreground">Description</dt>
-            <dd>{bp.description}</dd>
-          </div>
-          <div>
-            <dt className="text-xs text-muted-foreground">Approach</dt>
-            <dd>{bp.solutionArchitecture.name}</dd>
-          </div>
-          <div>
-            <dt className="text-xs text-muted-foreground">Contents</dt>
-            <dd>
-              {bp.workflow.nodes.length} steps · {bp.experience.pages.length} screens · {resources.length} resources · {bp.security.roles.length} roles
-            </dd>
-          </div>
-        </dl>
-      </Section>
-      <Section title="How it works">
-        <FlowDiagram label="Application workflow" steps={bp.workflow.nodes.map((n) => ({ id: n.id, name: n.name, actor: n.actor, capabilityId: n.capabilityId, role: n.role }))} roleLabel={(id) => roleName(bp, id) ?? id} />
-      </Section>
-      <Section title="Approvals required">
-        <ul className="divide-y rounded-lg border bg-card">
-          {approvals.map((a) => (
-            <li key={a.id} className="flex items-center gap-2 px-3 py-2 text-sm">
-              <span className="flex-1">{a.description}</span>
-              {a.role ? <StatusBadge tone="neutral">{roleName(bp, a.role)}</StatusBadge> : <StatusBadge tone="danger">No approver assigned</StatusBadge>}
-            </li>
-          ))}
-        </ul>
-      </Section>
-      <Section title="Revision history">
-        <ol className="divide-y rounded-lg border bg-card">
-          {(project?.revisions ?? []).map((r, i) => (
-            <li key={`${r.version}-${i}`} className="flex gap-3 px-3 py-2 text-sm">
-              <span className="w-14 shrink-0 font-medium tabular-nums">{r.version}</span>
-              <span className="flex-1">{r.summary}</span>
-              <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{dateFormat.format(new Date(r.createdAt))}</span>
-            </li>
-          ))}
-        </ol>
-      </Section>
+    <div className="space-y-5">
+      <SectionHeader tab="overview" project={project} />
+      {readinessOf(project) === 'not-validated' || readinessOf(project) === 'outdated' ? (
+        <p className="text-sm text-muted-foreground">Section statuses appear after validation runs on this version.</p>
+      ) : null}
+      <ul className="divide-y rounded-lg border bg-card" aria-label="Blueprint sections">
+        {nav
+          .filter((n) => !['overview', 'json'].includes(n.id))
+          .map((n) => {
+            const status = statusOf(n.id, project)
+            const Icon = n.icon
+            return (
+              <li key={n.id}>
+                <button
+                  type="button"
+                  onClick={() => onOpen(n.id)}
+                  className="flex w-full items-start gap-3 px-4 py-3 text-left outline-none hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset"
+                >
+                  <Icon aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium">{n.label}</span>
+                    <span className="block text-sm text-muted-foreground">{n.id === 'history' ? `${project.revisions.length} versions; current v${bp.version}.` : summaryOf(n.id, bp, project)}</span>
+                  </span>
+                  {status && status.label !== 'Not validated' && <StatusBadge tone={status.tone}>{status.label}</StatusBadge>}
+                  <ChevronRight aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground/60" />
+                </button>
+              </li>
+            )
+          })}
+      </ul>
     </div>
   )
 }
 
-function Workflow({ bp }: { bp: ApplicationBlueprint }) {
+function Requirements({ project }: { project: StudioProject }) {
   const { dispatch } = useStudio()
-  const resourceName = (id: string | null) => (id ? Object.values(bp.resources).flat().find((r) => r.id === id) : undefined)
+  const req = project.blueprint!.requirements
   return (
-    <ol className="space-y-2">
-      {bp.workflow.nodes.map((n, i) => {
-        const res = resourceName(n.resourceId)
-        return (
-          <li key={n.id} className="rounded-lg border bg-card px-4 py-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="w-5 text-sm text-muted-foreground tabular-nums">{i + 1}</span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">{n.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {n.actor === 'human' ? 'Human decision' : n.actor === 'system' ? 'Rules / system' : 'Automated'} · {res ? `${res.name} ${res.version}` : 'No resource'}
-                </p>
-              </div>
-              {n.actor === 'human' && (
-                <div className="flex items-center gap-2">
-                  <label htmlFor={`role-${n.id}`} className="text-xs text-muted-foreground">
-                    Decided by
-                  </label>
-                  <NativeSelect
-                    id={`role-${n.id}`}
-                    size="sm"
-                    value={n.role ?? ''}
-                    aria-invalid={!n.role}
-                    onChange={(e) => e.target.value && dispatch({ type: 'generate/patch', patch: { kind: 'assign-role', nodeId: n.id, role: e.target.value }, now: new Date().toISOString() })}
-                  >
-                    <NativeSelectOption value="" disabled>
-                      Choose a role…
-                    </NativeSelectOption>
-                    {bp.security.roles.map((r) => (
-                      <NativeSelectOption key={r.id} value={r.id}>
-                        {r.name}
-                      </NativeSelectOption>
-                    ))}
-                  </NativeSelect>
-                </div>
-              )}
-            </div>
-            <p className="mt-1.5 pl-8 text-xs text-muted-foreground">
-              Reads {n.inputs.length ? n.inputs.join(', ') : 'nothing'} · writes {n.outputs.length ? n.outputs.join(', ') : 'nothing'}
-            </p>
-          </li>
-        )
-      })}
-    </ol>
+    <div className="space-y-5">
+      <SectionHeader tab="requirements" project={project}>
+        <Button size="sm" variant="outline" onClick={() => dispatch({ type: 'stage/go', stage: 'define' })}>
+          Edit in Define
+        </Button>
+      </SectionHeader>
+      <Block title="Business objective">
+        <p className="text-sm">{req.objective}</p>
+      </Block>
+      {req.context?.problem && (
+        <Block title="Problem statement">
+          <p className="text-sm">{req.context.problem}</p>
+        </Block>
+      )}
+      <div className="grid gap-5 @3xl:grid-cols-2">
+        <Block title="Users">
+          <List items={req.users.map((u) => u.label)} />
+        </Block>
+        <Block title="Capabilities">
+          <List items={req.capabilities.map((c) => c.label)} />
+        </Block>
+        <Block title="Constraints">
+          <List items={req.constraints.map((c) => c.label)} />
+        </Block>
+        <Block title="Success criteria">
+          <List items={req.successCriteria.map((c) => c.label)} />
+        </Block>
+        <Block title="Inputs">
+          <List items={req.inputs.map((c) => c.label)} />
+        </Block>
+        <Block title="Outputs">
+          <List items={req.outputs.map((c) => c.label)} />
+        </Block>
+      </div>
+      <p className="text-xs text-muted-foreground">Snapshot of requirement specification v{req.version} taken when the blueprint was generated.</p>
+    </div>
   )
 }
 
-function Resources({ bp }: { bp: ApplicationBlueprint }) {
+function Solution({ project }: { project: StudioProject }) {
+  const { dispatch } = useStudio()
+  const bp = project.blueprint!
+  const option = project.architecture?.options.find((o) => o.id === bp.solutionArchitecture.optionId)
+  return (
+    <div className="space-y-5">
+      <SectionHeader tab="solution" project={project}>
+        <Button size="sm" variant="outline" onClick={() => dispatch({ type: 'stage/go', stage: 'architect' })}>
+          Change in Architect
+        </Button>
+      </SectionHeader>
+      <Block title="Approach">
+        <p className="text-sm font-medium">{bp.solutionArchitecture.name}</p>
+        {option?.operatingModel && <p className="text-sm">{option.operatingModel}</p>}
+      </Block>
+      {option?.howItAddresses && (
+        <Block title="How it addresses the problem">
+          <p className="text-sm">{option.howItAddresses}</p>
+        </Block>
+      )}
+      <Block title="Human checkpoints">
+        <List items={bp.solutionArchitecture.humanCheckpoints} />
+      </Block>
+      {option && (
+        <div className="grid gap-5 @3xl:grid-cols-2">
+          <Block title="Advantages">
+            <List items={option.benefits} />
+          </Block>
+          <Block title="Trade-offs accepted">
+            <List items={option.tradeOffs} />
+          </Block>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function Workflow({ project }: { project: StudioProject }) {
+  const { dispatch } = useStudio()
+  const bp = project.blueprint!
+  const resources = Object.values(bp.resources).flat()
+  const entity = bp.dataModel.entities[0]
+  const label = (id: string) => entity.fields.find((f) => f.id === id)?.label ?? id
+  return (
+    <div className="space-y-5">
+      <SectionHeader tab="workflow" project={project} />
+      <FlowDiagram label="Application workflow" steps={bp.workflow.nodes.map((n) => ({ id: n.id, name: n.name, actor: n.actor, capabilityId: n.capabilityId, role: n.role }))} roleLabel={(id) => roleName(bp, id) ?? id} />
+      <ol className="space-y-2">
+        {bp.workflow.nodes.map((n, i) => {
+          const res = resources.find((r) => r.id === n.resourceId)
+          return (
+            <li key={n.id} className="rounded-lg border bg-card px-4 py-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="w-5 text-sm text-muted-foreground tabular-nums">{i + 1}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">{n.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {n.actor === 'human' ? 'Human decision' : n.actor === 'system' ? 'Rules or systems' : 'AI and automation'} · {res ? `${res.name} ${res.version}` : 'No resource'}
+                  </p>
+                </div>
+                {n.actor === 'human' && (
+                  <div className="flex items-center gap-2">
+                    <label htmlFor={`role-${n.id}`} className="text-xs text-muted-foreground">
+                      Decided by
+                    </label>
+                    <NativeSelect
+                      id={`role-${n.id}`}
+                      size="sm"
+                      value={n.role ?? ''}
+                      aria-invalid={!n.role}
+                      onChange={(e) =>
+                        e.target.value &&
+                        dispatch({ type: 'generate/patch', patch: { kind: 'assign-role', nodeId: n.id, role: e.target.value }, reason: 'Approver chosen in the Workflow section.', now: new Date().toISOString() })
+                      }
+                    >
+                      <NativeSelectOption value="" disabled>
+                        Choose a role…
+                      </NativeSelectOption>
+                      {bp.security.roles.map((r) => (
+                        <NativeSelectOption key={r.id} value={r.id}>
+                          {r.name}
+                        </NativeSelectOption>
+                      ))}
+                    </NativeSelect>
+                  </div>
+                )}
+              </div>
+              <p className="mt-1.5 pl-8 text-xs text-muted-foreground">
+                Uses {n.inputs.length ? n.inputs.map(label).join(', ') : 'nothing'} · produces {n.outputs.length ? n.outputs.map(label).join(', ') : 'nothing'}
+              </p>
+            </li>
+          )
+        })}
+      </ol>
+    </div>
+  )
+}
+
+function Resources({ project }: { project: StudioProject }) {
+  const bp = project.blueprint!
+  const [detail, setDetail] = useState<PlatformResource | null>(null)
+  const lookup = (r: ResourceRef): PlatformResource | null =>
+    getResource(r.id) ?? project.composition?.createdWorkers.find((w) => w.resource.id === r.id)?.resource ?? null
   const groups: [string, ResourceRef[]][] = [
-    ['Agents', bp.resources.agents],
     ['AI Workers', bp.resources.workers],
+    ['Agents', bp.resources.agents],
     ['Connectors', bp.resources.connectors],
-    ['OS services', bp.resources.services],
+    ['Services', bp.resources.services],
     ['Domain knowledge', bp.resources.knowledge],
   ]
+  const usedBy = (id: string) => bp.workflow.nodes.filter((n) => n.resourceId === id).map((n) => n.name)
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+      <SectionHeader tab="resources" project={project} />
       {groups
         .filter(([, list]) => list.length)
         .map(([title, list]) => (
-          <Section key={title} title={title}>
+          <Block key={title} title={title}>
             <ul className="divide-y rounded-lg border bg-card">
               {list.map((r) => (
-                <li key={r.id} className="flex flex-wrap items-center gap-2 px-3 py-2 text-sm">
-                  <span className="font-medium">{r.name}</span>
-                  <span className="text-xs text-muted-foreground tabular-nums">pinned {r.version}</span>
-                  <span className="text-xs text-muted-foreground">· {r.owner}</span>
-                  <span className="ml-auto">
-                    {r.origin === 'created' ? <StatusBadge tone="info">Created for this app</StatusBadge> : <StatusBadge tone="neutral">Existing</StatusBadge>}
-                  </span>
+                <li key={r.id}>
+                  <button
+                    type="button"
+                    onClick={() => setDetail(lookup(r))}
+                    className="flex w-full flex-wrap items-center gap-2 px-3 py-2 text-left text-sm outline-none hover:bg-muted/50 focus-visible:bg-muted/50"
+                  >
+                    <span className="font-medium">{r.name}</span>
+                    <span className="text-xs text-muted-foreground tabular-nums">pinned {r.version}</span>
+                    <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{usedBy(r.id).length ? `· ${usedBy(r.id).join(', ')}` : '· supports the whole application'}</span>
+                    {r.origin === 'created' ? <StatusBadge tone="info">Composed for this app</StatusBadge> : <StatusBadge tone="neutral">Existing</StatusBadge>}
+                  </button>
                 </li>
               ))}
             </ul>
-          </Section>
+          </Block>
         ))}
+      <ResourceDetailSheet
+        resource={detail}
+        onOpenChange={(o) => !o && setDetail(null)}
+        context={detail ? { label: 'Supports in this application', items: usedBy(detail.id) } : undefined}
+      />
     </div>
   )
 }
@@ -191,28 +347,31 @@ const fieldTypes: { id: FieldType; label: string }[] = [
   { id: 'date', label: 'Date' },
 ]
 
-function DataModel({ bp }: { bp: ApplicationBlueprint }) {
+function DataModel({ project }: { project: StudioProject }) {
   const { dispatch } = useStudio()
+  const bp = project.blueprint!
   const [label, setLabel] = useState('')
   const [type, setType] = useState<FieldType>('text')
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      <SectionHeader tab="data" project={project} />
       {bp.dataModel.entities.map((entity) => (
-        <Section key={entity.id} title={entity.name} description={`The record every step and screen reads and writes.`}>
+        <div key={entity.id} className="space-y-3">
           <table className="w-full rounded-lg border bg-card text-sm">
+            <caption className="sr-only">{entity.name} fields</caption>
             <thead className="bg-chrome text-left text-xs text-muted-foreground">
               <tr className="border-b">
                 <th className="px-3 py-2 font-medium">Field</th>
-                <th className="px-3 py-2 font-medium">Id</th>
                 <th className="px-3 py-2 font-medium">Type</th>
+                <th className="hidden px-3 py-2 font-medium @3xl:table-cell">Technical id</th>
               </tr>
             </thead>
             <tbody>
               {entity.fields.map((f) => (
                 <tr key={f.id} className="border-b last:border-0">
                   <td className="px-3 py-2">{f.label}</td>
-                  <td className="px-3 py-2 text-muted-foreground">{f.id}</td>
                   <td className="px-3 py-2 text-muted-foreground">{f.type}</td>
+                  <td className="hidden px-3 py-2 text-muted-foreground @3xl:table-cell">{f.id}</td>
                 </tr>
               ))}
             </tbody>
@@ -223,9 +382,14 @@ function DataModel({ bp }: { bp: ApplicationBlueprint }) {
               e.preventDefault()
               const clean = label.trim()
               if (!clean) return
-              const id = clean.replace(/[^a-zA-Z0-9 ]/g, '').split(' ').filter(Boolean).map((w, i) => (i ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w.toLowerCase())).join('')
+              const id = clean
+                .replace(/[^a-zA-Z0-9 ]/g, '')
+                .split(' ')
+                .filter(Boolean)
+                .map((w, i) => (i ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w.toLowerCase()))
+                .join('')
               const field: DataField = { id, label: clean, type }
-              dispatch({ type: 'generate/patch', patch: { kind: 'add-field', entityId: entity.id, field }, now: new Date().toISOString() })
+              dispatch({ type: 'generate/patch', patch: { kind: 'add-field', entityId: entity.id, field }, reason: 'Field added in the Data model section.', now: new Date().toISOString() })
               setLabel('')
             }}
           >
@@ -247,16 +411,45 @@ function DataModel({ bp }: { bp: ApplicationBlueprint }) {
               Add field
             </Button>
           </form>
-        </Section>
+        </div>
       ))}
     </div>
   )
 }
 
-function Security({ bp }: { bp: ApplicationBlueprint }) {
+function Experience({ project }: { project: StudioProject }) {
+  const bp = project.blueprint!
+  const scenario = getScenario(project.scenarioId)
   return (
-    <div className="space-y-6">
-      <Section title="Roles">
+    <div className="space-y-5">
+      <SectionHeader tab="experience" project={project} />
+      <ul className="grid gap-2 @3xl:grid-cols-2">
+        {bp.experience.pages.map((p) => (
+          <li key={p.id} className="rounded-lg border bg-card px-3 py-2 text-sm">
+            <p className="font-medium">{p.title}</p>
+            <p className="text-muted-foreground">{p.purpose}</p>
+            <p className="mt-1 text-xs text-muted-foreground">For {p.roles.map((r) => roleName(bp, r) ?? r).join(', ')}</p>
+          </li>
+        ))}
+      </ul>
+      <Block title="Preview">
+        <p className="text-sm text-muted-foreground">
+          Built from the blueprint’s screens with the trusted component catalogue — the same renderer the published application uses. Sample records are mock data.
+        </p>
+        <div className="h-[34rem] overflow-hidden rounded-xl border bg-card shadow-widget">
+          <ExperienceRenderer key={bp.version} blueprint={bp} initialRecords={scenario?.sampleRecords ?? []} />
+        </div>
+      </Block>
+    </div>
+  )
+}
+
+function Security({ project }: { project: StudioProject }) {
+  const bp = project.blueprint!
+  return (
+    <div className="space-y-5">
+      <SectionHeader tab="security" project={project} />
+      <Block title="Roles and what they can do">
         <ul className="divide-y rounded-lg border bg-card">
           {bp.security.roles.map((r) => (
             <li key={r.id} className="px-3 py-2 text-sm">
@@ -275,12 +468,106 @@ function Security({ bp }: { bp: ApplicationBlueprint }) {
             </li>
           ))}
         </ul>
-      </Section>
-      <Section title="Audit">
+      </Block>
+      <Block title="Approval rules">
+        <ul className="divide-y rounded-lg border bg-card">
+          {bp.security.approvals.map((a) => (
+            <li key={a.id} className="flex items-center gap-2 px-3 py-2 text-sm">
+              <span className="flex-1">{a.description}</span>
+              {a.role ? <StatusBadge tone="neutral">{roleName(bp, a.role)}</StatusBadge> : <StatusBadge tone="danger">No approver assigned</StatusBadge>}
+            </li>
+          ))}
+        </ul>
+      </Block>
+      <Block title="Audit">
         <p className="text-sm">
           Decision log: {bp.security.audit.decisionLog ? 'enabled for every human decision' : 'not required by the specification'} · Document retention: {bp.security.audit.retention}
         </p>
-      </Section>
+      </Block>
+      {project.decisions.length > 0 && (
+        <Block title="Decisions recorded in this draft">
+          <ul className="space-y-1 text-sm">
+            {[...project.decisions].reverse().slice(0, 8).map((d) => (
+              <li key={d.id} className="flex gap-3">
+                <span className="w-28 shrink-0 text-xs text-muted-foreground tabular-nums">{new Date(d.at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                <span>{d.text}</span>
+              </li>
+            ))}
+          </ul>
+        </Block>
+      )}
+    </div>
+  )
+}
+
+function Validation({ project }: { project: StudioProject }) {
+  const { dispatch } = useStudio()
+  const findings = project.validation?.findings ?? []
+  const readiness = readinessOf(project)
+  return (
+    <div className="space-y-5">
+      <SectionHeader tab="validation" project={project}>
+        <Button size="sm" variant="outline" onClick={() => dispatch({ type: 'stage/go', stage: 'validate' })}>
+          Open Validate
+        </Button>
+      </SectionHeader>
+      {readiness === 'not-validated' || readiness === 'outdated' ? (
+        <p className="text-sm text-muted-foreground">{readinessMeta[readiness].description}</p>
+      ) : (
+        <ul className="divide-y rounded-lg border bg-card">
+          {findings
+            .filter((f) => f.status !== 'passed')
+            .map((f) => (
+              <li key={f.id} className="flex items-center gap-2 px-3 py-2 text-sm">
+                <span className="flex-1">{f.title}</span>
+                <StatusBadge tone={project.validation!.acknowledged.includes(f.id) ? 'info' : f.status === 'blocked' ? 'danger' : 'warning'}>
+                  {project.validation!.acknowledged.includes(f.id) ? 'Accepted' : f.status === 'blocked' ? 'Blocked' : 'Needs attention'}
+                </StatusBadge>
+              </li>
+            ))}
+          <li className="px-3 py-2 text-sm text-muted-foreground">{findings.filter((f) => f.status === 'passed').length} checks passed.</li>
+        </ul>
+      )}
+    </div>
+  )
+}
+
+function Deployment({ project }: { project: StudioProject }) {
+  const bp = project.blueprint!
+  return (
+    <div className="space-y-5">
+      <SectionHeader tab="deployment" project={project} />
+      <dl className="grid gap-x-6 gap-y-3 rounded-lg border bg-card p-4 text-sm @3xl:grid-cols-2">
+        <div>
+          <dt className="text-xs text-muted-foreground">Destination</dt>
+          <dd>Enterprise AI OS desktop · {bp.deployment.folder} folder</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">Runtime</dt>
+          <dd>Prototype runtime (simulated) — no infrastructure is provisioned</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">Application id</dt>
+          <dd className="tabular-nums">{bp.applicationId}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">Domain pack</dt>
+          <dd>{bp.domainPack.id} {bp.domainPack.version}</dd>
+        </div>
+      </dl>
+      <Block title="Publication history">
+        {project.publications.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Not published yet.</p>
+        ) : (
+          <ul className="space-y-1 text-sm">
+            {[...project.publications].reverse().map((p) => (
+              <li key={p.publishedAt}>
+                v{p.version} · {new Date(p.publishedAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Block>
     </div>
   )
 }
@@ -289,24 +576,25 @@ function Json({ bp }: { bp: ApplicationBlueprint }) {
   const json = JSON.stringify(bp, null, 2)
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <p className="flex-1 text-sm text-muted-foreground">Schema {bp.schemaVersion} · for developers and advanced review. Edits happen in the other tabs.</p>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={async () => {
-            try {
-              await navigator.clipboard.writeText(json)
-              toast.success('Blueprint JSON copied')
-            } catch {
-              toast.error('Could not copy — select the text instead')
-            }
-          }}
-        >
-          <Copy />
-          Copy JSON
-        </Button>
-      </div>
+      <header className="mb-3">
+        <h3 className="text-base font-semibold">Technical view (JSON)</h3>
+        <p className="text-sm text-muted-foreground">Schema {bp.schemaVersion}, for developers and advanced review. Edits happen in the other sections.</p>
+      </header>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={async () => {
+          try {
+            await navigator.clipboard.writeText(json)
+            toast.success('Blueprint JSON copied')
+          } catch {
+            toast.error('Could not copy — select the text instead')
+          }
+        }}
+      >
+        <Copy />
+        Copy JSON
+      </Button>
       <pre className="max-h-[32rem] overflow-auto rounded-lg border bg-muted/50 p-4 text-xs leading-relaxed">{json}</pre>
     </div>
   )
@@ -315,19 +603,61 @@ function Json({ bp }: { bp: ApplicationBlueprint }) {
 export function GenerateStage({ tab, onTabChange }: { tab: GenerateTab; onTabChange: (t: GenerateTab) => void }) {
   const { project, dispatch } = useStudio()
   if (!project?.blueprint) {
-    return <StagePrerequisite stage="generate" requires="compose" message="Resolve the resources the approach needs first. The blueprint is compiled from them." />
+    return <StagePrerequisite stage="generate" requires="compose" message="Select the resources the approach needs first. The blueprint is compiled from them." />
   }
   const bp = project.blueprint
-  const scenario = getScenario(project.scenarioId)
+
+  const content = () => {
+    switch (tab) {
+      case 'overview':
+        return <Overview project={project} onOpen={onTabChange} />
+      case 'requirements':
+        return <Requirements project={project} />
+      case 'solution':
+        return <Solution project={project} />
+      case 'workflow':
+        return <Workflow project={project} />
+      case 'resources':
+        return <Resources project={project} />
+      case 'data':
+        return <DataModel project={project} />
+      case 'experience':
+        return <Experience project={project} />
+      case 'security':
+        return <Security project={project} />
+      case 'validation':
+        return <Validation project={project} />
+      case 'deployment':
+        return <Deployment project={project} />
+      case 'history':
+        return (
+          <div className="space-y-5">
+            <header>
+              <h3 className="text-base font-semibold">Version history</h3>
+              <p className="text-sm text-muted-foreground">Every generated or edited version, why it changed, and which one is published.</p>
+            </header>
+            <VersionHistory
+              revisions={project.revisions}
+              publications={project.publications}
+              currentVersion={bp.version}
+              onRollback={(version) => {
+                dispatch({ type: 'generate/rollback', version, now: new Date().toISOString() })
+                toast.success(`Restored v${version} as a new draft version`, { description: 'Validate and publish again to make it live.' })
+              }}
+            />
+          </div>
+        )
+      case 'json':
+        return <Json bp={bp} />
+    }
+  }
 
   return (
     <StageFrame
       stage="generate"
       aside={
         <div className="flex items-center gap-2">
-          <StatusBadge tone={bp.status === 'published' ? 'success' : bp.status === 'validated' ? 'success' : 'neutral'}>
-            {bp.status === 'draft' ? 'Draft' : bp.status === 'validated' ? 'Validated' : 'Published'}
-          </StatusBadge>
+          <StatusBadge tone={bp.status === 'draft' ? 'neutral' : 'success'}>{bp.status === 'draft' ? 'Draft' : bp.status === 'validated' ? 'Validated' : 'Published'}</StatusBadge>
           <span className="text-sm font-medium tabular-nums">v{bp.version}</span>
         </div>
       }
@@ -338,41 +668,12 @@ export function GenerateStage({ tab, onTabChange }: { tab: GenerateTab; onTabCha
         </Button>
       }
     >
-      <Tabs value={tab} onValueChange={(v) => onTabChange(v as GenerateTab)}>
-        <TabsList className="mb-4 flex-wrap">
-          {tabs.map((t) => (
-            <TabsTrigger key={t.id} value={t.id}>
-              {t.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        <TabsContent value="overview">
-          <Overview bp={bp} />
-        </TabsContent>
-        <TabsContent value="workflow">
-          <Workflow bp={bp} />
-        </TabsContent>
-        <TabsContent value="resources">
-          <Resources bp={bp} />
-        </TabsContent>
-        <TabsContent value="data">
-          <DataModel bp={bp} />
-        </TabsContent>
-        <TabsContent value="experience">
-          <p className="mb-3 text-sm text-muted-foreground">
-            Built from blueprint pages with the trusted component catalogue — the same renderer the published application uses. Sample records are mock data.
-          </p>
-          <div className="h-[34rem] overflow-hidden rounded-xl border bg-card shadow-widget">
-            <ExperienceRenderer key={bp.version} blueprint={bp} initialRecords={scenario?.sampleRecords ?? []} />
-          </div>
-        </TabsContent>
-        <TabsContent value="security">
-          <Security bp={bp} />
-        </TabsContent>
-        <TabsContent value="json">
-          <Json bp={bp} />
-        </TabsContent>
-      </Tabs>
+      <div className="flex flex-col gap-6 @4xl:flex-row">
+        <div className="@4xl:w-56 @4xl:shrink-0 [&>nav]:rounded-lg [&>nav]:border @4xl:[&>nav]:w-full">
+          <SidebarNav label="Blueprint sections" items={nav} value={tab} onChange={onTabChange} />
+        </div>
+        <div className="min-w-0 flex-1">{content()}</div>
+      </div>
     </StageFrame>
   )
 }

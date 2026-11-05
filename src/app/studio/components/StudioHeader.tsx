@@ -1,22 +1,16 @@
 import { useState } from 'react'
-import { Blocks, Check, CloudOff, FolderOpen, Minus, PanelRightClose, PanelRightOpen, Pencil } from 'lucide-react'
+import { ArrowRight, Blocks, Check, CloudOff, FolderOpen, Minus, PanelRightClose, PanelRightOpen, Pencil } from 'lucide-react'
 import { useOs } from '@/app/os/use-os'
 import { MockBadge } from '@/components/os/MockBadge'
-import { StatusBadge, type StatusTone } from '@/components/os/StatusBadge'
+import { StatusBadge } from '@/components/os/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
-import { lifecycleLabel, lifecycleOf } from '../studioReducer'
-import type { Lifecycle } from '../types'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { lifecycleMeta, lifecycleOf, nextAction } from '../lifecycle'
+import { LifecycleTrack } from './LifecycleTrack'
 import { useStudio } from '../use-studio'
 
-const lifecycleTone: Record<Lifecycle, StatusTone> = {
-  discovery: 'neutral',
-  draft: 'info',
-  ready: 'success',
-  published: 'success',
-  'changes-pending': 'warning',
-}
 
 const timeFormat = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' })
 
@@ -43,6 +37,7 @@ export function StudioHeader({
   }
 
   const lifecycle = project ? lifecycleOf(project) : null
+  const next = project ? nextAction(project) : null
 
   return (
     <header className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b bg-chrome px-4 py-2.5">
@@ -85,7 +80,28 @@ export function StudioHeader({
               <Pencil aria-hidden className="size-3 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100" />
             </button>
           )}
-          {lifecycle && <StatusBadge tone={lifecycleTone[lifecycle]}>{lifecycleLabel[lifecycle]}</StatusBadge>}
+          {lifecycle && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button type="button" aria-label={`Lifecycle: ${lifecycleMeta[lifecycle].label}. Show lifecycle`} className="rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+                  <StatusBadge tone={lifecycleMeta[lifecycle].tone}>{lifecycleMeta[lifecycle].label}</StatusBadge>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-auto max-w-[min(36rem,calc(100vw-2rem))] gap-2 p-3">
+                <LifecycleTrack lifecycle={lifecycle} />
+                <p className="text-xs text-muted-foreground">{lifecycleMeta[lifecycle].description}</p>
+              </PopoverContent>
+            </Popover>
+          )}
+          {next &&
+            (next.stage === project.activeStage ? (
+              <span className="text-xs text-muted-foreground">Next: {next.label}</span>
+            ) : (
+              <Button size="xs" variant="outline" onClick={() => dispatch({ type: 'stage/go', stage: next.stage })} aria-label={`Go to next step: ${next.label}`}>
+                Next: {next.label}
+                <ArrowRight />
+              </Button>
+            ))}
           <span className="flex items-center gap-1 text-xs text-muted-foreground" aria-live="polite">
             {saveStatus === 'saving' ? (
               <>

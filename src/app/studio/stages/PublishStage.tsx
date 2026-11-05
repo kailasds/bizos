@@ -9,7 +9,9 @@ import { getScenario } from '@/data/studio-scenarios.mock'
 import { StageFrame, StagePrerequisite } from '../components/StageFrame'
 import { StepList } from '../components/StepList'
 import { useSimulation } from '../hooks/use-simulation'
-import { lifecycleOf } from '../studioReducer'
+import { readinessMeta, readinessOf } from '@/app/services/mock/blueprint-service'
+import { LifecycleTrack } from '../components/LifecycleTrack'
+import { lifecycleMeta, lifecycleOf } from '../lifecycle'
 import { useStudio } from '../use-studio'
 
 function Fact({ label, children }: { label: string; children: ReactNode }) {
@@ -118,6 +120,10 @@ export function PublishStage({ windowId }: { windowId: string }) {
         </div>
       ) : (
         <div className="space-y-6">
+          <section aria-label="Lifecycle" className="space-y-2">
+            <LifecycleTrack lifecycle={lifecycle} />
+            <p className="text-sm text-muted-foreground">{lifecycleMeta[lifecycle].description}</p>
+          </section>
           {project.publication && (
             <div role="status" className={published ? 'flex items-start gap-3 rounded-xl border border-success/40 bg-success-soft/60 p-4' : 'flex items-start gap-3 rounded-xl border border-warning/40 bg-warning-soft/60 p-4'}>
               <CheckCircle2 aria-hidden className={published ? 'mt-0.5 size-5 text-success-ink' : 'mt-0.5 size-5 text-warning-ink'} />
@@ -149,10 +155,16 @@ export function PublishStage({ windowId }: { windowId: string }) {
             </Fact>
             <Fact label="Workflow">{bp.workflow.nodes.map((n) => n.name).join(' → ')}</Fact>
             <Fact label="Screens">{bp.experience.pages.map((p) => p.title).join(' · ')}</Fact>
+            <Fact label="Version">
+              v{bp.version}
+              {project.publications.length > 0 && (
+                <span className="text-muted-foreground"> · previously published: {project.publications.map((p) => `v${p.version}`).join(', ')}</span>
+              )}
+            </Fact>
             <Fact label="Validation">
               {project.validation ? (
                 <span className="flex flex-wrap items-center gap-2">
-                  {ready ? <StatusBadge tone="success">Passed</StatusBadge> : <StatusBadge tone="danger">Not passed</StatusBadge>}
+                  <StatusBadge tone={readinessMeta[readinessOf(project)].tone}>{readinessMeta[readinessOf(project)].label}</StatusBadge>
                   <span className="text-muted-foreground">
                     {findings.length} findings{acknowledged ? `, ${acknowledged} accepted for this version` : ''} · checked v{project.validation.blueprintVersion}
                   </span>

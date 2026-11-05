@@ -26,6 +26,8 @@ export function ApplicationStudioApp({ windowId, params }: AppProps) {
   // Open beside the content on wide screens; on smaller screens it would cover the work.
   const [panelOpen, setPanelOpen] = useState(() => window.innerWidth >= 1280)
   const [generateTab, setGenerateTab] = useState<GenerateTab>('overview')
+  // The approach shown in Architect (not the selection) — the AI Architect can point at one.
+  const [focusOptionId, setFocusOptionId] = useState<string | null>(null)
 
   // Deep links: the launcher, assistant, desktop and published apps open the studio with params.
   useEffect(() => {
@@ -51,9 +53,9 @@ export function ApplicationStudioApp({ windowId, params }: AppProps) {
       case 'define':
         return <DefineStage openArchitect={() => setPanelOpen(true)} />
       case 'architect':
-        return <ArchitectStage />
+        return <ArchitectStage focusId={focusOptionId} onFocus={setFocusOptionId} />
       case 'compose':
-        return <ComposeStage />
+        return <ComposeStage onFocusOption={setFocusOptionId} />
       case 'generate':
         return <GenerateStage tab={generateTab} onTabChange={setGenerateTab} />
       case 'validate':
@@ -92,7 +94,7 @@ export function ApplicationStudioApp({ windowId, params }: AppProps) {
                   'absolute inset-y-0 right-0 z-10 w-80 shadow-overlay @5xl:static @5xl:z-auto @5xl:shrink-0 @5xl:shadow-none',
                 )}
               >
-                <ArchitectPanel stage={stage} onClose={() => setPanelOpen(false)} />
+                <ArchitectPanel stage={stage} onClose={() => setPanelOpen(false)} onFocusOption={setFocusOptionId} />
               </div>
             )}
           </div>

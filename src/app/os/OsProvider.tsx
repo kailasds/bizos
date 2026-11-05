@@ -8,15 +8,25 @@ import {
   type Bounds,
 } from '@/app/windows/windowReducer'
 import { initialNotifications, type OsNotification } from '@/data/notifications.mock'
-import { OsContext, type OsContextValue, type WidgetId, type WidgetPreferences } from './os-context'
+import { OsContext, type OsContextValue, type RecentApp, type WidgetId, type WidgetPreferences } from './os-context'
 
 const PREFS_KEY = 'enterprise-ai-os:widgets:v1'
+const RECENTS_KEY = 'enterprise-ai-os:recent-apps:v1'
+
+function loadRecents(): RecentApp[] {
+  try {
+    const raw = window.localStorage.getItem(RECENTS_KEY)
+    return raw ? (JSON.parse(raw) as RecentApp[]) : []
+  } catch {
+    return []
+  }
+}
 
 const defaultWidgetPreferences: WidgetPreferences = {
   'platform-health': true,
   'pending-approvals': true,
   'active-applications': true,
-  'active-executions': true,
+  'active-executions': false,
   'worker-activity': true,
   'recent-activity': true,
 }
@@ -46,6 +56,7 @@ export function OsProvider({ children }: { children: ReactNode }) {
   const [assistantOpen, setAssistantOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [notifications, setNotifications] = useState<OsNotification[]>(initialNotifications)
+  const [recentApps, setRecentApps] = useState<RecentApp[]>(loadRecents)
   const [widgetPreferences, setWidgetPreferences] = useState<WidgetPreferences>(loadPreferences)
 
   const { windows } = windowState
@@ -61,6 +72,17 @@ export function OsProvider({ children }: { children: ReactNode }) {
     (appId: AppId, params?: WindowParams) => {
       const app = getApp(appId)
       dispatch({ type: 'open', appId, params, area: desktopArea, size: app.defaultSize, maximized: app.startMaximized })
+      if (appId !== 'folder-browser') {
+        setRecentApps((list) => {
+          const next = [{ appId, openedAt: new Date().toISOString() }, ...list.filter((r) => r.appId !== appId)].slice(0, 8)
+          try {
+            window.localStorage.setItem(RECENTS_KEY, JSON.stringify(next))
+          } catch {
+            // Storage unavailable — recents last for this session.
+          }
+          return next
+        })
+      }
     },
     [desktopArea],
   )
@@ -127,6 +149,7 @@ export function OsProvider({ children }: { children: ReactNode }) {
       toggleMaximize,
       setWindowBounds,
       closeAllWindows,
+      recentApps,
       launcherOpen,
       setLauncherOpen,
       assistantOpen,
@@ -157,6 +180,7 @@ export function OsProvider({ children }: { children: ReactNode }) {
       toggleMaximize,
       setWindowBounds,
       closeAllWindows,
+      recentApps,
       launcherOpen,
       assistantOpen,
       notificationsOpen,

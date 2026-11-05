@@ -56,6 +56,8 @@ export function validateBlueprint(blueprint: ApplicationBlueprint, mappings: Cap
       id: 'requirements:incomplete', category: 'requirements', status: 'needs-review',
       title: 'Specification is incomplete',
       explanation: `The requirement specification has no ${missing.join(', ')}.`,
+      impact: 'Approaches, screens and evaluations are derived from the specification; gaps here carry into the application.',
+      approvalRequired: false,
       artifact: { stage: 'define', label: 'Requirement specification' },
       resolution: 'Add the missing items in Define.',
     })
@@ -67,6 +69,8 @@ export function validateBlueprint(blueprint: ApplicationBlueprint, mappings: Cap
         id: `requirements:custom:${cap.id}`, category: 'requirements', status: 'needs-review',
         title: `“${cap.label}” has no matching capability`,
         explanation: 'This requirement is recorded in the specification, but no step in the workflow implements it in this version.',
+        impact: 'People using the application would expect it to do this. Until a capability exists, it has to happen outside the application.',
+        approvalRequired: true,
         artifact: { stage: 'define', label: 'Business capabilities' },
         resolution: 'Accept it as a known gap for this version, or remove it from the requirements.',
       })
@@ -78,6 +82,8 @@ export function validateBlueprint(blueprint: ApplicationBlueprint, mappings: Cap
         id: `requirements:uncovered:${cap.id}`, category: 'requirements', status: 'needs-review',
         title: `“${cap.label}” is not covered by the selected approach`,
         explanation: `${blueprint.solutionArchitecture.name} has no step for this capability.`,
+        impact: 'A requirement you confirmed would not be delivered by this version.',
+        approvalRequired: true,
         artifact: { stage: 'architect', label: 'Solution approach' },
         resolution: 'Choose an approach that includes it, or accept that it is handled outside this application.',
       })
@@ -96,24 +102,28 @@ export function validateBlueprint(blueprint: ApplicationBlueprint, mappings: Cap
       id: `capabilities:${n.id}`, category: 'capabilities', status: 'blocked',
       title: `No resource for “${n.name}”`,
       explanation: 'An automated step has nothing to run it. The application cannot execute this workflow.',
+      impact: 'Every case would stop at this step.',
+      approvalRequired: false,
       artifact: { stage: 'compose', label: 'Resource mapping' },
       resolution: 'Map an existing resource or approve a worker composition in Compose.',
     })
   }
   if (!unresourced.length) {
-    const created = mappings.filter((m) => m.status === 'created').length
+    const created = mappings.filter((m) => m.created).length
     pass('capabilities', 'Every step has a resource',
       `${mappings.length - created} existing resources reused${created ? `, ${created} composed for this application` : ''}.`,
       { stage: 'compose', label: 'Resource mapping' })
   }
 
   // 3. Resource compatibility
-  const conditional = mappings.filter((m) => m.status === 'restricted')
+  const conditional = mappings.filter((m) => m.resource && m.resource.availability !== 'available')
   for (const m of conditional) {
     findings.push({
       id: `compatibility:${m.capabilityId}`, category: 'compatibility', status: 'needs-review',
       title: `${m.resource?.name} is available with conditions`,
       explanation: m.resource?.note ?? '',
+      impact: 'The resource can be used, but only under a condition set by its owning platform.',
+      approvalRequired: true,
       artifact: { stage: 'compose', label: 'Resource mapping' },
       resolution: 'Confirm the condition is acceptable for this application.',
     })
@@ -137,6 +147,8 @@ export function validateBlueprint(blueprint: ApplicationBlueprint, mappings: Cap
       id: 'workflow:structure', category: 'workflow', status: 'blocked',
       title: 'Workflow has disconnected steps',
       explanation: 'Some steps cannot be reached from the start of the workflow.',
+      impact: 'Cases could never reach those steps.',
+      approvalRequired: false,
       artifact: { stage: 'architect', label: 'Solution approach' },
       resolution: 'Regenerate the blueprint from the selected approach.',
     })
@@ -149,6 +161,8 @@ export function validateBlueprint(blueprint: ApplicationBlueprint, mappings: Cap
       id: `data-contract:${n.id}:${f}`, category: 'data-contract', status: 'blocked',
       title: `“${n.name}” uses an unknown field`,
       explanation: `The step reads or writes “${f}”, which is not in the ${entity.name} record.`,
+      impact: 'The step would fail or lose information at runtime.',
+      approvalRequired: false,
       artifact: { stage: 'generate', label: 'Data model', tab: 'data' },
     })
   }
@@ -166,6 +180,8 @@ export function validateBlueprint(blueprint: ApplicationBlueprint, mappings: Cap
         id: `security:${page.id}:${role}`, category: 'security', status: 'blocked',
         title: `“${page.title}” is assigned to a role that no longer exists`,
         explanation: `The screen is meant for “${humanize(role)}”, which was removed from the users of this application.`,
+        impact: 'Nobody would be allowed to use this screen.',
+        approvalRequired: false,
         artifact: { stage: 'define', label: 'Users' },
         resolution: 'Add the user group back in Define, or regenerate the blueprint.',
       })
@@ -176,6 +192,8 @@ export function validateBlueprint(blueprint: ApplicationBlueprint, mappings: Cap
       id: `security:${n.id}`, category: 'security', status: 'blocked',
       title: `“${n.name}” is assigned to a role that no longer exists`,
       explanation: 'Nobody in this application could perform this step.',
+      impact: 'Cases would wait at this step indefinitely.',
+      approvalRequired: false,
       artifact: { stage: 'define', label: 'Users' },
       resolution: 'Add the user group back in Define, or choose another role in Generate.',
     })
@@ -196,6 +214,8 @@ export function validateBlueprint(blueprint: ApplicationBlueprint, mappings: Cap
           id: `ui-data:${f}`, category: 'ui-data', status: 'needs-review',
           title: `“${page.title}” shows a field the data model does not have`,
           explanation: `The ${c.type.replace('-', ' ')} on this screen is bound to “${humanize(f)}”, but the ${entity.name} record has no such field. The screen would show nothing there.`,
+          impact: 'People would see an empty panel and could not record what they found.',
+          approvalRequired: false,
           artifact: { stage: 'generate', label: 'Experience preview', tab: 'experience' },
           resolution: `Add “${humanize(f)}” to the ${entity.name} record.`,
           quickFix: { kind: 'add-field', entityId: entity.id, fieldId: f, label: humanize(f) },
@@ -217,6 +237,8 @@ export function validateBlueprint(blueprint: ApplicationBlueprint, mappings: Cap
       id: `approvals:${n.id}`, category: 'approvals', status: 'blocked',
       title: `Nobody is assigned to approve “${n.name}”`,
       explanation: 'More than one user group could make this decision, so the OS did not choose one. Without an approver the step cannot be enforced.',
+      impact: 'Decisions could be made by anyone with access, or by no one — neither is auditable.',
+      approvalRequired: true,
       artifact: { stage: 'generate', label: 'Workflow', tab: 'workflow' },
       resolution: 'Choose which role makes this decision.',
       quickFix: {
@@ -232,6 +254,8 @@ export function validateBlueprint(blueprint: ApplicationBlueprint, mappings: Cap
       id: 'approvals:none', category: 'approvals', status: 'blocked',
       title: 'A constraint requires human approval, but no step has one',
       explanation: 'Your requirements say sensitive decisions need a person, and the selected approach has no human step.',
+      impact: 'Sensitive decisions would be made without a person, against your constraint.',
+      approvalRequired: true,
       artifact: { stage: 'architect', label: 'Solution approach' },
       resolution: 'Choose an approach with a human decision step.',
     })

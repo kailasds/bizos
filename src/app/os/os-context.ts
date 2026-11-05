@@ -13,6 +13,11 @@ export type WidgetId =
 
 export type WidgetPreferences = Record<WidgetId, boolean>
 
+export interface RecentApp {
+  appId: AppId
+  openedAt: string
+}
+
 export interface OsContextValue {
   // Windows
   windows: WindowState[]
@@ -28,6 +33,8 @@ export interface OsContextValue {
   toggleMaximize: (id: string) => void
   setWindowBounds: (id: string, bounds: Bounds) => void
   closeAllWindows: () => void
+  /** Recently opened applications, newest first (persisted). */
+  recentApps: RecentApp[]
 
   // System surfaces
   launcherOpen: boolean

@@ -1,31 +1,32 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { ArrowUp, Sparkles, X } from 'lucide-react'
+import { ArrowUp, ChevronDown, Sparkles, X } from 'lucide-react'
+import { architectReply, stageGuidance, suggestedQuestions } from '@/app/services/mock/architecture-service'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
-import { architectReply, stageGuidance } from '../services/guidance'
 import { stageMeta } from '../stageMeta'
-import type { StageId } from '../types'
+import type { ArchitectAction, ArchitectMessage, StageId } from '../types'
 import { useStudio } from '../use-studio'
 
-const prompts: Record<StageId, string[]> = {
-  discover: ['What will you do with this?', 'Summarise progress'],
-  define: ['What might be missing?', 'Summarise progress'],
-  architect: ['Why do you recommend this?', 'Where do people review?'],
-  compose: ['Why is a new worker needed?', 'Summarise progress'],
-  generate: ['Where do people review?', 'Summarise progress'],
-  validate: ['Summarise progress', 'What might be missing?'],
-  publish: ['Summarise progress'],
-}
-
 /**
- * Contextual assistant. Always answers: what the OS is doing, why, what it needs,
- * and what happens next. Scripted responses — no model is called.
+ * Contextual AI Architect. Knows the stage and the application being designed; replies
+ * are scripted from project state (see services/mock/architecture-service.ts) — no
+ * model is called. Each reply says what it is based on.
  */
-export function ArchitectPanel({ stage, onClose }: { stage: StageId; onClose: () => void }) {
+export function ArchitectPanel({
+  stage,
+  onClose,
+  onFocusOption,
+}: {
+  stage: StageId
+  onClose: () => void
+  /** Show an approach in Architect without selecting it. */
+  onFocusOption: (optionId: string) => void
+}) {
   const { project, dispatch } = useStudio()
   const [draft, setDraft] = useState('')
-  const [localLog, setLocalLog] = useState<{ id: number; role: 'user' | 'architect'; text: string }[]>([])
+  const [showGuidance, setShowGuidance] = useState(true)
+  const [localLog, setLocalLog] = useState<ArchitectMessage[]>([])
   const listRef = useRef<HTMLDivElement>(null)
   const guidance = stageGuidance(project, stage)
   const log = project ? project.architectLog.filter((m) => m.stage === stage) : localLog
@@ -40,11 +41,24 @@ export function ArchitectPanel({ stage, onClose }: { stage: StageId; onClose: ()
     const reply = architectReply(project, stage, question)
     if (project) {
       dispatch({ type: 'architect/message', message: { role: 'user', stage, text: question } })
-      dispatch({ type: 'architect/message', message: { role: 'architect', stage, text: reply } })
+      dispatch({ type: 'architect/message', message: { role: 'architect', stage, text: reply.text, sources: reply.sources, actions: reply.actions } })
     } else {
-      setLocalLog((l) => [...l, { id: l.length, role: 'user', text: question }, { id: l.length + 1, role: 'architect', text: reply }])
+      setLocalLog((l) => [
+        ...l,
+        { id: `local-${l.length}`, role: 'user', stage, text: question },
+        { id: `local-${l.length + 1}`, role: 'architect', stage, text: reply.text, sources: reply.sources },
+      ])
     }
     setDraft('')
+  }
+
+  const act = (a: ArchitectAction) => {
+    if (a.kind === 'focus-option' && a.optionId) {
+      onFocusOption(a.optionId)
+      dispatch({ type: 'stage/go', stage: 'architect' })
+    } else if (a.kind === 'go-stage' && a.stage) {
+      dispatch({ type: 'stage/go', stage: a.stage })
+    }
   }
 
   const onSubmit = (e: FormEvent) => {
@@ -63,40 +77,63 @@ export function ArchitectPanel({ stage, onClose }: { stage: StageId; onClose: ()
         </Button>
       </header>
 
-      <dl className="space-y-2.5 border-b px-4 py-3 text-sm">
-        {(
-          [
-            ['Doing', guidance.doing],
-            ['Why', guidance.why],
-            ['Needs from you', guidance.needs],
-            ['Next', guidance.next],
-          ] as const
-        ).map(([label, text]) => (
-          <div key={label}>
-            <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-            <dd className={cn(label === 'Needs from you' && 'font-medium')}>{text}</dd>
-          </div>
-        ))}
-      </dl>
+      <div className="border-b">
+        <button
+          type="button"
+          aria-expanded={showGuidance}
+          onClick={() => setShowGuidance(!showGuidance)}
+          className="flex w-full items-center justify-between px-4 py-2 text-left text-xs font-medium text-muted-foreground outline-none hover:bg-muted/50 focus-visible:bg-muted/50"
+        >
+          What the OS is doing
+          <ChevronDown aria-hidden className={cn('size-4', showGuidance && 'rotate-180')} />
+        </button>
+        {showGuidance && (
+          <dl className="space-y-2 px-4 pb-3 text-sm">
+            {(
+              [
+                ['Doing', guidance.doing],
+                ['Why', guidance.why],
+                ['Needs from you', guidance.needs],
+                ['Next', guidance.next],
+              ] as const
+            ).map(([label, text]) => (
+              <div key={label}>
+                <dt className="text-xs text-muted-foreground">{label}</dt>
+                <dd className={cn(label === 'Needs from you' && 'font-medium')}>{text}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+      </div>
 
       <div ref={listRef} className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-4 py-3" aria-live="polite">
         {log.length === 0 && <p className="text-xs text-muted-foreground">Ask about any decision on this stage.</p>}
-        {log.map((m) => (
-          <p
-            key={m.id}
-            className={cn(
-              'rounded-lg px-3 py-2 text-sm',
-              m.role === 'user' ? 'ml-6 bg-primary text-primary-foreground' : 'mr-2 border bg-card',
-            )}
-          >
-            {m.text}
-          </p>
-        ))}
+        {log.map((m) =>
+          m.role === 'user' ? (
+            <p key={m.id} className="ml-6 rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground">
+              {m.text}
+            </p>
+          ) : (
+            <div key={m.id} className="mr-2 space-y-2 rounded-lg border bg-card px-3 py-2">
+              <p className="text-sm">{m.text}</p>
+              {m.sources && m.sources.length > 0 && <p className="text-[11px] text-muted-foreground">Based on: {m.sources.join(' · ')}</p>}
+              {m.actions && m.actions.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {m.actions.map((a) => (
+                    <Button key={a.label} size="xs" variant="outline" onClick={() => act(a)}>
+                      {a.label}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ),
+        )}
       </div>
 
       <div className="space-y-2 border-t p-3">
         <div className="flex flex-wrap gap-1.5">
-          {prompts[stage].map((p) => (
+          {suggestedQuestions(project, stage).map((p) => (
             <Button key={p} size="xs" variant="secondary" onClick={() => ask(p)}>
               {p}
             </Button>

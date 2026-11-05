@@ -64,11 +64,15 @@ export function generateBlueprint(input: GenerateInput): ApplicationBlueprint {
       kind: m.resource!.kind,
       owner: m.resource!.owner,
       capabilityIds: [m.capabilityId],
-      origin: m.status === 'created' ? 'created' : 'existing',
+      origin: m.created ? 'created' : 'existing',
     }))
   const byKind = (kind: ResourceRef['kind']) => refs.filter((r) => r.kind === kind)
 
-  const capabilities = new Set(requirements.capabilities.map((c) => c.capabilityId).filter(Boolean))
+  // Screens follow both the requirements and the approach (e.g. monitoring adds an operations view).
+  const capabilities = new Set([
+    ...requirements.capabilities.map((c) => c.capabilityId).filter(Boolean),
+    ...option.steps.map((s) => s.capabilityId),
+  ])
   const pages = scenario.pages
     .filter((page) => !page.requires || capabilities.has(page.requires))
     .map(({ requires: _requires, ...page }) => page)

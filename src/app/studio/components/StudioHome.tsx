@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { getScenario } from '@/data/studio-scenarios.mock'
 import { stageMeta } from '../stageMeta'
-import { lifecycleLabel, lifecycleOf } from '../studioReducer'
+import { lifecycleMeta, lifecycleOf, nextAction } from '../lifecycle'
 import { useStudio } from '../use-studio'
 
 const dateFormat = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
@@ -52,10 +52,9 @@ export function StudioHome({ onNew }: { onNew: () => void }) {
                       <span className="tabular-nums">{p.id}</span> · {getScenario(p.scenarioId)?.label ?? 'Unclassified'} · {stageMeta[p.activeStage].label} ·{' '}
                       updated <span className="tabular-nums">{dateFormat.format(new Date(p.updatedAt))}</span>
                     </p>
+                    {nextAction(p) && <p className="truncate text-xs">Next: {nextAction(p)!.label}</p>}
                   </div>
-                  <StatusBadge tone={lifecycle === 'published' || lifecycle === 'ready' ? 'success' : lifecycle === 'changes-pending' ? 'warning' : 'neutral'}>
-                    {lifecycleLabel[lifecycle]}
-                  </StatusBadge>
+                  <StatusBadge tone={lifecycleMeta[lifecycle].tone}>{lifecycleMeta[lifecycle].label}</StatusBadge>
                   <Button size="sm" variant="outline" onClick={() => dispatch({ type: 'project/open', id: p.id })}>
                     Open
                   </Button>

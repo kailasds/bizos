@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react'
 import { StudioContext, type SaveStatus, type StudioContextValue } from './studio-context'
+import { migrateProject } from './migrate'
 import { initialStudioState, studioReducer, type StudioState } from './studioReducer'
 
 const STORAGE_KEY = 'enterprise-ai-os:studio:v1'
@@ -9,7 +10,8 @@ function loadState(): StudioState {
     const raw = window.localStorage.getItem(STORAGE_KEY)
     if (!raw) return initialStudioState
     const parsed = JSON.parse(raw) as StudioState
-    return Array.isArray(parsed.projects) ? parsed : initialStudioState
+    if (!Array.isArray(parsed.projects)) return initialStudioState
+    return { ...parsed, projects: parsed.projects.map((p) => migrateProject(p as unknown as Record<string, unknown>)) }
   } catch {
     return initialStudioState
   }

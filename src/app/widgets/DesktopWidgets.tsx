@@ -1,9 +1,16 @@
 import { Activity, AppWindow, ClipboardCheck, Cpu, History, LayoutDashboard, Workflow } from 'lucide-react'
-import type { ComponentType } from 'react'
+import type { ComponentType, ReactNode } from 'react'
 import { useOs } from '@/app/os/use-os'
 import type { WidgetId } from '@/app/os/os-context'
-import { getApp } from '@/app/registry/applicationRegistry'
+import { findApp, getApp, getGeneratedApp } from '@/app/registry/applicationRegistry'
+import type { AppId } from '@/app/registry/types'
+import { useApplications } from '@/app/registry/use-applications'
+import { useAllAppRecords } from '@/app/services/app-records-store'
+import { formatActivityTime, platformActivity } from '@/app/services/mock/activity-service'
+import { studioAttention } from '@/app/services/mock/attention-service'
 import { useMockServices } from '@/app/services/use-mock-services'
+import { lifecycleOf } from '@/app/studio/lifecycle'
+import { useStudio } from '@/app/studio/use-studio'
 import { AppIcon } from '@/components/os/AppIcon'
 import { MockBadge } from '@/components/os/MockBadge'
 import { StatusBadge } from '@/components/os/StatusBadge'
@@ -11,13 +18,22 @@ import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 import { Progress } from '@/components/ui/progress'
 import { formatCurrency } from '@/data/claims.mock'
-import { activity, executions, platformServices, workers } from '@/data/platform.mock'
+import { executions, platformServices } from '@/data/platform.mock'
+import { platformResources } from '@/data/resources.mock'
+import { scenarioForDomain } from '@/data/studio-scenarios.mock'
 import { cn } from '@/lib/utils'
 import { WidgetCard } from './WidgetCard'
 import { widgetOrder } from './widgetCatalog'
 
 const healthLabel = { operational: 'Operational', degraded: 'Degraded', outage: 'Outage' } as const
 const healthTone = { operational: 'success', degraded: 'warning', outage: 'danger' } as const
+
+function SubHeading({ children }: { children: ReactNode }) {
+  return <h3 className="mt-3 mb-1 text-xs font-medium text-muted-foreground first:mt-0">{children}</h3>
+}
+
+const rowButton =
+  'relative z-10 flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-sm outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50'
 
 function PlatformHealthWidget() {
   const { openApp } = useOs()
@@ -28,11 +44,7 @@ function PlatformHealthWidget() {
       title="Platform health"
       openLabel="Platform health — open System Explorer overview"
       onOpen={() => openApp('system-explorer', { section: 'overview' })}
-      aside={
-        <StatusBadge tone={issues.length ? 'warning' : 'success'}>
-          {issues.length ? `${issues.length} degraded` : 'All operational'}
-        </StatusBadge>
-      }
+      aside={<StatusBadge tone={issues.length ? 'warning' : 'success'}>{issues.length ? `${issues.length} degraded` : 'All operational'}</StatusBadge>}
     >
       <ul className="space-y-2">
         {platformServices.map((s) => (
@@ -46,80 +58,197 @@ function PlatformHealthWidget() {
   )
 }
 
-function PendingApprovalsWidget() {
+/** Pending human decisions in published generated applications (from their persisted mock records). */
+function useGeneratedApprovals() {
+  const apps = useApplications()
+  const records = useAllAppRecords()
+  return apps
+    .filter((a) => a.generated)
+    .map((a) => {
+      const record = getGeneratedApp(a.id)
+      if (!record) return null
+      const statuses = record.blueprint.experience.pages.flatMap((p) => p.components).flatMap((c) => (c.type === 'approval-queue' ? [c.statusValue] : []))
+      const list = records[a.id] ?? scenarioForDomain(record.domain).sampleRecords
+      const count = list.filter((r) => statuses.includes(String(r.status))).length
+      return count ? { app: a, count } : null
+    })
+    .filter((x): x is NonNullable<typeof x> => Boolean(x))
+}
+
+function ApprovalsWidget() {
   const { openApp } = useOs()
   const { pendingApprovals } = useMockServices()
+  const { state } = useStudio()
+  const generated = useGeneratedApprovals()
+  const attention = studioAttention(state.projects).slice(0, 2)
   const next = [...pendingApprovals].sort((a, b) => a.slaHoursRemaining - b.slaHoursRemaining)[0]
+  const total = pendingApprovals.length + generated.reduce((n, g) => n + g.count, 0)
+
   return (
     <WidgetCard
       icon={ClipboardCheck}
-      title="Pending approvals"
-      openLabel="Pending approvals — open Claims Intelligence approvals"
+      title="Approvals"
+      openLabel="Approvals — open Claims Intelligence approvals"
       onOpen={() => openApp('claims-intelligence', { view: 'approvals' })}
     >
-      {next ? (
-        <>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-semibold tabular-nums">{pendingApprovals.length}</span>
-            <span className="text-sm text-muted-foreground">awaiting your decision</span>
-          </div>
-          <div className="mt-3 flex items-center gap-3 rounded-lg bg-muted px-3 py-2">
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">
-                {next.id} · {formatCurrency(next.amount)}
-              </p>
-              <p className="text-xs text-muted-foreground tabular-nums">Due in {next.slaHoursRemaining} h</p>
-            </div>
-            <Button
-              size="xs"
-              className="relative z-10"
-              onClick={() => openApp('claims-intelligence', { view: 'approvals', claim: next.id })}
-            >
-              Review
-            </Button>
-          </div>
-        </>
-      ) : (
+      {total === 0 && attention.length === 0 ? (
         <p className="text-sm text-muted-foreground">Nothing is waiting on you.</p>
+      ) : (
+        <>
+          {total > 0 && (
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-semibold tabular-nums">{total}</span>
+              <span className="text-sm text-muted-foreground">decision{total === 1 ? '' : 's'} awaiting you</span>
+            </div>
+          )}
+          {next && (
+            <div className="mt-3 flex items-center gap-3 rounded-lg bg-muted px-3 py-2">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">
+                  {next.id} · {formatCurrency(next.amount)}
+                </p>
+                <p className="text-xs text-muted-foreground tabular-nums">Claims Intelligence · due in {next.slaHoursRemaining} h</p>
+              </div>
+              <Button size="xs" className="relative z-10" onClick={() => openApp('claims-intelligence', { view: 'approvals', claim: next.id })}>
+                Review
+              </Button>
+            </div>
+          )}
+          {generated.map((g) => (
+            <button key={g.app.id} type="button" className={cn(rowButton, 'mt-1')} onClick={() => openApp(g.app.id)}>
+              <AppIcon app={g.app} size="xs" />
+              <span className="min-w-0 flex-1 truncate">{g.app.name}</span>
+              <span className="text-xs text-muted-foreground tabular-nums">{g.count} awaiting</span>
+            </button>
+          ))}
+          {attention.length > 0 && (
+            <>
+              <SubHeading>Needs your attention in Studio</SubHeading>
+              <ul className="-mx-2">
+                {attention.map((a) => (
+                  <li key={a.id}>
+                    <button type="button" className={rowButton} onClick={() => openApp('application-studio', { project: a.projectId })}>
+                      <span aria-hidden className={cn('size-1.5 shrink-0 rounded-full', a.tone === 'danger' ? 'bg-danger' : a.tone === 'warning' ? 'bg-warning' : 'bg-info')} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate">{a.title}</span>
+                        <span className="block truncate text-xs text-muted-foreground">{a.detail}</span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </>
       )}
     </WidgetCard>
   )
 }
 
-function ActiveApplicationsWidget() {
-  const { windows, focusedId, openApp, focusWindow } = useOs()
+function ApplicationActivityWidget() {
+  const { windows, focusedId, openApp, focusWindow, recentApps } = useOs()
+  const apps = useApplications()
+  const { state } = useStudio()
+  const published = apps
+    .filter((a) => a.generated)
+    .sort((a, b) => (b.generated!.publishedAt ?? '').localeCompare(a.generated!.publishedAt ?? ''))
+    .slice(0, 2)
+  const pending = state.projects.filter((p) => lifecycleOf(p) === 'changes-pending').slice(0, 2)
+  const recent = recentApps
+    .filter((r) => !windows.some((w) => w.appId === r.appId))
+    .map((r) => findApp(r.appId))
+    .filter((a): a is NonNullable<typeof a> => Boolean(a) && a!.kind === 'application')
+    .slice(0, 3)
+  const nothing = !windows.length && !published.length && !pending.length && !recent.length
+
   return (
     <WidgetCard
       icon={AppWindow}
-      title="Active applications"
-      openLabel="Active applications — open System Explorer applications"
+      title="Application activity"
+      openLabel="Application activity — open the application registry"
       onOpen={() => openApp('system-explorer', { section: 'applications' })}
-      aside={<span className="text-xs text-muted-foreground">This session</span>}
     >
-      {windows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No applications open. Open one from the desktop or dock.</p>
+      {nothing ? (
+        <p className="text-sm text-muted-foreground">No applications open yet. Open one from the desktop or dock.</p>
       ) : (
-        <ul className="-mx-2 space-y-0.5">
-          {windows.map((w) => {
-            const app = getApp(w.appId)
-            const state = w.status === 'minimized' ? 'Minimized' : w.id === focusedId ? 'Active' : 'Open'
-            return (
-              <li key={w.id}>
-                <button
-                  type="button"
-                  onClick={() => focusWindow(w.id)}
-                  className="relative z-10 flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-sm outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
-                >
-                  <AppIcon app={app} size="xs" />
-                  <span className="min-w-0 flex-1 truncate">{app.name}</span>
-                  <span className={cn('text-xs', state === 'Active' ? 'text-primary' : 'text-muted-foreground')}>
-                    {state}
-                  </span>
-                </button>
-              </li>
-            )
-          })}
-        </ul>
+        <div className="-mx-2">
+          {windows.length > 0 && (
+            <>
+              <SubHeading>
+                <span className="px-2">Open now</span>
+              </SubHeading>
+              <ul className="space-y-0.5">
+                {windows.map((w) => {
+                  const app = getApp(w.appId)
+                  const status = w.status === 'minimized' ? 'Minimized' : w.id === focusedId ? 'Active' : 'Open'
+                  return (
+                    <li key={w.id}>
+                      <button type="button" onClick={() => focusWindow(w.id)} className={rowButton}>
+                        <AppIcon app={app} size="xs" />
+                        <span className="min-w-0 flex-1 truncate">{app.name}</span>
+                        <span className={cn('text-xs', status === 'Active' ? 'text-primary' : 'text-muted-foreground')}>{status}</span>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </>
+          )}
+          {published.length > 0 && (
+            <>
+              <SubHeading>
+                <span className="px-2">Recently published</span>
+              </SubHeading>
+              <ul className="space-y-0.5">
+                {published.map((a) => (
+                  <li key={a.id}>
+                    <button type="button" onClick={() => openApp(a.id)} className={rowButton}>
+                      <AppIcon app={a} size="xs" />
+                      <span className="min-w-0 flex-1 truncate">{a.name}</span>
+                      <span className="text-xs text-muted-foreground tabular-nums">v{a.version}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          {pending.length > 0 && (
+            <>
+              <SubHeading>
+                <span className="px-2">Pending changes</span>
+              </SubHeading>
+              <ul className="space-y-0.5">
+                {pending.map((p) => (
+                  <li key={p.id}>
+                    <button type="button" onClick={() => openApp('application-studio', { project: p.id })} className={rowButton}>
+                      <span className="min-w-0 flex-1 truncate">{p.name}</span>
+                      <span className="text-xs text-warning-ink tabular-nums">
+                        v{p.publication?.version} → v{p.blueprint?.version}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          {recent.length > 0 && (
+            <>
+              <SubHeading>
+                <span className="px-2">Recently opened</span>
+              </SubHeading>
+              <ul className="space-y-0.5">
+                {recent.map((a) => (
+                  <li key={a.id}>
+                    <button type="button" onClick={() => openApp(a.id as AppId)} className={rowButton}>
+                      <AppIcon app={a} size="xs" />
+                      <span className="min-w-0 flex-1 truncate">{a.name}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
       )}
     </WidgetCard>
   )
@@ -132,8 +261,8 @@ function ActiveExecutionsWidget() {
   return (
     <WidgetCard
       icon={Workflow}
-      title="Active executions"
-      openLabel="Active executions — open System Explorer workflows"
+      title="Simulated executions"
+      openLabel="Simulated executions — open System Explorer executions"
       onOpen={() => openApp('system-explorer', { section: 'workflows' })}
       aside={failed > 0 ? <StatusBadge tone="danger">{failed} failed</StatusBadge> : undefined}
     >
@@ -157,7 +286,13 @@ function ActiveExecutionsWidget() {
 
 function WorkerActivityWidget() {
   const { openApp } = useOs()
-  const busy = workers.filter((w) => w.state === 'busy')
+  const { state } = useStudio()
+  const workers = platformResources.filter((r) => r.kind === 'worker')
+  const busy = workers.filter((w) => w.runtime?.state === 'busy')
+  const validating = workers.filter((w) => w.runtime?.state === 'validating').length
+  const failed = executions.filter((e) => e.state === 'failed').length
+  const composed = state.projects.flatMap((p) => (p.composition?.createdWorkers ?? []).map((w) => ({ project: p.name, worker: w.resource })))
+
   return (
     <WidgetCard
       icon={Cpu}
@@ -167,44 +302,56 @@ function WorkerActivityWidget() {
     >
       <div className="flex items-baseline gap-2">
         <span className="text-2xl font-semibold tabular-nums">{busy.length}</span>
-        <span className="text-sm text-muted-foreground">of {workers.length} workers busy</span>
+        <span className="text-sm text-muted-foreground">
+          of {workers.length} workers busy{validating ? ` · ${validating} in validation` : ''}
+        </span>
       </div>
       <div className="mt-2 flex gap-1" aria-hidden>
         {workers.map((w) => (
           <span
             key={w.id}
-            className={cn(
-              'h-1.5 flex-1 rounded-full',
-              w.state === 'busy' ? 'bg-primary' : w.state === 'provisioning' ? 'bg-warning' : 'bg-muted',
-            )}
+            className={cn('h-1.5 flex-1 rounded-full', w.runtime?.state === 'busy' ? 'bg-primary' : w.runtime?.state === 'validating' ? 'bg-warning' : 'bg-muted')}
           />
         ))}
       </div>
-      <ul className="mt-3 space-y-1">
-        {busy.slice(0, 2).map((w) => (
-          <li key={w.id} className="truncate text-xs text-muted-foreground">
-            <span className="text-foreground">{w.name}</span> — {w.currentTask}
+      <SubHeading>In application workflows</SubHeading>
+      <ul className="space-y-1">
+        {busy.slice(0, 3).map((w) => (
+          <li key={w.id} className="text-xs text-muted-foreground">
+            <span className="text-foreground">{w.name}</span> — {w.runtime?.currentTask}
+            {w.runtime?.appId && ` · ${getApp(w.runtime.appId).name}`}
           </li>
         ))}
       </ul>
+      {(composed.length > 0 || failed > 0) && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          {composed.length > 0 && `Composed for your apps: ${composed.map((c) => c.worker.name).join(', ')}. `}
+          {failed > 0 && `${failed} recent execution failed.`}
+        </p>
+      )}
     </WidgetCard>
   )
 }
 
-function RecentActivityWidget() {
+function PlatformActivityWidget() {
   const { openApp } = useOs()
+  const { state } = useStudio()
+  const events = platformActivity(state.projects).slice(0, 4)
   return (
     <WidgetCard
       icon={History}
-      title="Recent activity"
-      openLabel="Recent activity — open System Explorer activity"
+      title="Platform activity"
+      openLabel="Platform activity — open System Explorer activity"
       onOpen={() => openApp('system-explorer', { section: 'activity' })}
     >
       <ol className="space-y-2.5">
-        {activity.slice(0, 3).map((a) => (
+        {events.map((a) => (
           <li key={a.id} className="flex gap-3 text-sm">
-            <span className="w-14 shrink-0 text-xs leading-5 text-muted-foreground tabular-nums">{a.at}</span>
-            <span className="line-clamp-2 min-w-0">{a.summary}</span>
+            <span className="w-16 shrink-0 text-xs leading-5 text-muted-foreground tabular-nums">{formatActivityTime(a.at).replace(/^\d+ \w+, /, '')}</span>
+            <span className="min-w-0">
+              <span className="line-clamp-2">{a.summary}</span>
+              {!a.simulated && <span className="text-xs text-primary">You</span>}
+            </span>
           </li>
         ))}
       </ol>
@@ -214,13 +361,12 @@ function RecentActivityWidget() {
 
 const widgetComponents: Record<WidgetId, ComponentType> = {
   'platform-health': PlatformHealthWidget,
-  'pending-approvals': PendingApprovalsWidget,
-  'active-applications': ActiveApplicationsWidget,
+  'pending-approvals': ApprovalsWidget,
+  'active-applications': ApplicationActivityWidget,
   'active-executions': ActiveExecutionsWidget,
   'worker-activity': WorkerActivityWidget,
-  'recent-activity': RecentActivityWidget,
+  'recent-activity': PlatformActivityWidget,
 }
-
 
 export function DesktopWidgets() {
   const { widgetPreferences, openApp } = useOs()
@@ -231,12 +377,7 @@ export function DesktopWidgets() {
       <div className="flex items-center gap-2 px-1">
         <h2 className="text-sm font-medium whitespace-nowrap">System overview</h2>
         <MockBadge />
-        <Button
-          size="xs"
-          variant="ghost"
-          className="ml-auto text-muted-foreground"
-          onClick={() => openApp('settings', { section: 'desktop' })}
-        >
+        <Button size="xs" variant="ghost" className="ml-auto text-muted-foreground" onClick={() => openApp('settings', { section: 'desktop' })}>
           <LayoutDashboard />
           Customize
         </Button>

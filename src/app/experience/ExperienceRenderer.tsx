@@ -8,6 +8,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/u
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
+import { useAppRecords } from '@/app/services/app-records-store'
 import { FieldValue } from './fields'
 
 type Patch = (id: string, values: Partial<SampleRecord>) => void
@@ -196,7 +197,7 @@ function Notes({ ctx, component }: { ctx: Ctx; component: Extract<ExperienceComp
           })
           setDraft('')
           toast.success('Note saved', {
-            description: 'Mock record — kept for this window only.',
+            description: 'Mock record — saved in this browser.',
           })
         }}
       >
@@ -253,7 +254,7 @@ function Approvals({ ctx, component }: { ctx: Ctx; component: Extract<Experience
                 onClick={() => {
                   if (done) ctx.patch(r.id, { status: done })
                   toast.success(`${r.id} approved`, {
-                    description: 'Mock decision — this window only.',
+                    description: 'Mock decision — saved in this browser.',
                   })
                 }}
               >
@@ -265,7 +266,7 @@ function Approvals({ ctx, component }: { ctx: Ctx; component: Extract<Experience
                 onClick={() => {
                   if (referred) ctx.patch(r.id, { status: referred })
                   toast(`${r.id} referred`, {
-                    description: 'Mock decision — this window only.',
+                    description: 'Mock decision — saved in this browser.',
                   })
                 }}
               >
@@ -306,7 +307,7 @@ function IntakeForm({
     ctx.select(id)
     setValues({})
     toast.success(`${ctx.entity.name} ${id} created`, {
-      description: 'Mock record — kept for this window only.',
+      description: 'Mock record — saved in this browser.',
     })
     onCreated()
   }
@@ -353,13 +354,19 @@ function IntakeForm({
 export function ExperienceRenderer({
   blueprint,
   initialRecords,
+  persistKey,
 }: {
   blueprint: ApplicationBlueprint
   initialRecords: SampleRecord[]
+  /** Published applications persist their (mock) records under their app id; previews do not. */
+  persistKey?: string
 }) {
   const pages = blueprint.experience.pages
   const [pageId, setPageId] = useState(pages[0]?.id ?? '')
-  const [records, setRecords] = useState<SampleRecord[]>(initialRecords)
+  const [localRecords, setLocalRecords] = useState<SampleRecord[]>(initialRecords)
+  const [storedRecords, setStoredRecords] = useAppRecords(persistKey ?? '__preview__', initialRecords)
+  const records = persistKey ? storedRecords : localRecords
+  const setRecords = (fn: (list: SampleRecord[]) => SampleRecord[]) => (persistKey ? setStoredRecords(fn) : setLocalRecords(fn))
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const entity = blueprint.dataModel.entities.find((e) => e.id === blueprint.dataModel.primaryEntity)!
   const page = pages.find((p) => p.id === pageId) ?? pages[0]

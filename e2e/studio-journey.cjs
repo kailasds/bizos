@@ -43,47 +43,52 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await shot('01-discover');
   await studio.getByRole('button', { name: 'Start discovery' }).click();
   check('thinking state shown', await studio.getByText('Understanding your request…').isVisible());
-  await studio.getByRole('region', { name: 'What I understood' }).waitFor({ timeout: T });
-  const interp = await studio.getByRole('region', { name: 'What I understood' }).innerText();
-  check('interpretation has fraud + routing', interp.includes('Identify potential fraud indicators.') && interp.includes('Route complex cases to human reviewers.'));
+  await studio.getByRole('region', { name: 'Summary of understanding' }).waitFor({ timeout: T });
+  const interp = await studio.innerText();
+  check('interpretation has fraud + routing', interp.includes('Identify potential fraud indicators and investigate flagged claims.') && interp.includes('Route complex cases to human reviewers.'))
 
-  // 3. edit interpretation: add a point
-  await studio.getByRole('button', { name: 'Add something I missed' }).click();
-  await studio.getByLabel('Add something I missed').fill('Let customers upload photos of damage');
+  // 3. edit interpretation: add a point, accept a suggestion
+  await studio.getByRole('button', { name: 'Add a capability' }).click();
+  await studio.getByLabel('Add a capability').fill('Let customers upload photos of damage');
   await studio.getByRole('button', { name: 'Add', exact: true }).click();
-  check('custom point added', (await studio.getByRole('region', { name: 'What I understood' }).innerText()).includes('upload photos'));
+  check('custom point added', (await studio.getByRole('group', { name: 'What the application must do' }).innerText()).includes('upload photos'));
+  await studio.getByRole('button', { name: 'Accept: Ask customers for missing information automatically' }).click();
   await shot('02-interpretation');
-  await studio.getByRole('button', { name: /Looks right/ }).click();
+  await studio.getByRole('button', { name: /Confirm understanding/ }).click();
 
   // Define
   await studio.getByRole('heading', { name: 'Requirement specification' }).waitFor({ timeout: T });
   check('define has users', (await studio.getByRole('region', { name: 'Users' }).innerText()).includes('Fraud investigators'));
   check('custom capability carried into spec', (await studio.getByRole('region', { name: 'Business capabilities' }).innerText()).includes('upload photos'));
-  await studio.getByRole('region', { name: 'Suggestions from the architect' }).getByRole('button', { name: 'Add' }).first().click();
-  check('suggestion added to outputs', (await studio.getByRole('region', { name: 'Outputs' }).innerText()).includes('Proactive notification'));
+  check('accepted suggestion carried into outputs', (await studio.getByRole('region', { name: 'Outputs' }).innerText()).includes('Ask customers for missing information'));
   await studio.getByRole('button', { name: 'Ask the architect about Coverage validation' }).click();
   check('architect explains item', (await studio.getByRole('complementary', { name: 'AI Architect' }).innerText()).includes('Coverage validation'));
   await shot('03-define');
   await studio.getByRole('button', { name: 'Confirm requirements' }).click();
 
   // 4-5. Architect
-  await studio.getByRole('radiogroup', { name: 'Solution approaches' }).waitFor({ timeout: T });
-  check('three approaches', await studio.getByRole('radiogroup', { name: 'Solution approaches' }).getByRole('article').count() === 3);
-  check('no percentages in approaches', !/\d+\s?%/.test(await studio.getByRole('radiogroup', { name: 'Solution approaches' }).innerText()));
-  await studio.getByRole('article', { name: 'Intelligent claims orchestration' }).getByRole('radio').click();
-  check('flow visualization shown', await studio.getByRole('figure', { name: /Intelligent claims orchestration workflow/ }).isVisible());
+  await studio.getByRole('tablist', { name: 'Solution approaches' }).waitFor({ timeout: T });
+  check('three approaches', await studio.getByRole('tablist', { name: 'Solution approaches' }).getByRole('tab').count() === 3);
+  check('no percentages in approaches', !/\d+\s?%/.test(await studio.innerText()));
+  await studio.getByRole('tab', { name: /AI-Driven Claims Automation/ }).click();
+  await studio.getByRole('button', { name: 'Select this approach' }).click();
+  check('flow visualization shown', await studio.getByRole('figure', { name: /AI-Driven Claims Automation workflow/ }).isVisible());
   await shot('04-architect');
-  await studio.getByRole('button', { name: /Use this approach/ }).click();
+  await studio.getByRole('button', { name: /Use AI-Driven Claims Automation/ }).click();
 
   // 6-7. Compose
   await studio.getByRole('region', { name: /Missing capability: Fraud investigation/ }).waitFor({ timeout: T });
   check('generate disabled while missing', await studio.getByRole('button', { name: 'Generate blueprint' }).isDisabled());
   check('proposal marked as proposed', await studio.getByText('Proposed — not created').isVisible());
   await shot('05-compose-gap');
+  await studio.getByRole('button', { name: /Select all available/ }).click();
+  await studio.getByRole('button', { name: 'Review configuration' }).first().click();
+  await studio.getByRole('button', { name: 'Confirm and select' }).click();
   await studio.getByRole('button', { name: 'Approve and compose worker' }).click();
   check('composition sequence shown', await studio.getByRole('list', { name: 'Worker composition' }).isVisible());
-  await studio.getByText('Created for this app').waitFor({ timeout: T });
+  await studio.getByText(/composed for this application/).first().waitFor({ timeout: T });
   check('worker now created', !(await studio.getByRole('region', { name: /Missing capability/ }).count()));
+  check('generate enabled once every need is selected', await studio.getByRole('button', { name: 'Generate blueprint' }).isEnabled());
   await shot('06-compose-done');
   await studio.getByRole('button', { name: 'Generate blueprint' }).click();
 
@@ -91,13 +96,13 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await studio.getByRole('heading', { name: 'Application Blueprint' }).waitFor({ timeout: T });
   check('blueprint v0.1.0', (await studio.innerText()).includes('v0.1.0'));
   await shot('07-generate-overview');
-  await studio.getByRole('tab', { name: 'Experience preview' }).click();
+  await studio.getByRole('navigation', { name: 'Blueprint sections' }).getByRole('button', { name: 'Experience and screens' }).click();
   await page.waitForTimeout(200);
   check('preview renders claims workspace', await studio.getByRole('region', { name: 'All claims' }).isVisible());
   await studio.getByRole('navigation', { name: /screens/ }).getByRole('button', { name: 'Investigation workspace' }).click();
   check('preview exposes missing notes field', await studio.getByText(/Nothing can be saved here yet/).isVisible());
   await shot('08-generate-preview');
-  await studio.getByRole('tab', { name: 'JSON' }).click();
+  await studio.getByRole('navigation', { name: 'Blueprint sections' }).getByRole('button', { name: 'Technical view (JSON)' }).click();
   check('json view', (await studio.locator('pre').innerText()).includes('"applicationId": "app-claims-processing-hub-001"'));
   await studio.getByRole('button', { name: 'Continue to validation' }).click();
 
@@ -120,7 +125,8 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   const v2 = await studio.innerText();
   check('approver issue resolved', !v2.includes('Nobody is assigned to approve'));
   check('ui issue resolved', !v2.includes('shows a field the data model does not have'));
-  await studio.getByRole('button', { name: 'Accept for this version' }).click();
+  await studio.getByRole('button', { name: 'Accept as known gap' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Accept known gap' }).click();
   check('ready after acceptance', await studio.getByRole('button', { name: /Continue to publish/ }).isEnabled());
   await shot('10-validate-passed');
   await studio.getByRole('button', { name: /Continue to publish/ }).click();
@@ -180,10 +186,11 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
 
   // Change an upstream decision → downstream invalidated
   await studio.getByRole('navigation', { name: 'Studio stages' }).getByRole('button', { name: /Architect/ }).click();
-  await studio.getByRole('article', { name: 'Assisted claims processing' }).getByRole('radio').click();
+  await studio.getByRole('tab', { name: /Assisted Claims Processing/ }).click();
+  await studio.getByRole('button', { name: 'Select this approach' }).click();
   const navText = await studio.getByRole('navigation', { name: 'Studio stages' }).innerHTML();
   check('downstream marked needs review', (navText.match(/Needs review/g) || []).length >= 4);
-  check('lifecycle changes pending', (await studio.innerText()).includes('changes pending'));
+  check('lifecycle changes pending', (await studio.innerText()).includes('Changes pending'));
   await shot('14-needs-review');
 
   // reopen draft via All projects

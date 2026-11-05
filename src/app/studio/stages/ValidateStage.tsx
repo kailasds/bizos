@@ -1,7 +1,18 @@
 import { useState } from 'react'
-import { ArrowRight, ChevronDown, RefreshCw, ShieldCheck } from 'lucide-react'
+import { ArrowRight, CheckCircle2, ChevronDown, RefreshCw, ShieldCheck, UserCheck } from 'lucide-react'
 import { validateBlueprint, validationCategories } from '@/app/blueprint/validate'
+import { readinessMeta, readinessOf } from '@/app/services/mock/blueprint-service'
 import { StatusBadge, type StatusTone } from '@/components/os/StatusBadge'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
@@ -10,105 +21,113 @@ import { StageFrame, StagePrerequisite } from '../components/StageFrame'
 import { StepList } from '../components/StepList'
 import { useSimulation } from '../hooks/use-simulation'
 import { stageMeta } from '../stageMeta'
-import type { FindingStatus, StageId, ValidationFinding } from '../types'
+import type { StageId, ValidationFinding } from '../types'
 import { useStudio } from '../use-studio'
 import type { GenerateTab } from './GenerateStage'
 
-const statusMeta: Record<FindingStatus, { tone: StatusTone; label: string }> = {
-  passed: { tone: 'success', label: 'Passed' },
-  'needs-review': { tone: 'warning', label: 'Needs review' },
-  blocked: { tone: 'danger', label: 'Blocked' },
-}
+const categoryLabel = Object.fromEntries(validationCategories.map((c) => [c.id, c.label])) as Record<string, string>
 
-const rank: Record<FindingStatus, number> = { passed: 0, 'needs-review': 1, blocked: 2 }
-
-function FindingRow({
+function IssueCard({
   finding,
-  acknowledged,
+  accepted,
   goTo,
+  onAccept,
 }: {
   finding: ValidationFinding
-  acknowledged: boolean
+  accepted: boolean
   goTo: (stage: StageId, tab?: GenerateTab) => void
+  onAccept: (f: ValidationFinding) => void
 }) {
   const { dispatch } = useStudio()
-  const [open, setOpen] = useState(finding.status !== 'passed')
-  const status = acknowledged ? { tone: 'neutral' as const, label: 'Accepted' } : statusMeta[finding.status]
   const now = () => new Date().toISOString()
-
+  const tone: StatusTone = accepted ? 'info' : finding.status === 'blocked' ? 'danger' : 'warning'
+  const label = accepted ? 'Accepted as known gap' : finding.status === 'blocked' ? 'Blocked' : 'Needs attention'
   return (
-    <li className="border-b last:border-0">
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen(!open)}
-        className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm outline-none hover:bg-muted/50 focus-visible:bg-muted/50"
-      >
-        <StatusBadge tone={status.tone} className="w-28 justify-center">
-          {status.label}
-        </StatusBadge>
-        <span className="min-w-0 flex-1 font-medium">{finding.title}</span>
-        <ChevronDown aria-hidden className={cn('size-4 shrink-0 text-muted-foreground', open && 'rotate-180')} />
-      </button>
-      {open && (
-        <div className="space-y-3 px-4 pb-4 pl-[8.75rem] text-sm max-sm:pl-4">
-          <p>{finding.explanation}</p>
-          <p className="text-xs text-muted-foreground">
-            Related artifact: {stageMeta[finding.artifact.stage].label} → {finding.artifact.label}
-          </p>
-          {finding.resolution && finding.status !== 'passed' && (
-            <p>
-              <span className="font-medium">Suggested resolution: </span>
-              {finding.resolution}
-            </p>
-          )}
-          <div className="flex flex-wrap items-center gap-2">
-            {finding.quickFix?.kind === 'assign-role' && (
-              <NativeSelect
-                size="sm"
-                aria-label="Choose the approver role"
-                defaultValue=""
-                onChange={(e) => {
-                  const fix = finding.quickFix
-                  if (fix?.kind === 'assign-role' && e.target.value) {
-                    dispatch({ type: 'generate/patch', patch: { kind: 'assign-role', nodeId: fix.nodeId, role: e.target.value }, now: now() })
-                  }
-                }}
-              >
-                <NativeSelectOption value="" disabled>
-                  Assign approver…
-                </NativeSelectOption>
-                {finding.quickFix.candidates.map((c) => (
-                  <NativeSelectOption key={c.id} value={c.id}>
-                    {c.label}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
-            )}
-            {finding.quickFix?.kind === 'add-field' && (
-              <Button
-                size="sm"
-                onClick={() =>
-                  finding.quickFix?.kind === 'add-field' &&
-                  dispatch({
-                    type: 'generate/patch',
-                    patch: { kind: 'add-field', entityId: finding.quickFix.entityId, field: { id: finding.quickFix.fieldId, label: finding.quickFix.label, type: 'longtext' } },
-                    now: now(),
-                  })
-                }
-              >
-                Add “{finding.quickFix.label}” field
-              </Button>
-            )}
-            <Button size="sm" variant="outline" onClick={() => goTo(finding.artifact.stage, finding.artifact.tab as GenerateTab | undefined)}>
-              Open {stageMeta[finding.artifact.stage].label}
-            </Button>
-            {finding.status === 'needs-review' && !acknowledged && (
-              <Button size="sm" variant="ghost" onClick={() => dispatch({ type: 'validate/acknowledge', findingId: finding.id })}>
-                Accept for this version
-              </Button>
-            )}
+    <li className={cn('rounded-lg border bg-card', finding.status === 'blocked' && !accepted && 'border-danger/30')}>
+      <div className="flex flex-wrap items-start gap-2 border-b px-4 py-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs text-muted-foreground">{categoryLabel[finding.category]}</p>
+          <h4 className="text-sm font-semibold">{finding.title}</h4>
+        </div>
+        {finding.approvalRequired && !accepted && (
+          <span className="inline-flex items-center gap-1 rounded-full border px-2 text-xs leading-5 text-muted-foreground">
+            <UserCheck aria-hidden className="size-3" /> Your decision needed
+          </span>
+        )}
+        <StatusBadge tone={tone}>{label}</StatusBadge>
+      </div>
+      <dl className="grid gap-x-6 gap-y-3 px-4 py-3 text-sm @3xl:grid-cols-2">
+        <div>
+          <dt className="text-xs font-medium text-muted-foreground">What is wrong</dt>
+          <dd>{finding.explanation}</dd>
+        </div>
+        {finding.impact && (
+          <div>
+            <dt className="text-xs font-medium text-muted-foreground">Why it matters</dt>
+            <dd>{finding.impact}</dd>
           </div>
+        )}
+        <div>
+          <dt className="text-xs font-medium text-muted-foreground">Where it occurs</dt>
+          <dd>
+            {stageMeta[finding.artifact.stage].label} → {finding.artifact.label}
+          </dd>
+        </div>
+        {finding.resolution && (
+          <div>
+            <dt className="text-xs font-medium text-muted-foreground">Recommended resolution</dt>
+            <dd>{finding.resolution}</dd>
+          </div>
+        )}
+      </dl>
+      {!accepted && (
+        <div className="flex flex-wrap items-center gap-2 border-t px-4 py-3">
+          {finding.quickFix?.kind === 'assign-role' && (
+            <NativeSelect
+              size="sm"
+              aria-label="Choose the approver role"
+              defaultValue=""
+              onChange={(e) => {
+                const fix = finding.quickFix
+                if (fix?.kind === 'assign-role' && e.target.value) {
+                  dispatch({ type: 'generate/patch', patch: { kind: 'assign-role', nodeId: fix.nodeId, role: e.target.value }, reason: `Resolving validation: ${finding.title}`, now: now() })
+                }
+              }}
+            >
+              <NativeSelectOption value="" disabled>
+                Assign approver…
+              </NativeSelectOption>
+              {finding.quickFix.candidates.map((c) => (
+                <NativeSelectOption key={c.id} value={c.id}>
+                  {c.label}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          )}
+          {finding.quickFix?.kind === 'add-field' && (
+            <Button
+              size="sm"
+              onClick={() =>
+                finding.quickFix?.kind === 'add-field' &&
+                dispatch({
+                  type: 'generate/patch',
+                  patch: { kind: 'add-field', entityId: finding.quickFix.entityId, field: { id: finding.quickFix.fieldId, label: finding.quickFix.label, type: 'longtext' } },
+                  reason: `Resolving validation: ${finding.title}`,
+                  now: now(),
+                })
+              }
+            >
+              Add “{finding.quickFix.label}” field
+            </Button>
+          )}
+          <Button size="sm" variant="outline" onClick={() => goTo(finding.artifact.stage, finding.artifact.tab as GenerateTab | undefined)}>
+            Open {stageMeta[finding.artifact.stage].label}
+          </Button>
+          {finding.status === 'needs-review' && (
+            <Button size="sm" variant="ghost" onClick={() => onAccept(finding)}>
+              Accept as known gap
+            </Button>
+          )}
         </div>
       )}
     </li>
@@ -118,6 +137,8 @@ function FindingRow({
 export function ValidateStage({ goTo }: { goTo: (stage: StageId, tab?: GenerateTab) => void }) {
   const { project, dispatch } = useStudio()
   const sim = useSimulation(450)
+  const [showPassed, setShowPassed] = useState(false)
+  const [accepting, setAccepting] = useState<ValidationFinding | null>(null)
 
   if (!project?.blueprint || !project.composition) {
     return <StagePrerequisite stage="validate" requires="generate" message="Generate the Application Blueprint first. Validation checks the blueprint." />
@@ -125,7 +146,7 @@ export function ValidateStage({ goTo }: { goTo: (stage: StageId, tab?: GenerateT
 
   const bp = project.blueprint
   const validation = project.validation
-  const stale = validation && validation.blueprintVersion !== bp.version
+  const readiness = readinessOf(project)
   const run = () =>
     sim.run(validationCategories.length, () =>
       dispatch({ type: 'validate/result', findings: validateBlueprint(bp, project.composition!.mappings), now: new Date().toISOString() }),
@@ -133,9 +154,11 @@ export function ValidateStage({ goTo }: { goTo: (stage: StageId, tab?: GenerateT
 
   const findings = validation?.findings ?? []
   const isAck = (f: ValidationFinding) => validation?.acknowledged.includes(f.id) ?? false
-  const effective = (f: ValidationFinding): FindingStatus => (f.status === 'needs-review' && isAck(f) ? 'passed' : f.status)
-  const counts = { blocked: findings.filter((f) => effective(f) === 'blocked').length, review: findings.filter((f) => effective(f) === 'needs-review').length }
-  const passedCategories = validationCategories.filter((c) => findings.filter((f) => f.category === c.id).every((f) => effective(f) === 'passed')).length
+  const issues = findings
+    .filter((f) => f.status !== 'passed')
+    .sort((a, b) => Number(isAck(a)) - Number(isAck(b)) || (a.status === 'blocked' ? -1 : 1) - (b.status === 'blocked' ? -1 : 1))
+  const passed = findings.filter((f) => f.status === 'passed')
+  const passedCategories = validationCategories.filter((c) => findings.filter((f) => f.category === c.id).every((f) => f.status === 'passed' || isAck(f))).length
 
   return (
     <StageFrame
@@ -171,46 +194,93 @@ export function ValidateStage({ goTo }: { goTo: (stage: StageId, tab?: GenerateT
             </EmptyMedia>
             <EmptyTitle>Validation has not run yet</EmptyTitle>
             <EmptyDescription>
-              Eight checks compare the blueprint’s requirements, resources, workflow, data, permissions, screens and approvals. Publishing is blocked until they pass.
+              Eight deterministic checks compare the blueprint’s requirements, resources, workflow, data, permissions, screens and approvals. Publishing is
+              blocked until they pass or you accept a known gap.
             </EmptyDescription>
           </EmptyHeader>
           <Button onClick={run}>Run validation</Button>
         </Empty>
       ) : (
-        <div className="space-y-4">
-          {stale && (
-            <div role="status" className="flex flex-wrap items-center gap-3 rounded-lg border border-info/30 bg-info-soft/60 px-4 py-2.5 text-sm">
-              <span className="flex-1">
-                The blueprint changed to v{bp.version} since this run. Re-run validation to confirm your changes.
+        <div className="space-y-5">
+          <section aria-label="Readiness" className="rounded-xl border bg-card p-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <StatusBadge tone={readinessMeta[readiness].tone}>{readinessMeta[readiness].label}</StatusBadge>
+              <span className="text-sm font-medium tabular-nums">
+                {passedCategories} of {validationCategories.length} checks passed
               </span>
-              <Button size="sm" onClick={run}>
-                Re-run validation
-              </Button>
+              {readiness === 'outdated' && (
+                <Button size="sm" className="ml-auto" onClick={run}>
+                  Re-run validation
+                </Button>
+              )}
             </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {readiness === 'outdated'
+                ? `The blueprint changed to v${bp.version} since this run. Re-run validation to confirm your changes.`
+                : readinessMeta[readiness].description}
+            </p>
+          </section>
+
+          {issues.length > 0 && (
+            <section aria-label="Issues" className="space-y-2">
+              <h3 className="text-sm font-semibold">Issues</h3>
+              <ul className="space-y-3">
+                {issues.map((f) => (
+                  <IssueCard key={f.id} finding={f} accepted={isAck(f)} goTo={goTo} onAccept={setAccepting} />
+                ))}
+              </ul>
+            </section>
           )}
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="font-medium tabular-nums">
-              {passedCategories} of {validationCategories.length} checks passed
-            </span>
-            {counts.blocked > 0 && <StatusBadge tone="danger">{counts.blocked} blocked</StatusBadge>}
-            {counts.review > 0 && <StatusBadge tone="warning">{counts.review} to review</StatusBadge>}
-            {!counts.blocked && !counts.review && !stale && <StatusBadge tone="success">Ready to publish</StatusBadge>}
-          </div>
-          {validationCategories.map((cat) => {
-            const list = findings.filter((f) => f.category === cat.id).sort((a, b) => rank[effective(b)] - rank[effective(a)])
-            return (
-              <section key={cat.id} aria-label={cat.label} className="overflow-hidden rounded-lg border bg-card">
-                <h3 className="border-b bg-chrome px-4 py-2 text-xs font-medium text-muted-foreground">{cat.label}</h3>
-                <ul>
-                  {list.map((f) => (
-                    <FindingRow key={f.id} finding={f} acknowledged={isAck(f)} goTo={goTo} />
-                  ))}
-                </ul>
-              </section>
-            )
-          })}
+
+          <section aria-label="Passed checks" className="rounded-lg border bg-card">
+            <button
+              type="button"
+              aria-expanded={showPassed}
+              onClick={() => setShowPassed(!showPassed)}
+              className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm outline-none hover:bg-muted/50 focus-visible:bg-muted/50"
+            >
+              <CheckCircle2 aria-hidden className="size-4 text-success" />
+              <span className="flex-1 font-medium">
+                {passed.length} check{passed.length === 1 ? '' : 's'} passed
+              </span>
+              <ChevronDown aria-hidden className={cn('size-4 text-muted-foreground', showPassed && 'rotate-180')} />
+            </button>
+            {showPassed && (
+              <ul className="divide-y border-t">
+                {passed.map((f) => (
+                  <li key={f.id} className="px-4 py-2.5 text-sm">
+                    <p className="font-medium">{f.title}</p>
+                    <p className="text-muted-foreground">{f.explanation}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         </div>
       )}
+
+      <AlertDialog open={Boolean(accepting)} onOpenChange={(o) => !o && setAccepting(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Accept as a known gap?</AlertDialogTitle>
+            <AlertDialogDescription>
+              “{accepting?.title}” stays unresolved in v{bp.version}. {accepting?.impact} Your acceptance is recorded in this draft’s decision log and applies to
+              this version only.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (accepting) dispatch({ type: 'validate/acknowledge', findingId: accepting.id, now: new Date().toISOString() })
+                setAccepting(null)
+              }}
+            >
+              Accept known gap
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </StageFrame>
   )
 }

@@ -1,53 +1,43 @@
 import { useState, type ReactNode } from 'react'
-import { Activity, AppWindow, Bot, Cpu, History, Library, Plug, Workflow } from 'lucide-react'
+import { Activity, AppWindow, Bot, Cpu, History, Library, Plug, Server, Workflow } from 'lucide-react'
+import type { ResourceKind } from '@/app/blueprint/types'
 import { useOs } from '@/app/os/use-os'
 import { getApp } from '@/app/registry/applicationRegistry'
-import { useApplications } from '@/app/registry/use-applications'
-import { useParamsChange } from '@/app/windows/use-params-change'
 import type { AppProps } from '@/app/registry/types'
-import { AppIcon } from '@/components/os/AppIcon'
+import { ResourceDetailSheet } from '@/app/resources/ResourceDetailSheet'
+import { formatActivityTime, platformActivity } from '@/app/services/mock/activity-service'
+import { searchCatalogue } from '@/app/services/mock/resource-discovery-service'
+import { useStudio } from '@/app/studio/use-studio'
+import { useParamsChange } from '@/app/windows/use-params-change'
 import { MockBadge } from '@/components/os/MockBadge'
 import { SidebarNav } from '@/components/os/SidebarNav'
 import { StatusBadge, type StatusTone } from '@/components/os/StatusBadge'
 import { Button } from '@/components/ui/button'
-import {
-  activity,
-  agents,
-  connectors,
-  domainPacks,
-  executions,
-  platformServices,
-  workers,
-  type Execution,
-} from '@/data/platform.mock'
+import type { ActivityCategory } from '@/data/activity.mock'
+import { executions, platformServices, type Execution } from '@/data/platform.mock'
+import { availabilityLabel, type PlatformResource, type ResourceAvailability } from '@/data/resources.mock'
+import { ApplicationDetail } from './ApplicationDetail'
+import { ApplicationRegistry } from './ApplicationRegistry'
 
-type Section = 'overview' | 'applications' | 'domain-packs' | 'agents' | 'workers' | 'connectors' | 'workflows' | 'activity'
+type Section = 'overview' | 'applications' | 'domain-packs' | 'agents' | 'workers' | 'connectors' | 'services' | 'workflows' | 'activity'
 
 const sections: { id: Section; label: string; icon: typeof Activity }[] = [
   { id: 'overview', label: 'Overview', icon: Activity },
   { id: 'applications', label: 'Applications', icon: AppWindow },
-  { id: 'domain-packs', label: 'Domain packs', icon: Library },
+  { id: 'workers', label: 'AI Workers', icon: Cpu },
   { id: 'agents', label: 'Agents', icon: Bot },
-  { id: 'workers', label: 'Workers', icon: Cpu },
   { id: 'connectors', label: 'Connectors', icon: Plug },
+  { id: 'services', label: 'Services', icon: Server },
+  { id: 'domain-packs', label: 'Domain knowledge', icon: Library },
   { id: 'workflows', label: 'Executions', icon: Workflow },
   { id: 'activity', label: 'Activity', icon: History },
 ]
 
 const isSection = (v: string | undefined): v is Section => sections.some((s) => s.id === v)
 
-const executionTone: Record<Execution['state'], StatusTone> = {
-  running: 'info',
-  'waiting-approval': 'warning',
-  failed: 'danger',
-  completed: 'success',
-}
-const executionLabel: Record<Execution['state'], string> = {
-  running: 'Running',
-  'waiting-approval': 'Waiting for approval',
-  failed: 'Failed',
-  completed: 'Completed',
-}
+const executionTone: Record<Execution['state'], StatusTone> = { running: 'info', 'waiting-approval': 'warning', failed: 'danger', completed: 'success' }
+const executionLabel: Record<Execution['state'], string> = { running: 'Running', 'waiting-approval': 'Waiting for approval', failed: 'Failed', completed: 'Completed' }
+const availabilityTone: Record<ResourceAvailability, StatusTone> = { available: 'success', restricted: 'warning', validating: 'info', planned: 'neutral' }
 
 function SectionHeader({ title, source, children }: { title: string; source?: string; children?: ReactNode }) {
   return (
@@ -57,25 +47,6 @@ function SectionHeader({ title, source, children }: { title: string; source?: st
         {children}
       </div>
       {source && <p className="text-sm text-muted-foreground">{source}</p>}
-    </div>
-  )
-}
-
-function DataTable({ head, children }: { head: string[]; children: ReactNode }) {
-  return (
-    <div className="overflow-x-auto rounded-lg border">
-      <table className="w-full text-sm">
-        <thead className="bg-chrome text-left text-xs text-muted-foreground">
-          <tr className="border-b">
-            {head.map((h) => (
-              <th key={h} className="px-3 py-2 font-medium whitespace-nowrap">
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="[&>tr]:border-b [&>tr:last-child]:border-0 [&_td]:px-3 [&_td]:py-2">{children}</tbody>
-      </table>
     </div>
   )
 }
@@ -104,141 +75,51 @@ function Overview() {
   )
 }
 
-function Applications() {
-  const { windows, openApp } = useOs()
-  const applications = useApplications()
-  return (
-    <>
-      <SectionHeader title="Application registry" source="Every application and system workspace registered with this OS." />
-      <DataTable head={['Application', 'Version', 'Lifecycle', 'Owner', 'Session', '']}>
-        {applications
-          .filter((a) => a.id !== 'folder-browser')
-          .map((app) => {
-            const open = windows.some((w) => w.appId === app.id)
-            return (
-              <tr key={app.id}>
-                <td>
-                  <div className="flex items-center gap-2">
-                    <AppIcon app={app} size="xs" />
-                    <div>
-                      <p className="font-medium">{app.name}</p>
-                      <p className="text-xs text-muted-foreground">{app.id}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="tabular-nums">{app.version}</td>
-                <td>
-                  <StatusBadge tone={app.lifecycle === 'published' ? 'success' : app.lifecycle === 'preview' ? 'info' : 'neutral'}>
-                    {app.lifecycle === 'published' ? 'Published' : app.lifecycle === 'preview' ? 'Preview' : 'System'}
-                  </StatusBadge>
-                </td>
-                <td className="text-muted-foreground">{app.owner}</td>
-                <td className="text-muted-foreground">{open ? 'Open' : '—'}</td>
-                <td className="text-right">
-                  <Button size="xs" variant="outline" onClick={() => openApp(app.id)}>
-                    {open ? 'Switch to' : 'Open'}
-                  </Button>
-                </td>
-              </tr>
-            )
-          })}
-      </DataTable>
-    </>
-  )
+const resourceSections: Partial<Record<Section, { kind: ResourceKind; title: string; source: string }>> = {
+  workers: { kind: 'worker', title: 'AI Workers', source: 'Read from the AI Workers Platform, which owns composition and lifecycle. Not connected in this prototype.' },
+  agents: { kind: 'agent', title: 'Agents', source: 'Read from the Agent Control Plane, which remains the source of truth. Not connected in this prototype.' },
+  connectors: { kind: 'connector', title: 'Connectors', source: 'Governed integrations with enterprise systems. Not connected in this prototype.' },
+  services: { kind: 'service', title: 'Services', source: 'Services provided by Enterprise AI OS itself.' },
+  'domain-packs': { kind: 'knowledge', title: 'Domain knowledge', source: 'Versioned domain packs from the Domain Intelligence Kernel.' },
 }
 
-function DomainPacks() {
+function Resources({ section }: { section: Section }) {
+  const meta = resourceSections[section]!
+  const [detail, setDetail] = useState<PlatformResource | null>(null)
+  const list = searchCatalogue({ kind: meta.kind })
   return (
     <>
-      <SectionHeader title="Domain packs" source="Versioned domain intelligence (ontology, rules, processes). Built in Phase 2.">
+      <SectionHeader title={meta.title} source={meta.source}>
         <MockBadge />
       </SectionHeader>
-      <DataTable head={['Pack', 'Version', 'Status', 'Contents']}>
-        {domainPacks.map((p) => (
-          <tr key={p.id}>
-            <td className="font-medium">{p.name}</td>
-            <td className="tabular-nums">{p.version}</td>
-            <td>
-              <StatusBadge tone="neutral">Planned</StatusBadge>
-            </td>
-            <td className="text-muted-foreground">{p.contents}</td>
-          </tr>
-        ))}
-      </DataTable>
-    </>
-  )
-}
-
-function Agents() {
-  return (
-    <>
-      <SectionHeader title="Agents" source="Read from the Agent Control Plane, which remains the source of truth. Not connected in Phase 1.">
-        <MockBadge />
-      </SectionHeader>
-      <DataTable head={['Agent', 'Version', 'Capability', 'Certified for', 'Status']}>
-        {agents.map((a) => (
-          <tr key={a.id}>
-            <td className="font-medium">{a.name}</td>
-            <td className="tabular-nums">{a.version}</td>
-            <td className="text-muted-foreground">{a.capability}</td>
-            <td className="text-muted-foreground">{a.certifiedDomains.join(', ')}</td>
-            <td>
-              <StatusBadge tone={a.state === 'available' ? 'success' : a.state === 'restricted' ? 'warning' : 'neutral'}>
-                {a.state === 'available' ? 'Available' : a.state === 'restricted' ? 'Restricted' : 'Retired'}
+      <ul className="divide-y rounded-lg border bg-card">
+        {list.map((r) => (
+          <li key={r.id}>
+            <button
+              type="button"
+              onClick={() => setDetail(r)}
+              className="flex w-full flex-wrap items-start gap-x-3 gap-y-1 px-4 py-3 text-left outline-none hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-medium">
+                  {r.name} <span className="font-normal text-muted-foreground tabular-nums">· {r.version}</span>
+                </span>
+                <span className="block text-sm text-muted-foreground">{r.purpose}</span>
+                {r.runtime && (
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    Simulated: {r.runtime.state === 'busy' ? 'busy' : r.runtime.state === 'validating' ? 'in validation' : 'idle'}
+                    {r.runtime.currentTask ? ` — ${r.runtime.currentTask}` : ''}
+                  </span>
+                )}
+              </span>
+              <StatusBadge tone={availabilityTone[r.availability]} pulse={r.runtime?.state === 'busy'}>
+                {availabilityLabel[r.availability]}
               </StatusBadge>
-            </td>
-          </tr>
+            </button>
+          </li>
         ))}
-      </DataTable>
-    </>
-  )
-}
-
-function Workers() {
-  return (
-    <>
-      <SectionHeader title="Workers" source="Read from the AI Workers Platform, which owns composition and lifecycle. Not connected in Phase 1.">
-        <MockBadge />
-      </SectionHeader>
-      <DataTable head={['Worker', 'Version', 'Capability', 'Status', 'Current task']}>
-        {workers.map((w) => (
-          <tr key={w.id}>
-            <td className="font-medium">{w.name}</td>
-            <td className="tabular-nums">{w.version}</td>
-            <td className="text-muted-foreground">{w.capability}</td>
-            <td>
-              <StatusBadge tone={w.state === 'busy' ? 'info' : w.state === 'provisioning' ? 'warning' : 'neutral'} pulse={w.state === 'busy'}>
-                {w.state === 'busy' ? 'Busy' : w.state === 'provisioning' ? 'Validating' : 'Idle'}
-              </StatusBadge>
-            </td>
-            <td className="text-muted-foreground">{w.currentTask ?? '—'}</td>
-          </tr>
-        ))}
-      </DataTable>
-    </>
-  )
-}
-
-function Connectors() {
-  return (
-    <>
-      <SectionHeader title="Connectors" source="Governed integrations with enterprise systems. Not connected in Phase 1.">
-        <MockBadge />
-      </SectionHeader>
-      <DataTable head={['Connector', 'System', 'Protocol', 'Status']}>
-        {connectors.map((c) => (
-          <tr key={c.id}>
-            <td className="font-medium">{c.name}</td>
-            <td className="text-muted-foreground">{c.system}</td>
-            <td className="text-muted-foreground">{c.protocol}</td>
-            <td>
-              <StatusBadge tone={c.state === 'connected' ? 'success' : 'danger'}>
-                {c.state === 'connected' ? 'Connected' : 'Disconnected'}
-              </StatusBadge>
-            </td>
-          </tr>
-        ))}
-      </DataTable>
+      </ul>
+      <ResourceDetailSheet resource={detail} onOpenChange={(o) => !o && setDetail(null)} />
     </>
   )
 }
@@ -247,51 +128,94 @@ function Executions() {
   const { openApp } = useOs()
   return (
     <>
-      <SectionHeader title="Workflow executions" source="Workflow runs across published applications.">
-        <MockBadge />
+      <SectionHeader title="Workflow executions" source="Workflow runs across published applications. Simulated — no workflow engine runs in this prototype.">
+        <MockBadge label="Simulated" />
       </SectionHeader>
-      <DataTable head={['Execution', 'Workflow', 'Subject', 'Step', 'Status', '']}>
-        {executions.map((e) => (
-          <tr key={e.id}>
-            <td className="tabular-nums">
-              <p className="font-medium">{e.id}</p>
-              <p className="text-xs text-muted-foreground">Started {e.startedAt}</p>
-            </td>
-            <td className="text-muted-foreground">{e.workflow}</td>
-            <td className="tabular-nums">{e.subject}</td>
-            <td className="text-muted-foreground">
-              {e.step} <span className="tabular-nums">({e.stepIndex}/{e.stepCount})</span>
-            </td>
-            <td>
-              <StatusBadge tone={executionTone[e.state]} pulse={e.state === 'running'}>
-                {executionLabel[e.state]}
-              </StatusBadge>
-            </td>
-            <td className="text-right">
-              <Button size="xs" variant="outline" onClick={() => openApp(e.appId)}>
-                Open {getApp(e.appId).name}
-              </Button>
-            </td>
-          </tr>
-        ))}
-      </DataTable>
+      <div className="overflow-x-auto rounded-lg border">
+        <table className="w-full text-sm">
+          <thead className="bg-chrome text-left text-xs text-muted-foreground">
+            <tr className="border-b">
+              {['Execution', 'Workflow', 'Subject', 'Step', 'Status', ''].map((h) => (
+                <th key={h} className="px-3 py-2 font-medium whitespace-nowrap">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="[&>tr]:border-b [&>tr:last-child]:border-0 [&_td]:px-3 [&_td]:py-2">
+            {executions.map((e) => (
+              <tr key={e.id}>
+                <td className="tabular-nums">
+                  <p className="font-medium">{e.id}</p>
+                  <p className="text-xs text-muted-foreground">Started {e.startedAt}</p>
+                </td>
+                <td className="text-muted-foreground">{e.workflow}</td>
+                <td className="tabular-nums">{e.subject}</td>
+                <td className="text-muted-foreground">
+                  {e.step}{' '}
+                  <span className="tabular-nums">
+                    ({e.stepIndex}/{e.stepCount})
+                  </span>
+                </td>
+                <td>
+                  <StatusBadge tone={executionTone[e.state]} pulse={e.state === 'running'}>
+                    {executionLabel[e.state]}
+                  </StatusBadge>
+                </td>
+                <td className="text-right">
+                  <Button size="xs" variant="outline" onClick={() => openApp(e.appId)}>
+                    Open {getApp(e.appId).name}
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </>
   )
 }
 
+const categoryLabel: Record<ActivityCategory, string> = {
+  deployment: 'Publication',
+  approval: 'Approval',
+  execution: 'Execution',
+  resource: 'Resource',
+  configuration: 'Configuration',
+  validation: 'Validation',
+  blueprint: 'Blueprint change',
+  composition: 'Composition',
+}
+
 function ActivityLog() {
+  const { state } = useStudio()
+  const [category, setCategory] = useState<ActivityCategory | 'all'>('all')
+  const all = platformActivity(state.projects)
+  const shown = all.filter((a) => category === 'all' || a.category === category)
+  const present = [...new Set(all.map((a) => a.category))]
   return (
     <>
-      <SectionHeader title="Activity" source="Deployments, approvals, executions and configuration changes.">
-        <MockBadge />
-      </SectionHeader>
+      <SectionHeader title="Activity" source="Publications, blueprint changes, validation runs, compositions and approvals. Seed events are simulated; Studio events are your own." />
+      <div role="group" aria-label="Filter activity" className="mb-3 flex flex-wrap gap-1">
+        <Button size="xs" variant={category === 'all' ? 'secondary' : 'ghost'} aria-pressed={category === 'all'} onClick={() => setCategory('all')}>
+          All
+        </Button>
+        {present.map((c) => (
+          <Button key={c} size="xs" variant={category === c ? 'secondary' : 'ghost'} aria-pressed={category === c} onClick={() => setCategory(c)}>
+            {categoryLabel[c]}
+          </Button>
+        ))}
+      </div>
       <ol className="divide-y rounded-lg border">
-        {activity.map((a) => (
+        {shown.map((a) => (
           <li key={a.id} className="flex gap-4 px-3 py-2.5 text-sm">
-            <span className="w-20 shrink-0 text-muted-foreground tabular-nums">{a.at}</span>
-            <div className="min-w-0">
+            <span className="w-28 shrink-0 text-xs leading-5 text-muted-foreground tabular-nums">{formatActivityTime(a.at)}</span>
+            <div className="min-w-0 flex-1">
               <p>{a.summary}</p>
-              <p className="text-xs text-muted-foreground">{a.actor}</p>
+              <p className="text-xs text-muted-foreground">
+                {categoryLabel[a.category]} · {a.actor}
+                {a.simulated ? ' · simulated' : ''}
+              </p>
             </div>
           </li>
         ))}
@@ -300,32 +224,45 @@ function ActivityLog() {
   )
 }
 
-const sectionComponents: Record<Section, () => ReactNode> = {
-  overview: Overview,
-  applications: Applications,
-  'domain-packs': DomainPacks,
-  agents: Agents,
-  workers: Workers,
-  connectors: Connectors,
-  workflows: Executions,
-  activity: ActivityLog,
+function Applications({ appId, onSelect }: { appId: string | null; onSelect: (id: string | null) => void }) {
+  if (appId) return <ApplicationDetail id={appId} onBack={() => onSelect(null)} />
+  return (
+    <>
+      <SectionHeader title="Application registry" source="Every application on this OS: built-in, published from Application Studio, and drafts still being designed." />
+      <ApplicationRegistry onSelect={onSelect} />
+    </>
+  )
 }
 
 export function SystemExplorerApp({ params }: AppProps) {
   const [section, setSection] = useState<Section>(isSection(params.section) ? params.section : 'overview')
+  const [appId, setAppId] = useState<string | null>(params.app ?? null)
 
   useParamsChange(params, (p) => {
     if (isSection(p.section)) setSection(p.section)
+    setAppId(p.app ?? null)
   })
 
-  const Content = sectionComponents[section]
+  const content = () => {
+    if (section === 'overview') return <Overview />
+    if (section === 'applications') return <Applications appId={appId} onSelect={setAppId} />
+    if (section === 'workflows') return <Executions />
+    if (section === 'activity') return <ActivityLog />
+    return <Resources key={section} section={section} />
+  }
 
   return (
     <div className="@container flex h-full min-h-0 flex-col @3xl:flex-row">
-      <SidebarNav label="System Explorer" items={sections} value={section} onChange={setSection} />
-      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-6">
-        <Content />
-      </div>
+      <SidebarNav
+        label="System Explorer"
+        items={sections}
+        value={section}
+        onChange={(s) => {
+          setSection(s)
+          setAppId(null)
+        }}
+      />
+      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-6">{content()}</div>
     </div>
   )
 }
