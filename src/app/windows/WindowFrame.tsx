@@ -3,9 +3,46 @@ import { Maximize2, Minimize2, Minus, X } from 'lucide-react'
 import { useOs } from '@/app/os/use-os'
 import type { AppDefinition, Size } from '@/app/registry/types'
 import { AppIcon } from '@/components/os/AppIcon'
-import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { clampBounds, type Bounds, type WindowState } from './windowReducer'
+
+const controlTone = {
+  maximize: 'bg-control-maximize',
+  minimize: 'bg-control-minimize',
+  close: 'bg-control-close',
+} as const
+
+function WindowControl({
+  tone,
+  label,
+  onClick,
+  children,
+}: {
+  tone: keyof typeof controlTone
+  label: string
+  onClick: () => void
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      className="flex size-6 items-center justify-center rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+    >
+      <span
+        aria-hidden
+        className={cn(
+          'flex size-3.5 items-center justify-center rounded-full text-foreground/70 shadow-[inset_0_0_0_0.5px_oklch(0_0_0/0.18)] group-data-[focused=false]/window:bg-foreground/20 [&_svg]:size-2.5 [&_svg]:stroke-[2.5] [&_svg]:opacity-0 group-hover/controls:[&_svg]:opacity-100 group-focus-within/controls:[&_svg]:opacity-100',
+          controlTone[tone],
+        )}
+      >
+        {children}
+      </span>
+    </button>
+  )
+}
 
 interface Gesture {
   mode: 'move' | 'resize'
@@ -82,15 +119,15 @@ export function WindowFrame({ win, app, title, focused, area, compact, children 
           : { zIndex: win.z, left: bounds.x, top: bounds.y, width: bounds.width, height: bounds.height }
       }
       className={cn(
-        'pointer-events-auto absolute flex flex-col overflow-hidden border bg-card text-card-foreground animate-in fade-in-0 zoom-in-[0.985] [animation-duration:150ms]',
-        maximized ? 'rounded-none border-x-0 border-t-0 sm:rounded-xl sm:border' : 'rounded-xl',
-        focused ? 'border-border shadow-window-active' : 'border-border/80 shadow-window',
+        'group/window glass pointer-events-auto absolute flex flex-col overflow-hidden text-card-foreground animate-in fade-in-0 zoom-in-[0.985] [animation-duration:150ms]',
+        maximized ? 'rounded-none border-x-0 border-t-0 sm:rounded-2xl sm:border' : 'rounded-2xl',
+        focused ? 'shadow-window-active' : 'shadow-window',
         live && 'select-none',
       )}
     >
       <header
         className={cn(
-          'flex h-10 shrink-0 items-center gap-2 border-b bg-chrome pr-1.5 pl-3',
+          'flex h-11 shrink-0 items-center gap-2 pr-2 pl-3.5',
           !maximized && 'cursor-grab active:cursor-grabbing',
         )}
         onDoubleClick={(event) => {
@@ -100,36 +137,30 @@ export function WindowFrame({ win, app, title, focused, area, compact, children 
         {...gestureHandlers('move')}
       >
         <AppIcon app={app} size="xs" />
-        <h2 className={cn('min-w-0 flex-1 truncate text-sm font-medium', !focused && 'text-muted-foreground')}>
+        <h2 className={cn('min-w-0 flex-1 truncate text-sm font-semibold', !focused && 'text-foreground/55')}>
           {title}
         </h2>
-        <div className="flex items-center gap-0.5">
-          <Button variant="ghost" size="icon-sm" aria-label={`Minimize ${app.name}`} onClick={() => minimizeWindow(win.id)}>
-            <Minus />
-          </Button>
+        {/* Window controls (design.md §7): filled dots, maximize · minimize · close, glyph on hover. */}
+        <div className="group/controls flex items-center gap-0.5">
           {!compact && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label={win.status === 'maximized' ? `Restore ${app.name}` : `Maximize ${app.name}`}
+            <WindowControl
+              tone="maximize"
+              label={win.status === 'maximized' ? `Restore ${app.name}` : `Maximize ${app.name}`}
               onClick={() => toggleMaximize(win.id)}
             >
               {win.status === 'maximized' ? <Minimize2 /> : <Maximize2 />}
-            </Button>
+            </WindowControl>
           )}
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label={`Close ${app.name}`}
-            className="hover:bg-danger-soft hover:text-danger-ink"
-            onClick={() => closeWindow(win.id)}
-          >
+          <WindowControl tone="minimize" label={`Minimize ${app.name}`} onClick={() => minimizeWindow(win.id)}>
+            <Minus />
+          </WindowControl>
+          <WindowControl tone="close" label={`Close ${app.name}`} onClick={() => closeWindow(win.id)}>
             <X />
-          </Button>
+          </WindowControl>
         </div>
       </header>
 
-      <div className="@container relative min-h-0 flex-1">{children}</div>
+      <div className="@container relative mx-1.5 mb-1.5 min-h-0 flex-1 overflow-hidden rounded-xl bg-card shadow-[0_0_0_1px_oklch(0.2_0.02_220/0.06)]">{children}</div>
 
       {!maximized && (
         <div

@@ -13,7 +13,7 @@ const tintClass: Record<AppTint, string> = {
   graphite: 'bg-tint-graphite',
 }
 
-const iconVariants = cva('flex shrink-0 items-center justify-center text-white', {
+const iconVariants = cva('flex shrink-0 items-center justify-center text-white shadow-[inset_0_1px_0_oklch(1_0_0/0.35),0_1px_2px_oklch(0.2_0.03_220/0.2)]', {
   variants: {
     size: {
       xs: 'size-5 rounded-[5px] [&_svg]:size-3',
@@ -44,7 +44,7 @@ export function FolderIcon({ folderId, size = 'lg', className }: { folderId: Dom
     <span
       aria-hidden
       className={cn(
-        'flex shrink-0 items-center justify-center border border-border bg-card shadow-widget',
+        'glass-strong flex shrink-0 items-center justify-center shadow-widget',
         size === 'lg' ? 'size-13 rounded-xl' : 'size-10 rounded-lg',
         className,
       )}

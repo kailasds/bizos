@@ -375,9 +375,9 @@ export function DesktopWidgets() {
   return (
     <aside aria-label="System overview" className="flex flex-col gap-3">
       <div className="flex items-center gap-2 px-1">
-        <h2 className="text-sm font-medium whitespace-nowrap">System overview</h2>
+        <h2 className="text-sm font-semibold whitespace-nowrap">System overview</h2>
         <MockBadge />
-        <Button size="xs" variant="ghost" className="ml-auto text-muted-foreground" onClick={() => openApp('settings', { section: 'desktop' })}>
+        <Button size="xs" variant="ghost" className="ml-auto text-foreground/80 hover:bg-white/45" onClick={() => openApp('settings', { section: 'desktop' })}>
           <LayoutDashboard />
           Customize
         </Button>

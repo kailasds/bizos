@@ -122,5 +122,5 @@ node e2e/intelligence.cjs     # Milestone 3 intelligence, resources, versions, r
 
 ## Stack
 
-React 19 · Vite · TypeScript · Tailwind CSS v4 · shadcn/ui (source in `src/components/ui`) ·
+React 19 · Vite · TypeScript · Tailwind CSS v4 · shadcn/ui (source in `src/components/ui`) · Plus Jakarta Sans ·
 lucide-react. Started from `claude-react-starter`.

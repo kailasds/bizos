@@ -126,7 +126,7 @@ export function AssistantPanel() {
   return (
     <aside
       aria-label="Assistant"
-      className="pointer-events-auto absolute top-3 right-3 bottom-3 flex w-[min(24rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border bg-card shadow-overlay animate-in fade-in-0 slide-in-from-right-2 [animation-duration:150ms]"
+      className="pointer-events-auto absolute top-3 right-3 bottom-3 flex w-[min(24rem,calc(100vw-1.5rem))] flex-col overflow-hidden glass-strong rounded-2xl shadow-overlay animate-in fade-in-0 slide-in-from-right-2 [animation-duration:150ms]"
     >
       <header className="flex items-center gap-2 border-b px-4 py-3">
         <Sparkles className="size-4 text-primary" />

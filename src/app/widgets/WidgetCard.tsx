@@ -22,7 +22,7 @@ export function WidgetCard({ icon: Icon, title, openLabel, onOpen, aside, childr
   return (
     <section
       className={cn(
-        'group/widget relative rounded-xl border bg-card p-4 shadow-widget hover:border-foreground/15 has-[>header>button:focus-visible]:ring-3 has-[>header>button:focus-visible]:ring-ring/50',
+        'group/widget relative glass-strong rounded-xl p-4 shadow-widget transition-colors hover:bg-white/90 has-[>header>button:focus-visible]:ring-3 has-[>header>button:focus-visible]:ring-ring/50',
         className,
       )}
     >

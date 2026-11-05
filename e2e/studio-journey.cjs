@@ -29,6 +29,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   // 1. open studio from desktop entry point
   await page.getByRole('button', { name: 'Create Application, opens Application Studio' }).click();
   await studio.waitFor({ timeout: T });
+  await page.waitForTimeout(300); // let the 150ms open animation settle before measuring
   const sb = await studio.boundingBox();
   check('studio opens maximized', sb.width >= 1430);
 

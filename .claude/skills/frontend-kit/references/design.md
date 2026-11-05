@@ -37,7 +37,7 @@ has one rule: **glass frames content and never carries content-dense text.**
 
 ```css
 :root {
-  --radius: 1rem;                       /* 16px — windows, panels, dock (~approx, ~20px image) */
+  --radius: 0.75rem;   /* Tailwind scale: rounded-md ≈10px inputs · rounded-lg 12px tiles · rounded-xl ≈17px / rounded-2xl panels & windows */
 
   /* Opaque content */
   --background: oklch(0.948 0.008 229);       /* #E9EFF2 — fallback canvas under the wallpaper */
@@ -192,9 +192,9 @@ separates floating layers. Inside panes, separation is a 1px `#F0F0F0` hairline 
 
 | Element | Radius |
 |---|---|
-| Window, panels, dock, launcher | 16px (`--radius`) |
-| Quick tiles, cards inside panes | 12px (`calc(var(--radius) - 4px)`) |
-| Search field, inputs, buttons | 10px (`calc(var(--radius) - 6px)`) |
+| Window, panels, dock, launcher | ~16px (`rounded-xl` / `rounded-2xl`) |
+| Quick tiles, cards inside panes | 12px (`rounded-lg`) |
+| Search field, inputs | ~10px (`rounded-md`) |
 | Window controls, toggles, avatars, indicators | full |
 
 Spacing is airy:

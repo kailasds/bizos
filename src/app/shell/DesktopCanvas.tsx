@@ -23,10 +23,10 @@ function DesktopIcon({
         type="button"
         onClick={onOpen}
         aria-label={`${label}, ${detail}`}
-        className="flex w-24 flex-col items-center gap-2 rounded-lg px-1 py-2 text-center outline-none hover:bg-foreground/5 focus-visible:bg-foreground/5 focus-visible:ring-3 focus-visible:ring-ring/50 active:bg-foreground/8"
+        className="flex w-24 flex-col items-center gap-2 rounded-lg px-1 py-2 text-center outline-none hover:bg-white/30 focus-visible:bg-white/30 focus-visible:ring-3 focus-visible:ring-ring/50 active:bg-white/40"
       >
         {icon}
-        <span className="line-clamp-2 text-xs leading-tight font-medium">{label}</span>
+        <span className="line-clamp-2 text-xs leading-tight font-semibold text-foreground">{label}</span>
       </button>
     </li>
   )
@@ -35,7 +35,7 @@ function DesktopIcon({
 function IconGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section aria-label={title}>
-      <h2 className="mb-1 px-2 text-xs font-medium text-muted-foreground">{title}</h2>
+      <h2 className="mb-1 px-2 text-xs font-semibold text-foreground/80">{title}</h2>
       <ul className="flex flex-wrap gap-1">{children}</ul>
     </section>
   )
@@ -67,7 +67,7 @@ export function DesktopCanvas() {
             label="Create Application"
             detail="opens Application Studio"
             icon={
-              <span aria-hidden className="flex size-13 items-center justify-center rounded-xl border-2 border-dashed border-primary/50 bg-card text-primary">
+              <span aria-hidden className="flex size-13 items-center justify-center rounded-xl border-2 border-dashed border-primary/60 bg-white/70 text-primary backdrop-blur-md">
                 <Plus className="size-6" />
               </span>
             }

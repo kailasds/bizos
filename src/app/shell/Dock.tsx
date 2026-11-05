@@ -26,8 +26,8 @@ function RunIndicator({ state }: { state: RunState }) {
       aria-hidden
       className={cn(
         'absolute bottom-0 left-1/2 -translate-x-1/2 rounded-full',
-        state === 'focused' && 'h-1 w-4 bg-primary',
-        state === 'open' && 'size-1 bg-muted-foreground',
+        state === 'focused' && 'h-[3px] w-4 bg-ring',
+        state === 'open' && 'h-[3px] w-1.5 bg-foreground/45',
         state === 'minimized' && 'size-1.5 bg-transparent ring-1 ring-muted-foreground',
       )}
     />
@@ -35,7 +35,7 @@ function RunIndicator({ state }: { state: RunState }) {
 }
 
 const dockButton =
-  'relative flex size-11 shrink-0 items-center justify-center rounded-lg pb-1 outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 aria-expanded:bg-muted aria-pressed:bg-muted'
+  'relative flex size-11 shrink-0 items-center justify-center rounded-lg pb-1 outline-none transition-colors hover:bg-white/55 focus-visible:ring-3 focus-visible:ring-ring/50 aria-expanded:bg-white/85 aria-pressed:bg-white/85 data-[state=focused]:bg-white/85'
 
 function DockTooltip({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -63,7 +63,7 @@ function AppDockItem({ app, state, className }: { app: AppDefinition; state: Run
   const label = state === 'closed' ? app.name : `${app.name} · ${runStateLabel[state]}`
   return (
     <DockTooltip label={label}>
-      <button type="button" aria-label={label} className={cn(dockButton, className)} onClick={() => activateFromDock(app.id)}>
+      <button type="button" aria-label={label} data-state={state} className={cn(dockButton, className)} onClick={() => activateFromDock(app.id)}>
         <AppIcon app={app} size="md" className={cn(state === 'minimized' && 'opacity-70')} />
         <RunIndicator state={state} />
       </button>
@@ -94,29 +94,29 @@ export function Dock() {
   return (
     <nav
       aria-label="Dock"
-      className="pointer-events-auto mx-auto flex h-15 max-w-[calc(100vw-1.5rem)] items-center gap-1 overflow-x-auto rounded-2xl border bg-card/95 px-2 shadow-dock no-scrollbar"
+      className="pointer-events-auto mx-auto flex h-15 max-w-[calc(100vw-1.5rem)] items-center gap-1 glass overflow-x-auto rounded-2xl px-2 shadow-dock no-scrollbar"
     >
       <DockTooltip label="Launcher  ⌘K">
         <button type="button" aria-label="Open launcher" className={dockButton} onClick={() => setLauncherOpen(true)}>
-          <span className="flex size-10 items-center justify-center rounded-lg bg-foreground text-background">
+          <span className="flex size-10 items-center justify-center rounded-lg bg-white/90 text-primary shadow-widget">
             <LayoutGrid className="size-5" />
           </span>
         </button>
       </DockTooltip>
 
-      <Separator orientation="vertical" className="mx-1 my-3" />
+      <Separator orientation="vertical" className="mx-1 my-3 bg-foreground/12" />
 
       {pinnedApps.map((app) => (
         // On phones, closed pinned apps live on the desktop and in the launcher only.
         <AppDockItem key={app.id} app={app} state={runState(app.id)} className={runState(app.id) === 'closed' ? 'hidden sm:flex' : undefined} />
       ))}
 
-      {transient.length > 0 && <Separator orientation="vertical" className="mx-1 my-3" />}
+      {transient.length > 0 && <Separator orientation="vertical" className="mx-1 my-3 bg-foreground/12" />}
       {transient.map((app) => (
         <AppDockItem key={app.id} app={app} state={runState(app.id)} />
       ))}
 
-      <Separator orientation="vertical" className="mx-1 my-3" />
+      <Separator orientation="vertical" className="mx-1 my-3 bg-foreground/12" />
 
       <DockTooltip label="Assistant">
         <button

@@ -29,7 +29,7 @@ export function DesktopShell() {
 
   return (
     <TooltipProvider delayDuration={500} skipDelayDuration={300}>
-      <div className="flex h-full flex-col bg-background">
+      <div className="flex h-full flex-col">
         <TopBar />
         {/* Desktop area: everything between the top bar and the dock reserve. */}
         <main className="relative flex-1">

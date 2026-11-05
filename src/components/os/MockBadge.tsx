@@ -6,7 +6,7 @@ export function MockBadge({ className, label = 'Mock data' }: { className?: stri
   return (
     <span
       className={cn(
-        'inline-flex h-5 shrink-0 items-center gap-1 rounded-full border border-border px-2 text-xs font-medium text-muted-foreground',
+        'inline-flex h-5 shrink-0 items-center gap-1 rounded-full border border-foreground/10 bg-glass-strong px-2 text-xs font-medium text-muted-foreground',
         className,
       )}
     >
