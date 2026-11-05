@@ -1,6 +1,14 @@
 # CLAUDE.md
 
-This repository is a reusable React frontend starter template, not an application. It provides a neutral component foundation for future projects.
+This repository is the **Enterprise AI OS** frontend (built on the claude-react-starter foundation). Read `context.md` before product, UX or architecture work — it is the shared product context. Current scope: Phase 1 desktop shell with mock data only (no backend, LLM, agent or worker integrations).
+
+## Architecture rules
+
+- Application metadata lives in `src/app/registry/applicationRegistry.ts`; the id → component map is `applicationComponents.ts`. Add an app by registering it in both — never hardcode a window/modal per app.
+- Window state is a pure reducer (`src/app/windows/windowReducer.ts`); shell components talk to it only through `useOs()`.
+- Mock data lives in `src/data/*.mock.ts`. Any surface showing fabricated data must carry `MockBadge` (or sit in a container that does).
+- Status is always shown with the shared `StatusBadge` (`src/components/os/`).
+- Every visible control must work; if a feature is out of scope, omit the control or label it clearly as a placeholder.
 
 ## Stack
 

@@ -46,33 +46,82 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
+
+    /* Enterprise AI OS tokens (see .claude/skills/frontend-kit/references/design.md) */
+    --color-chrome: var(--chrome);
+    --color-success: var(--success);
+    --color-success-soft: var(--success-soft);
+    --color-success-ink: var(--success-ink);
+    --color-warning: var(--warning);
+    --color-warning-soft: var(--warning-soft);
+    --color-warning-ink: var(--warning-ink);
+    --color-info: var(--info);
+    --color-info-soft: var(--info-soft);
+    --color-info-ink: var(--info-ink);
+    --color-danger: var(--danger);
+    --color-danger-soft: var(--danger-soft);
+    --color-danger-ink: var(--danger-ink);
+    --color-tint-blue: var(--tint-blue);
+    --color-tint-teal: var(--tint-teal);
+    --color-tint-amber: var(--tint-amber);
+    --color-tint-coral: var(--tint-coral);
+    --color-tint-graphite: var(--tint-graphite);
+    --shadow-widget: var(--elevation-widget);
+    --shadow-window: var(--elevation-window);
+    --shadow-window-active: var(--elevation-window-active);
+    --shadow-dock: var(--elevation-dock);
+    --shadow-overlay: var(--elevation-overlay);
 }
 
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
+    --background: oklch(0.958 0.006 255);
+    --foreground: oklch(0.22 0.018 262);
     --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
+    --card-foreground: oklch(0.22 0.018 262);
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
+    --popover-foreground: oklch(0.22 0.018 262);
+    --primary: oklch(0.48 0.14 256);
+    --primary-foreground: oklch(0.985 0.002 255);
+    --secondary: oklch(0.962 0.005 255);
+    --secondary-foreground: oklch(0.26 0.02 262);
+    --muted: oklch(0.962 0.005 255);
+    --muted-foreground: oklch(0.5 0.016 262);
+    --accent: oklch(0.948 0.02 256);
+    --accent-foreground: oklch(0.36 0.12 258);
+    --destructive: oklch(0.56 0.2 27);
+    --border: oklch(0.908 0.007 255);
+    --input: oklch(0.908 0.007 255);
+    --ring: oklch(0.55 0.14 256);
+    --chart-1: oklch(0.55 0.14 256);
+    --chart-2: oklch(0.62 0.1 190);
+    --chart-3: oklch(0.72 0.13 75);
+    --chart-4: oklch(0.64 0.14 32);
+    --chart-5: oklch(0.5 0.02 262);
     --radius: 0.625rem;
+
+    --chrome: oklch(0.979 0.004 255);
+    --success: oklch(0.6 0.13 155);
+    --success-soft: oklch(0.955 0.035 155);
+    --success-ink: oklch(0.4 0.09 155);
+    --warning: oklch(0.74 0.15 72);
+    --warning-soft: oklch(0.965 0.045 85);
+    --warning-ink: oklch(0.45 0.1 60);
+    --info: oklch(0.58 0.13 256);
+    --info-soft: oklch(0.955 0.025 256);
+    --info-ink: oklch(0.42 0.13 258);
+    --danger: oklch(0.6 0.19 27);
+    --danger-soft: oklch(0.96 0.03 25);
+    --danger-ink: oklch(0.46 0.16 27);
+    --tint-blue: oklch(0.52 0.15 256);
+    --tint-teal: oklch(0.56 0.1 190);
+    --tint-amber: oklch(0.68 0.14 65);
+    --tint-coral: oklch(0.6 0.15 30);
+    --tint-graphite: oklch(0.38 0.02 262);
+    --elevation-widget: 0 1px 2px oklch(0.25 0.02 262 / 0.05);
+    --elevation-window: 0 1px 2px oklch(0.25 0.02 262 / 0.06), 0 8px 24px -10px oklch(0.25 0.02 262 / 0.16);
+    --elevation-window-active: 0 1px 3px oklch(0.25 0.02 262 / 0.08), 0 20px 48px -16px oklch(0.25 0.02 262 / 0.3);
+    --elevation-dock: 0 1px 2px oklch(0.25 0.02 262 / 0.06), 0 10px 30px -12px oklch(0.25 0.02 262 / 0.22);
+    --elevation-overlay: 0 2px 6px oklch(0.25 0.02 262 / 0.08), 0 24px 60px -20px oklch(0.25 0.02 262 / 0.32);
     --sidebar: oklch(0.985 0 0);
     --sidebar-foreground: oklch(0.145 0 0);
     --sidebar-primary: oklch(0.205 0 0);
@@ -125,6 +174,14 @@
     @apply bg-background text-foreground;
     }
   html {
-    @apply font-sans;
+    @apply font-sans bg-background;
+    }
+  html,
+  body,
+  #root {
+    height: 100%;
+    }
+  body {
+    overflow: hidden;
     }
 }

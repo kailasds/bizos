@@ -1,15 +1,12 @@
-# claude-react-starter
+# Enterprise AI OS
 
-A minimal, reusable starter for React frontend projects.
+An AI-native enterprise operating environment: describe a business problem, get a working
+enterprise application. See [`context.md`](context.md) for the full product and architecture
+context.
 
-## Stack
-
-- [React](https://react.dev/)
-- [Vite](https://vite.dev/)
-- [TypeScript](https://www.typescriptlang.org/)
-- [Tailwind CSS v4](https://tailwindcss.com/)
-- [shadcn/ui](https://ui.shadcn.com/) — all components installed as source in `src/components/ui`
-- [Lucide](https://lucide.dev/) icons
+**Current state: Phase 1, Milestone 1 — Desktop foundation.** A frontend-only desktop shell
+with a window manager, dock, launcher, widgets, notifications and mock applications.
+All data is mock data; there are no backend, LLM, agent or worker integrations yet.
 
 ## Getting started
 
@@ -18,25 +15,41 @@ npm install
 npm run dev
 ```
 
-## Scripts
-
 - `npm run dev` — start the dev server
 - `npm run build` — type-check and build for production
 - `npm run lint` — lint with oxlint
 - `npm run preview` — preview the production build
 
-## Adding more shadcn/ui components
+## Architecture
 
-This project already includes every component from the shadcn/ui registry. To re-sync or add new ones as the registry evolves:
-
-```bash
-npx shadcn@latest add <component>
+```
+src/
+  app/
+    registry/      Application registry (metadata) + app-id → component map (lazy)
+    os/            OS state: windows, overlays, notifications, preferences (OsProvider, useOs)
+    windows/       Pure window reducer, WindowFrame (chrome, drag, resize), WindowManager
+    shell/         DesktopShell, TopBar, DesktopCanvas, Dock, ApplicationLauncher,
+                   NotificationCenter, AssistantPanel
+    widgets/       Desktop widgets + shared WidgetCard
+    services/      MockServicesProvider — stands in for backend state shared by apps and widgets
+    applications/  Hosted applications (claims-intelligence, document-ai, workflow-studio,
+                   analytics-workspace, system-explorer, settings, folder-browser)
+  components/
+    ui/            shadcn/ui primitives (unchanged)
+    os/            Shared OS micro-patterns: AppIcon, StatusBadge, MockBadge, SidebarNav
+  data/            Mock fixtures (claims, documents, platform, notifications, analytics)
 ```
 
-## Import alias
+Key principles (from `context.md` §12):
 
-`@/*` resolves to `src/*` (configured in `tsconfig.json`, `tsconfig.app.json`, and `vite.config.ts`).
+- The OS shell is separate from application content; the window manager knows only window
+  state and which component the registry maps an app id to.
+- Applications are identified by stable ids (`AppId`), never display names.
+- Mock data lives in `src/data/` and every mock surface carries a "Mock data" marker.
+- Visual design is defined in `.claude/skills/frontend-kit/references/design.md` and applied
+  only through CSS variables in `src/index.css`.
 
-## Notes
+## Stack
 
-This repository is intentionally free of application-specific UI (no dashboards, landing pages, navbars, etc.). It's meant to serve as a neutral component foundation for future projects.
+React 19 · Vite · TypeScript · Tailwind CSS v4 · shadcn/ui (source in `src/components/ui`) ·
+lucide-react. Started from `claude-react-starter`.
