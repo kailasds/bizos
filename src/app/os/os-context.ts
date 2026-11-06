@@ -41,8 +41,6 @@ export interface OsContextValue {
   // System surfaces
   launcherOpen: boolean
   setLauncherOpen: (open: boolean) => void
-  assistantOpen: boolean
-  setAssistantOpen: (open: boolean) => void
   notificationsOpen: boolean
   setNotificationsOpen: (open: boolean) => void
 

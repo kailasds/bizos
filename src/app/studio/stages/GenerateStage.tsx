@@ -1,20 +1,24 @@
 import { useState, type ReactNode } from 'react'
-import { ArrowRight, ChevronRight, Copy, Plus } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { ArrowRight, Copy, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ApplicationBlueprint, DataField, FieldType, ResourceRef } from '@/app/blueprint/types'
 import { ExperienceRenderer } from '@/app/experience/ExperienceRenderer'
 import { ResourceDetailSheet } from '@/app/resources/ResourceDetailSheet'
 import { readinessMeta, readinessOf, sectionStatus } from '@/app/services/mock/blueprint-service'
 import { getResource } from '@/app/services/mock/resource-discovery-service'
-import { SidebarNav } from '@/components/os/SidebarNav'
 import { StatusBadge, type StatusTone } from '@/components/os/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { getScenario } from '@/data/studio-scenarios.mock'
 import type { PlatformResource } from '@/data/resources.mock'
-import { FileJson, FileText, GitBranch, History, LayoutDashboard, ListChecks, Monitor, Network, Rocket, Shield, ShieldCheck, Table2, Waypoints } from 'lucide-react'
-import { FlowDiagram } from '../components/FlowDiagram'
+import { Blocks, ChevronDown, FileJson, FileText, GitBranch, History, LayoutDashboard, ListChecks, Monitor, Network, Rocket, Shield, ShieldCheck, Table2, Waypoints } from 'lucide-react'
+import { ApproachFlow } from '../components/ApproachFlow'
+import { kindIcon } from '../components/compose/flow-meta'
+import { ActorBar, ctaClass, IconTile } from '../components/StudioParts'
+import { actorMeta } from '../components/actor-meta'
+import { cn } from '@/lib/utils'
 import { StageFrame, StagePrerequisite } from '../components/StageFrame'
 import { VersionHistory } from '../components/VersionHistory'
 import type { BlueprintSection, StudioProject } from '../types'
@@ -47,7 +51,7 @@ function summaryOf(tab: GenerateTab, bp: ApplicationBlueprint, project: StudioPr
     case 'overview':
       return bp.description
     case 'requirements':
-      return `${bp.requirements.capabilities.length} capabilities for ${bp.requirements.users.length} user groups, with ${bp.requirements.constraints.length} constraints.`
+      return `${bp.requirements.capabilities.length} capabilities · ${bp.requirements.users.length} user groups · ${bp.requirements.constraints.length} constraints`
     case 'solution':
       return bp.solutionArchitecture.summary
     case 'workflow':
@@ -85,7 +89,7 @@ function SectionHeader({ tab, project, children }: { tab: GenerateTab; project: 
     <header className="mb-5 flex flex-wrap items-start gap-3">
       <div className="min-w-0 flex-1">
         <h3 className="text-base font-semibold">{title}</h3>
-        <p className="text-sm text-muted-foreground">{summaryOf(tab, project.blueprint!, project)}</p>
+        <p className="line-clamp-2 text-[13px] text-muted-foreground">{summaryOf(tab, project.blueprint!, project)}</p>
       </div>
       {status && <StatusBadge tone={status.tone}>{status.label}</StatusBadge>}
       {children}
@@ -104,9 +108,11 @@ function Block({ title, children }: { title: string; children: ReactNode }) {
 
 const List = ({ items }: { items: string[] }) =>
   items.length ? (
-    <ul className="list-disc space-y-0.5 pl-5 text-sm">
+    <ul className="flex flex-wrap gap-1.5">
       {items.map((i) => (
-        <li key={i}>{i}</li>
+        <li key={i} className="rounded-xl border border-studio-ink/10 bg-white px-2.5 py-1 text-[13px] leading-tight">
+          {i}
+        </li>
       ))}
     </ul>
   ) : (
@@ -115,37 +121,177 @@ const List = ({ items }: { items: string[] }) =>
 
 // ── Sections ──────────────────────────────────────────────────────────────
 
-function Overview({ project, onOpen }: { project: StudioProject; onOpen: (t: GenerateTab) => void }) {
+/** A small picture of each section, drawn from the blueprint itself. */
+function SectionGlyph({ tab, project }: { tab: GenerateTab; project: StudioProject }) {
   const bp = project.blueprint!
-  return (
-    <div className="space-y-5">
-      <SectionHeader tab="overview" project={project} />
-      <ul className="divide-y rounded-lg border bg-card" aria-label="Blueprint sections">
-        {nav
-          .filter((n) => !['overview', 'json'].includes(n.id))
-          .map((n) => {
-            const status = statusOf(n.id, project)
-            const Icon = n.icon
+  const resources = Object.values(bp.resources).flat()
+  switch (tab) {
+    case 'workflow':
+      return (
+        <span aria-hidden className="flex w-full items-center">
+          {bp.workflow.nodes.map((n, i) => {
+            const Icon = actorMeta[n.actor].icon
             return (
-              <li key={n.id}>
-                <button
-                  type="button"
-                  onClick={() => onOpen(n.id)}
-                  className="flex w-full items-start gap-3 px-4 py-3 text-left outline-none hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset"
-                >
-                  <Icon aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium">{n.label}</span>
-                    <span className="block text-sm text-muted-foreground">{n.id === 'history' ? `${project.revisions.length} versions; current v${bp.version}.` : summaryOf(n.id, bp, project)}</span>
-                  </span>
-                  {status && status.label !== 'Not validated' && <StatusBadge tone={status.tone}>{status.label}</StatusBadge>}
-                  <ChevronRight aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground/60" />
-                </button>
-              </li>
+              <span key={n.id} className="flex min-w-0 flex-1 items-center last:flex-none">
+                <span className={cn('flex size-7 shrink-0 items-center justify-center rounded-[9px]', actorMeta[n.actor].tile)}>
+                  <Icon className="size-3.5" />
+                </span>
+                {i < bp.workflow.nodes.length - 1 && <span className="h-0.5 min-w-1 flex-1 bg-studio-ink/15" />}
+              </span>
             )
           })}
-      </ul>
-    </div>
+        </span>
+      )
+    case 'experience':
+      return (
+        <span aria-hidden className="flex gap-1.5">
+          {bp.experience.pages.slice(0, 5).map((pg) => (
+            <span key={pg.id} className="flex h-12 w-16 flex-col gap-1 rounded-lg border border-studio-ink/10 bg-white p-1.5">
+              <span className="h-1 w-2/3 rounded-full bg-actor-ai/60" />
+              <span className="h-1 w-full rounded-full bg-studio-ink/10" />
+              <span className="h-1 w-full rounded-full bg-studio-ink/10" />
+              <span className="h-1 w-1/2 rounded-full bg-studio-ink/10" />
+            </span>
+          ))}
+        </span>
+      )
+    case 'data':
+      return (
+        <span aria-hidden className="grid w-24 grid-cols-3 gap-0.5">
+          {(bp.dataModel.entities[0]?.fields ?? []).slice(0, 12).map((f) => (
+            <span key={f.id} className="h-1.5 rounded-[2px] bg-actor-system/50" />
+          ))}
+        </span>
+      )
+    case 'resources':
+      return (
+        <span aria-hidden className="flex -space-x-1.5">
+          {resources.slice(0, 7).map((r) => {
+            const Icon = kindIcon[r.kind]
+            return (
+              <span key={r.id} className={cn('flex size-7 items-center justify-center rounded-full text-white ring-2 ring-white', r.origin === 'created' ? 'bg-actor-ai' : 'bg-studio-ink')}>
+                <Icon className="size-3" />
+              </span>
+            )
+          })}
+        </span>
+      )
+    case 'requirements':
+      return (
+        <span aria-hidden className="flex flex-wrap gap-1">
+          {bp.requirements.capabilities.slice(0, 5).map((c, i) => (
+            <span key={c.id} className="h-2 rounded-full bg-actor-ai/50" style={{ width: `${18 + ((i * 11) % 26)}px` }} />
+          ))}
+          {bp.requirements.users.slice(0, 3).map((u) => (
+            <span key={u.id} className="h-2 w-4 rounded-full bg-actor-person/70" />
+          ))}
+        </span>
+      )
+    case 'deployment':
+      return (
+        <span aria-hidden className="flex items-center gap-1.5 text-studio-ink/60">
+          <Blocks className="size-4" />
+          <span className="h-0.5 w-6 rounded-full bg-studio-ink/20" />
+          <Monitor className="size-4" />
+        </span>
+      )
+    case 'security':
+      return (
+        <span aria-hidden className="flex -space-x-1.5">
+          {bp.security.roles.slice(0, 5).map((r) => (
+            <span key={r.id} className="flex size-6 items-center justify-center rounded-full bg-actor-person-soft text-[9px] font-bold text-[oklch(0.5_0.12_60)] ring-2 ring-white">
+              {r.name[0]}
+            </span>
+          ))}
+        </span>
+      )
+    case 'solution': {
+      const count = (a: string) => bp.workflow.nodes.filter((n) => n.actor === a).length
+      return <ActorBar className="w-28" people={count('human')} ai={count('automated')} system={count('system')} />
+    }
+    case 'validation': {
+      const findings = project.validation?.findings ?? []
+      return (
+        <span aria-hidden className="flex gap-0.5">
+          {(findings.length ? findings : Array.from({ length: 8 }, () => null)).slice(0, 12).map((f, i) => (
+            <span key={i} className={cn('h-4 w-1.5 rounded-sm', !f ? 'bg-studio-ink/10' : f.status === 'passed' ? 'bg-success' : f.status === 'blocked' ? 'bg-danger' : 'bg-warning')} />
+          ))}
+        </span>
+      )
+    }
+    case 'history':
+      return (
+        <span aria-hidden className="flex items-center gap-1">
+          {project.revisions.slice(-6).map((r, i, all) => (
+            <span key={r.version} className={cn('size-2.5 rounded-full', i === all.length - 1 ? 'bg-primary' : 'bg-studio-ink/20')} />
+          ))}
+        </span>
+      )
+    default:
+      return null
+  }
+}
+
+function statOf(tab: GenerateTab, project: StudioProject): string {
+  const bp = project.blueprint!
+  const resources = Object.values(bp.resources).flat()
+  const people = bp.workflow.nodes.filter((n) => n.actor === 'human').length
+  switch (tab) {
+    case 'requirements':
+      return `${bp.requirements.capabilities.length} capabilities · ${bp.requirements.users.length} user ${bp.requirements.users.length === 1 ? 'group' : 'groups'}`
+    case 'solution':
+      return bp.solutionArchitecture.name
+    case 'workflow':
+      return `${bp.workflow.nodes.length} steps · people on ${people}`
+    case 'resources':
+      return `${resources.length} pinned`
+    case 'data':
+      return `${bp.dataModel.entities[0]?.fields.length ?? 0} fields`
+    case 'experience':
+      return `${bp.experience.pages.length} screens`
+    case 'security':
+      return `${bp.security.roles.length} roles · ${bp.security.approvals.length} ${bp.security.approvals.length === 1 ? 'approval' : 'approvals'}`
+    case 'deployment':
+      return project.publication ? `Live v${project.publication.version}` : `${bp.deployment.folder[0].toUpperCase()}${bp.deployment.folder.slice(1)} folder`
+    case 'history':
+      return `${project.revisions.length} ${project.revisions.length === 1 ? 'version' : 'versions'} · v${bp.version}`
+    case 'validation':
+      return readinessMeta[readinessOf(project)].label
+    default:
+      return ''
+  }
+}
+
+const wideTiles: GenerateTab[] = ['workflow', 'experience']
+
+function Overview({ project, onOpen }: { project: StudioProject; onOpen: (t: GenerateTab) => void }) {
+  const tiles = nav.filter((n) => !['overview', 'json'].includes(n.id))
+  return (
+    <ul className="grid grid-cols-2 gap-2.5 @3xl:grid-cols-4" aria-label="Blueprint sections">
+      {tiles.map((n, i) => {
+        const status = statusOf(n.id, project)
+        const showStatus = status && status.label !== 'Not validated' && n.id !== 'validation'
+        return (
+          <motion.li key={n.id} className={cn(wideTiles.includes(n.id) && 'col-span-2')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: i * 0.025 }}>
+            <button
+              type="button"
+              onClick={() => onOpen(n.id)}
+              className="studio-card flex h-full min-h-[8.5rem] w-full flex-col justify-between gap-3 rounded-[22px] p-3.5 text-left outline-none hover:bg-white focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              <span className="flex items-center justify-between gap-2">
+                <IconTile icon={n.icon} size="sm" />
+                {showStatus && <StatusBadge tone={status.tone}>{status.label}</StatusBadge>}
+              </span>
+              <SectionGlyph tab={n.id} project={project} />
+              <span>
+                <span className="block text-[13px] leading-tight font-semibold">{n.label}</span>
+                <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{statOf(n.id, project)}</span>
+              </span>
+            </button>
+          </motion.li>
+        )
+      })}
+    </ul>
   )
 }
 
@@ -234,57 +380,65 @@ function Workflow({ project }: { project: StudioProject }) {
   const resources = Object.values(bp.resources).flat()
   const entity = bp.dataModel.entities[0]
   const label = (id: string) => entity.fields.find((f) => f.id === id)?.label ?? id
+  const human = bp.workflow.nodes.filter((n) => n.actor === 'human')
+  const [showAll, setShowAll] = useState(false)
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <SectionHeader tab="workflow" project={project} />
-      <FlowDiagram label="Application workflow" steps={bp.workflow.nodes.map((n) => ({ id: n.id, name: n.name, actor: n.actor, capabilityId: n.capabilityId, role: n.role }))} roleLabel={(id) => roleName(bp, id) ?? id} />
-      <ol className="space-y-2">
+      <ApproachFlow label="Application workflow" steps={bp.workflow.nodes.map((n) => ({ id: n.id, name: n.name, actor: n.actor, capabilityId: n.capabilityId, role: n.role }))} roleLabel={(id) => roleName(bp, id) ?? id} />
+      {human.length > 0 && (
+        <ul aria-label="Human decisions" className="grid gap-2.5 @3xl:grid-cols-2">
+          {human.map((n) => (
+            <li key={n.id} className="studio-card flex flex-wrap items-center gap-2.5 rounded-[20px] p-3">
+              <IconTile icon={actorMeta.human.icon} size="sm" tone="person" />
+              <p className="min-w-0 flex-1 text-[13px] font-semibold">{n.name}</p>
+              <label htmlFor={`role-${n.id}`} className="text-xs text-muted-foreground">
+                Decided by
+              </label>
+              <NativeSelect
+                id={`role-${n.id}`}
+                size="sm"
+                value={n.role ?? ''}
+                aria-invalid={!n.role}
+                onChange={(e) =>
+                  e.target.value &&
+                  dispatch({ type: 'generate/patch', patch: { kind: 'assign-role', nodeId: n.id, role: e.target.value }, reason: 'Approver chosen in the Workflow section.', now: new Date().toISOString() })
+                }
+              >
+                <NativeSelectOption value="" disabled>
+                  Choose a role…
+                </NativeSelectOption>
+                {bp.security.roles.map((r) => (
+                  <NativeSelectOption key={r.id} value={r.id}>
+                    {r.name}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </li>
+          ))}
+        </ul>
+      )}
+      <button type="button" aria-expanded={showAll} onClick={() => setShowAll(!showAll)} className="flex items-center gap-1.5 rounded-full px-2 py-1 text-[13px] font-medium text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50">
+        Data each step uses
+        <ChevronDown aria-hidden className={cn('size-4 transition-transform', showAll && 'rotate-180')} />
+      </button>
+      {showAll && <ol className="grid gap-2 @4xl:grid-cols-2">
         {bp.workflow.nodes.map((n, i) => {
           const res = resources.find((r) => r.id === n.resourceId)
           return (
-            <li key={n.id} className="rounded-lg border bg-card px-4 py-3">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="w-5 text-sm text-muted-foreground tabular-nums">{i + 1}</span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">{n.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {n.actor === 'human' ? 'Human decision' : n.actor === 'system' ? 'Rules or systems' : 'AI and automation'} · {res ? `${res.name} ${res.version}` : 'No resource'}
-                  </p>
-                </div>
-                {n.actor === 'human' && (
-                  <div className="flex items-center gap-2">
-                    <label htmlFor={`role-${n.id}`} className="text-xs text-muted-foreground">
-                      Decided by
-                    </label>
-                    <NativeSelect
-                      id={`role-${n.id}`}
-                      size="sm"
-                      value={n.role ?? ''}
-                      aria-invalid={!n.role}
-                      onChange={(e) =>
-                        e.target.value &&
-                        dispatch({ type: 'generate/patch', patch: { kind: 'assign-role', nodeId: n.id, role: e.target.value }, reason: 'Approver chosen in the Workflow section.', now: new Date().toISOString() })
-                      }
-                    >
-                      <NativeSelectOption value="" disabled>
-                        Choose a role…
-                      </NativeSelectOption>
-                      {bp.security.roles.map((r) => (
-                        <NativeSelectOption key={r.id} value={r.id}>
-                          {r.name}
-                        </NativeSelectOption>
-                      ))}
-                    </NativeSelect>
-                  </div>
-                )}
-              </div>
-              <p className="mt-1.5 pl-8 text-xs text-muted-foreground">
+            <li key={n.id} className="studio-card rounded-[20px] px-4 py-3">
+              <p className="text-[13px] font-medium">
+                <span className="mr-1.5 text-muted-foreground tabular-nums">{i + 1}</span>
+                {n.name}
+              </p>
+              <p className="text-[11px] text-muted-foreground">{res ? `${res.name} ${res.version}` : 'No resource'}</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">
                 Uses {n.inputs.length ? n.inputs.map(label).join(', ') : 'nothing'} · produces {n.outputs.length ? n.outputs.map(label).join(', ') : 'nothing'}
               </p>
             </li>
           )
         })}
-      </ol>
+      </ol>}
     </div>
   )
 }
@@ -309,7 +463,7 @@ function Resources({ project }: { project: StudioProject }) {
         .filter(([, list]) => list.length)
         .map(([title, list]) => (
           <Block key={title} title={title}>
-            <ul className="divide-y rounded-lg border bg-card">
+            <ul className="divide-y studio-card rounded-[20px]">
               {list.map((r) => (
                 <li key={r.id}>
                   <button
@@ -353,9 +507,9 @@ function DataModel({ project }: { project: StudioProject }) {
       <SectionHeader tab="data" project={project} />
       {bp.dataModel.entities.map((entity) => (
         <div key={entity.id} className="space-y-3">
-          <table className="w-full rounded-lg border bg-card text-sm">
+          <table className="w-full studio-card rounded-[20px] text-sm">
             <caption className="sr-only">{entity.name} fields</caption>
-            <thead className="bg-chrome text-left text-xs text-muted-foreground">
+            <thead className="bg-white/40 text-left text-xs text-muted-foreground">
               <tr className="border-b">
                 <th className="px-3 py-2 font-medium">Field</th>
                 <th className="px-3 py-2 font-medium">Type</th>
@@ -421,7 +575,7 @@ function Experience({ project }: { project: StudioProject }) {
       <SectionHeader tab="experience" project={project} />
       <ul className="grid gap-2 @3xl:grid-cols-2">
         {bp.experience.pages.map((p) => (
-          <li key={p.id} className="rounded-lg border bg-card px-3 py-2 text-sm">
+          <li key={p.id} className="studio-card rounded-[20px] px-3 py-2 text-sm">
             <p className="font-medium">{p.title}</p>
             <p className="text-muted-foreground">{p.purpose}</p>
             <p className="mt-1 text-xs text-muted-foreground">For {p.roles.map((r) => roleName(bp, r) ?? r).join(', ')}</p>
@@ -429,9 +583,6 @@ function Experience({ project }: { project: StudioProject }) {
         ))}
       </ul>
       <Block title="Preview">
-        <p className="text-sm text-muted-foreground">
-          Built from the blueprint’s screens with the trusted component catalogue — the same renderer the published application uses. Sample records are mock data.
-        </p>
         <div className="h-[34rem] overflow-hidden rounded-xl border bg-card shadow-widget">
           <ExperienceRenderer key={bp.version} blueprint={bp} initialRecords={scenario?.sampleRecords ?? []} />
         </div>
@@ -446,7 +597,7 @@ function Security({ project }: { project: StudioProject }) {
     <div className="space-y-5">
       <SectionHeader tab="security" project={project} />
       <Block title="Roles and what they can do">
-        <ul className="divide-y rounded-lg border bg-card">
+        <ul className="divide-y studio-card rounded-[20px]">
           {bp.security.roles.map((r) => (
             <li key={r.id} className="px-3 py-2 text-sm">
               <p className="font-medium">{r.name}</p>
@@ -466,7 +617,7 @@ function Security({ project }: { project: StudioProject }) {
         </ul>
       </Block>
       <Block title="Approval rules">
-        <ul className="divide-y rounded-lg border bg-card">
+        <ul className="divide-y studio-card rounded-[20px]">
           {bp.security.approvals.map((a) => (
             <li key={a.id} className="flex items-center gap-2 px-3 py-2 text-sm">
               <span className="flex-1">{a.description}</span>
@@ -510,7 +661,7 @@ function Validation({ project }: { project: StudioProject }) {
       {readiness === 'not-validated' || readiness === 'outdated' ? (
         <p className="text-sm text-muted-foreground">{readinessMeta[readiness].description}</p>
       ) : (
-        <ul className="divide-y rounded-lg border bg-card">
+        <ul className="divide-y studio-card rounded-[20px]">
           {findings
             .filter((f) => f.status !== 'passed')
             .map((f) => (
@@ -533,7 +684,7 @@ function Deployment({ project }: { project: StudioProject }) {
   return (
     <div className="space-y-5">
       <SectionHeader tab="deployment" project={project} />
-      <dl className="grid gap-x-6 gap-y-3 rounded-lg border bg-card p-4 text-sm @3xl:grid-cols-2">
+      <dl className="grid gap-x-6 gap-y-3 studio-card rounded-[20px] p-4 text-sm @3xl:grid-cols-2">
         <div>
           <dt className="text-xs text-muted-foreground">Destination</dt>
           <dd>Enterprise AI OS desktop · {bp.deployment.folder} folder</dd>
@@ -599,7 +750,7 @@ function Json({ bp }: { bp: ApplicationBlueprint }) {
 export function GenerateStage({ tab, onTabChange }: { tab: GenerateTab; onTabChange: (t: GenerateTab) => void }) {
   const { project, dispatch } = useStudio()
   if (!project?.blueprint) {
-    return <StagePrerequisite stage="generate" requires="compose" message="Select the resources the approach needs first. The blueprint is compiled from them." />
+    return <StagePrerequisite stage="generate" requires="compose" message="Connect the resources the approach needs first." />
   }
   const bp = project.blueprint
 
@@ -657,18 +808,35 @@ export function GenerateStage({ tab, onTabChange }: { tab: GenerateTab; onTabCha
         </div>
       }
       footer={
-        <Button onClick={() => dispatch({ type: 'generate/confirm' })}>
+        <Button className={ctaClass} onClick={() => dispatch({ type: 'generate/confirm' })}>
           Continue to validation
           <ArrowRight />
         </Button>
       }
     >
-      <div className="flex flex-col gap-6 @4xl:flex-row">
-        <div className="@4xl:w-56 @4xl:shrink-0 [&>nav]:rounded-lg [&>nav]:border @4xl:[&>nav]:w-full">
-          <SidebarNav label="Blueprint sections" items={nav} value={tab} onChange={onTabChange} />
-        </div>
-        <div className="min-w-0 flex-1">{content()}</div>
-      </div>
+      <nav aria-label="Blueprint sections" className="mb-4 flex flex-wrap gap-1">
+        {nav.map((n) => {
+          const Icon = n.icon
+          return (
+            <button
+              key={n.id}
+              type="button"
+              aria-current={tab === n.id ? 'page' : undefined}
+              aria-label={n.label}
+              title={n.label}
+              onClick={() => onTabChange(n.id)}
+              className={cn(
+                'flex h-8 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+                tab === n.id ? 'bg-studio-ink text-white' : 'bg-white/55 text-muted-foreground hover:bg-white hover:text-foreground',
+              )}
+            >
+              <Icon aria-hidden className="size-3.5" />
+              {tab === n.id && n.label}
+            </button>
+          )
+        })}
+      </nav>
+      <div className="min-w-0">{content()}</div>
     </StageFrame>
   )
 }

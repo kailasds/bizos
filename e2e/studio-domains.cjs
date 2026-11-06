@@ -32,15 +32,24 @@ const { chromium } = require('playwright');
     await studio.getByRole('button', { name: 'Select this approach' }).click();
     await studio.getByRole('button', { name: /^Use .* find resources$/ }).click();
     await studio.getByRole('button', { name: /Select all available/ }).click({ timeout: T });
-    while (await studio.getByRole('button', { name: 'Review configuration' }).count()) {
-      await studio.getByRole('button', { name: 'Review configuration' }).first().click();
-      await studio.getByRole('button', { name: 'Confirm and select' }).click();
-    }
-    await studio.getByRole('button', { name: 'Approve and compose worker' }).click();
-    if (label === 'Prior authorization') {
-      await studio.getByRole('alert').waitFor({ timeout: T });
-      check(label + ': first composition fails with a reason', (await studio.getByRole('alert').innerText()).includes('validation cases failed'));
-      await studio.getByRole('button', { name: 'Attach sample criteria and retry' }).click();
+    // The guided path visits each outstanding need in turn.
+    for (let i = 0; i < 12 && !(await studio.getByRole('button', { name: 'Generate blueprint' }).isEnabled()); i++) {
+      if (await studio.getByRole('button', { name: 'Confirm and select' }).count()) {
+        await studio.getByRole('button', { name: 'Confirm and select' }).click();
+      } else if (await studio.getByRole('button', { name: 'Approve and compose worker' }).count()) {
+        await studio.getByRole('button', { name: 'Approve and compose worker' }).click();
+        if (label === 'Prior authorization') {
+          await studio.getByRole('alert').waitFor({ timeout: T });
+          check(label + ': first composition fails with a reason', (await studio.getByRole('alert').innerText()).includes('validation cases failed'));
+          await studio.getByRole('button', { name: 'Attach sample criteria and retry' }).click();
+        }
+        await studio.getByRole('list', { name: 'Worker composition' }).waitFor({ state: 'hidden', timeout: T });
+      } else if (await studio.getByRole('button', { name: 'Resolve' }).count()) {
+        await studio.getByRole('button', { name: 'Resolve' }).first().click();
+      } else if (await studio.getByRole('button', { name: 'Review configuration' }).count()) {
+        await studio.getByRole('button', { name: 'Review configuration' }).first().click();
+      }
+      await page.waitForTimeout(150);
     }
     await studio.getByRole('button', { name: 'Generate blueprint' }).click({ timeout: T });
     await page.waitForTimeout(200);

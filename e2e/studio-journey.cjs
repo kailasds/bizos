@@ -43,7 +43,8 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   check('insurance suggested', await studio.getByRole('radio', { name: /Insurance.*Suggested/ }).isVisible());
   await shot('01-discover');
   await studio.getByRole('button', { name: 'Start discovery' }).click();
-  check('thinking state shown', await studio.getByText('Understanding your request…').isVisible());
+  await studio.getByText('Understanding your request…').waitFor({ timeout: 2000 });
+  check('thinking state shown', true);
   await studio.getByRole('region', { name: 'Summary of understanding' }).waitFor({ timeout: T });
   const interp = await studio.innerText();
   check('interpretation has fraud + routing', interp.includes('Identify potential fraud indicators and investigate flagged claims.') && interp.includes('Route complex cases to human reviewers.'))
@@ -62,6 +63,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   check('define has users', (await studio.getByRole('region', { name: 'Users' }).innerText()).includes('Fraud investigators'));
   check('custom capability carried into spec', (await studio.getByRole('region', { name: 'Business capabilities' }).innerText()).includes('upload photos'));
   check('accepted suggestion carried into outputs', (await studio.getByRole('region', { name: 'Outputs' }).innerText()).includes('Ask customers for missing information'));
+  await studio.getByRole('region', { name: 'Business capabilities' }).getByText('Coverage validation').hover(); // actions appear on hover
   await studio.getByRole('button', { name: 'Ask the architect about Coverage validation' }).click();
   check('architect explains item', (await studio.getByRole('complementary', { name: 'AI Architect' }).innerText()).includes('Coverage validation'));
   await shot('03-define');
@@ -78,15 +80,17 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await studio.getByRole('button', { name: /Use AI-Driven Claims Automation/ }).click();
 
   // 6-7. Compose
+  await studio.getByRole('button', { name: 'Close AI Architect' }).click();
+  await studio.getByRole('button', { name: 'Resolve' }).click({ timeout: T });
   await studio.getByRole('region', { name: /Missing capability: Fraud investigation/ }).waitFor({ timeout: T });
   check('generate disabled while missing', await studio.getByRole('button', { name: 'Generate blueprint' }).isDisabled());
   check('proposal marked as proposed', await studio.getByText('Proposed — not created').isVisible());
   await shot('05-compose-gap');
+  await studio.getByRole('button', { name: 'All needs' }).click();
   await studio.getByRole('button', { name: /Select all available/ }).click();
-  await studio.getByRole('button', { name: 'Review configuration' }).first().click();
-  await studio.getByRole('button', { name: 'Confirm and select' }).click();
-  await studio.getByRole('button', { name: 'Approve and compose worker' }).click();
+  await studio.getByRole('button', { name: 'Approve and compose worker' }).click(); // the guided path lands on the gap
   check('composition sequence shown', await studio.getByRole('list', { name: 'Worker composition' }).isVisible());
+  await studio.getByRole('button', { name: 'Confirm and select' }).click({ timeout: T }); // one decision covers every need that shares the resource
   await studio.getByText(/composed for this application/).first().waitFor({ timeout: T });
   check('worker now created', !(await studio.getByRole('region', { name: /Missing capability/ }).count()));
   check('generate enabled once every need is selected', await studio.getByRole('button', { name: 'Generate blueprint' }).isEnabled());
@@ -141,7 +145,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await shot('12-published');
 
   // 13-14. Back to desktop, open new app
-  await studio.getByRole('button', { name: 'Back to desktop' }).last().click();
+  await studio.getByRole('button', { name: 'Back to desktop' }).first().click();
   await studio.waitFor({ state: 'hidden' }); // minimize animates into the dock
   check('studio minimized', !(await studio.isVisible()));
   const icon = page.getByRole('button', { name: 'Claims Processing Hub, application' });

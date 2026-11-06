@@ -92,7 +92,7 @@ node e2e/operations.cjs   # also: desktop.cjs, studio-journey.cjs, studio-domain
 
 Stack: React 19, Vite 8, TypeScript 6, Tailwind CSS v4, shadcn/ui (source in
 `src/components/ui`, also `@base-ui/react`/`radix-ui`), lucide-react icons, Framer Motion,
-Recharts, Plus Jakarta Sans. Alias `@/*` → `src/*`. Started from `claude-react-starter`.
+Recharts, React Flow (`@xyflow/react`), Plus Jakarta Sans. Alias `@/*` → `src/*`. Started from `claude-react-starter`.
 
 ---
 
@@ -102,8 +102,9 @@ Recharts, Plus Jakarta Sans. Alias `@/*` → `src/*`. Started from `claude-react
 - **Top bar (72px)** with a **floating dock** in the centre (Framer Motion, magnifying tiles,
   names on hover, active item expands with its name). The dock items are: Desktop, Applications
   (launcher), Application Studio, Operations, Learning, System Explorer, then a divider, then
-  every open app in opening order with run-state dots. On the right: an **Ask AI** pill,
-  notifications and settings. On the left: identity and the focused app. There is no bottom dock
+  every open app in opening order with run-state dots. On the right: notifications and settings.
+  The global Ask AI / OS Assistant was removed at the product owner's request; the AI Architect
+  inside Application Studio is the one AI surface. On the left: identity and the focused app. There is no bottom dock
   any more; it moved into the top bar.
 - **Desktop canvas:** domain **folders** (Insurance, Healthcare, Banking) are groups sized by the
   number of apps they hold. **Standalone apps** are cards with a one-line `tagline`. The
@@ -116,8 +117,7 @@ Recharts, Plus Jakarta Sans. Alias `@/*` → `src/*`. Started from `claude-react
   out on close. Focus changes are not animated. `prefers-reduced-motion` turns motion off.
 - **Launcher** (Cmd/Ctrl+K) searches apps and ranks name matches first. It can also start
   "Create application" and open System Explorer.
-- **Notification centre** (read, dismiss, clear, open target) and the **OS Assistant panel**
-  (scripted, with no model calls).
+- **Notification centre** (read, dismiss, clear, open target).
 
 ### Built-in applications (`BuiltinAppId` in `src/app/registry/types.ts`)
 | App id | What it is |
@@ -150,7 +150,23 @@ and rendered by `GeneratedAppHost`.
 | **Validate** | Eight deterministic checks: requirements completeness, capability availability, resource compatibility, workflow consistency, data contract consistency, permission & security, UI/data alignment, human approval requirements. Each is passed / needs review / blocked, with links back to the responsible stage and quick fixes. Readiness is Ready / Needs attention / Blocked / Accepted with known gaps. | `blueprint/validate.ts`, `blueprint-service.ts` |
 | **Publish** | Simulated deployment. Registers the app in the registry, desktop, folder, launcher and window manager. | `registerGeneratedApp` in `registry/applicationRegistry.ts` |
 
-The **AI Architect panel** (right side) gives scripted, context-aware replies built from project
+**Studio UX (Nov 2026 redesign).** A pastel canvas with floating liquid-glass controls
+(`design.md` §10), pictorial and low on text:
+- **Journey navigator** (`JourneyRail`): floating glass card with the application's identity,
+  a progress ring and every level with its status and outcome. Collapses to icons, then to a top
+  bar on narrow windows.
+- **Chain of thought**: `ThinkingChain` plays while the OS works and leaves a result per step;
+  `ThoughtStrip` under each level title shows how it was reached. Both show facts only
+  (`services/mock/thought-chain-service.ts`).
+- **Compose** is a React Flow canvas (`components/compose/`): steps in order, each with the resource
+  attached beneath, pan/zoom/drag, and a floating inspector (coverage overview or one need). After a
+  decision, the guided path jumps to the next need that requires one. Steps come from the chosen
+  approach; they are not added or removed on the canvas.
+- **Architect** and Generate → Workflow draw swimlanes with `ApproachFlow`. Generate is a picture
+  board of sections; Validate is a shield gauge with eight check tiles; Publish shows the app as it
+  will appear on the desktop.
+
+The **AI Architect** (a floating orb, opening a floating glass panel) gives scripted, context-aware replies built from project
 state. Examples: why an approach is recommended, "Why is <capability> required?", how to reduce
 human intervention, unavailable workers, approvals. Replies show "based on" sources and
 navigation actions. Unscripted questions get an honest list of what it can answer.
@@ -201,13 +217,13 @@ src/
   app/
     os/          OsProvider, os-context, use-os: windows, overlays, notifications, prefs
     windows/     windowReducer (pure), WindowFrame (chrome/drag/resize), WindowManager
-    shell/       DesktopShell, TopBar, Dock, DesktopCanvas, ApplicationLauncher, NotificationCenter, AssistantPanel
+    shell/       DesktopShell, TopBar, Dock, DesktopCanvas, ApplicationLauncher, NotificationCenter
     widgets/     DesktopWidgets, WidgetCard, widgetCatalog
     registry/    applicationRegistry (metadata + generated apps, persisted, subscribable),
                  applicationComponents (id → lazy component), types, use-applications
     studio/      StudioProvider, studioReducer, lifecycle, migrate (older drafts), stageMeta,
-                 stages/ (one file per stage), components/ (ArchitectPanel, BlueprintDiff, VersionHistory,
-                 WorkflowLanes, FlowDiagram, StageNav, LifecycleTrack, StudioHome, …), hooks/use-simulation
+                 stages/ (one file per stage), components/ (JourneyRail, StudioParts, ApproachFlow, compose/,
+                 ArchitectPanel, BlueprintDiff, VersionHistory, FlowDiagram, LifecycleTrack, StudioHome, …), hooks/use-simulation
     blueprint/   types.ts (schema = source of truth), generate.ts (+ patches), validate.ts
     experience/  ExperienceRenderer (blueprint pages → trusted components), GeneratedAppHost, fields
     runtime/     types, engine, scripts, workflow-config, store, runtime-apps, observability, RuntimeClock,
@@ -216,7 +232,7 @@ src/
     operations/  OperationsApp
     learning/    LearningApp, learning-service
     services/    MockServicesProvider, app-records-store, demo-data (reset)
-      mock/      intent, architecture (+ AI Architect), capability-analysis, resource-discovery,
+      mock/      intent, architecture (+ AI Architect), thought-chain, capability-analysis, resource-discovery,
                  blueprint (diff, readiness), application-registry, activity, attention, simulate
     resources/   ResourceDetailSheet
     applications/ claims-intelligence, document-ai, workflow-studio, analytics-workspace,
@@ -261,8 +277,8 @@ change a persisted shape, bump the key version or add a migration (see `studio/m
     invented rates or KPIs.
 11. A published blueprint never changes silently. Improvements become draft version → validate →
     publish.
-12. Studio uses the `.theme-studio` indigo accent. Reasoning and explanations go behind `InfoTip`
-    or expanders, not inline paragraphs.
+12. Studio uses `.theme-studio` (`design.md` §10): pictorial screens with at most 1–2 lines of text
+    per block. Reasoning and explanations go behind `InfoTip` or expanders, not inline paragraphs.
 13. Window content is a **container-query context**. Size app layouts with `@…:` variants, not
     viewport breakpoints.
 14. UI work follows `.claude/skills/frontend-kit/SKILL.md`. Engineering conventions are in
@@ -296,6 +312,7 @@ applied **only** through CSS variables in `src/index.css`.
 | `4377df1` | Shell polish | Dock moved into the top bar, window open/minimize/restore/close motion, Workflow Studio canvas, Document AI confidence, less explanatory copy everywhere |
 | `b9bfd53` | Polish 2 | **All mock/prototype tags removed**, 72 px top bar with floating magnifying dock, Ask AI pill, folder groups + app cards with `tagline`, **Studio redesign** (indigo `.theme-studio`, icon stepper, InfoTips, card-based projects home), redesigned Architect and Assistant panels |
 | `3564586` | Revert | Restored the teal-to-warm-horizon wallpaper (product owner's request) |
+| (this branch) | Studio UX | Pastel Studio surface, floating journey navigator and AI Architect, visual chain of thought, Compose as a React Flow canvas, pictorial stages, global Ask AI removed |
 
 Product-owner decisions to respect: no mock tags in the UI; reasoning hidden behind info tips;
 the teal-horizon wallpaper; the dock in the top bar; minimal explanatory copy; counts, never

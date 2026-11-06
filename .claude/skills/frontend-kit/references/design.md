@@ -268,6 +268,28 @@ Spacing is airy:
 - **Application Studio** uses the scoped `.theme-studio` palette (indigo primary/accent, violet-grey
   canvas), a centred icon stepper, and keeps reasoning behind info icons and expanders.
 
+## 10. Application Studio surface (product owner, Nov 2026)
+
+Studio opens as its own application and may differ from the desktop. Scoped to `.theme-studio`.
+Taken from three pastel AI-assistant references the product owner supplied, which override the
+anti-slop gradient and glass defaults inside Studio.
+
+- **Canvas:** `--studio-wash`, a lavender → blush → peach mesh with two slow-drifting blobs behind
+  the glass. Its purpose is to give the glass something to refract.
+- **Liquid glass (`liquid-glass`):** floating controls only — journey navigator, action dock, AI
+  Architect, inspector, window actions. Text-heavy glass raises its opacity floor.
+- **Cards (`studio-card`):** translucent white, radius 20–28px, soft violet shadow.
+- **Graphite tile (`IconTile`, `--studio-ink`):** the recurring icon anchor.
+- **Coral (`--studio-cta`, `ctaClass`):** exactly one forward action per screen. Selection and
+  progress stay indigo (`--primary`).
+- **Headline:** grey lead line plus a `headline-gradient` line, only on Discover and the project list.
+- **Actors:** person amber, AI indigo, system teal (`--actor-*`, `actor-meta.ts`), everywhere a step
+  is drawn.
+- **Text budget:** 1–2 lines per block. Prefer a tile, count, diagram or chip; put the rest behind
+  `InfoTip` or an expander.
+- **Motion:** states only — thinking links lighting up, the active level sliding, flow edges running
+  once a step's resource is connected, the missing node pulsing. All off under reduced motion.
+
 ## 9. What the reference doesn't cover
 
 - **Dark mode.** Not shown. The `.dark` block is invented.

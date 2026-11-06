@@ -1,4 +1,4 @@
-import { FilePlus2, Sparkles } from 'lucide-react'
+import { FilePlus2 } from 'lucide-react'
 import { useOs } from '@/app/os/use-os'
 import { folders, launcherApps } from '@/app/registry/applicationRegistry'
 import { useApplications } from '@/app/registry/use-applications'
@@ -34,7 +34,7 @@ function launcherFilter(value: string, search: string, keywords: string[] = []):
 }
 
 export function ApplicationLauncher() {
-  const { launcherOpen, setLauncherOpen, openApp, setAssistantOpen } = useOs()
+  const { launcherOpen, setLauncherOpen, openApp } = useOs()
 
   const launch = (appId: AppId, params?: WindowParams) => {
     openApp(appId, params)
@@ -129,20 +129,6 @@ export function ApplicationLauncher() {
                 </div>
               </CommandItem>
             ))}
-            <CommandItem
-              value="Assistant"
-              keywords={['help', 'ask']}
-              onSelect={() => {
-                setLauncherOpen(false)
-                setAssistantOpen(true)
-              }}
-              className="gap-3 py-2"
-            >
-              <span className="flex size-7 items-center justify-center rounded-md border bg-card">
-                <Sparkles className="size-4" />
-              </span>
-              <div className="font-medium">Assistant</div>
-            </CommandItem>
           </CommandGroup>
         </CommandList>
       </Command>

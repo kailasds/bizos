@@ -42,7 +42,7 @@ function Compare({ revisions }: { revisions: BlueprintRevision[] }) {
   if (withSnap.length < 2) return <p className="text-sm text-muted-foreground">At least two versions with snapshots are needed to compare.</p>
 
   return (
-    <section aria-label="Compare versions" className="space-y-3 rounded-lg border bg-card p-4">
+    <section aria-label="Compare versions" className="space-y-3 studio-card rounded-[20px] p-4">
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span>Compare</span>
         <NativeSelect size="sm" aria-label="Base version" value={base} onChange={(e) => setBase(e.target.value)}>
@@ -105,7 +105,7 @@ export function VersionHistory({
         </Button>
       </div>
       {comparing && <Compare revisions={revisions} />}
-      <ol className="divide-y rounded-lg border bg-card" aria-label="Blueprint versions">
+      <ol className="divide-y studio-card rounded-[20px]" aria-label="Blueprint versions">
         {revisions.map((r, i) => {
           const isCurrent = r.version === currentVersion && i === revisions.findIndex((x) => x.version === currentVersion)
           return (

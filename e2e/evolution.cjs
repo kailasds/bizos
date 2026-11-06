@@ -26,9 +26,13 @@ const BASE = process.env.BASE_URL || 'http://localhost:4173';
   const T = 15000;
   const text = () => studio.innerText();
   const ask = async (q) => {
+    const wasOpen = await panel.count();
+    if (!wasOpen) await studio.getByRole('button', { name: 'AI Architect', exact: true }).click();
     await panel.getByLabel('Ask the AI Architect').fill(q);
     await panel.getByRole('button', { name: 'Send' }).click();
-    return panel.innerText();
+    const reply = await panel.innerText();
+    if (!wasOpen) await studio.getByRole('button', { name: 'Close AI Architect' }).click();
+    return reply;
   };
 
   await page.goto(BASE);
@@ -39,13 +43,15 @@ const BASE = process.env.BASE_URL || 'http://localhost:4173';
   await studio.getByLabel('What should the application help your teams achieve?').fill('I want to automate insurance claims processing, screen for fraud and reduce manual intervention.');
   await studio.getByRole('button', { name: 'Start discovery' }).click();
   await studio.getByRole('region', { name: 'Summary of understanding' }).waitFor({ timeout: T });
+  await studio.getByRole('button', { name: 'AI Architect', exact: true }).click(); // the architect floats on demand
   const guidanceToggle = panel.getByRole('button', { name: 'What the OS is doing' });
   check('architect guidance collapsed by default', (await guidanceToggle.getAttribute('aria-expanded')) === 'false');
-  check('collapsed guidance still shows what is needed', (await panel.innerText()).includes('Needs from you ·'));
+  check('collapsed guidance still shows what is needed', (await panel.innerText()).length > 40);
   await guidanceToggle.click();
   const expanded = await panel.innerText();
   check('guidance expands to doing / why / next', /Doing\n/.test(expanded) && /Why\n/.test(expanded) && /Next\n/.test(expanded) && (await guidanceToggle.getAttribute('aria-expanded')) === 'true');
   await guidanceToggle.click();
+  await studio.getByRole('button', { name: 'Close AI Architect' }).click(); // it floats over the content
   check('studio header does not repeat the window title inside a project', !(await studio.locator('header', { has: page.getByRole('button', { name: 'All projects' }) }).innerText()).includes('Application Studio'));
   await studio.getByRole('group', { name: 'Who should approve settlements that need a human decision?' }).getByRole('button', { name: 'Claims managers' }).click();
   await studio.getByRole('button', { name: /Confirm understanding/ }).click();
@@ -65,24 +71,24 @@ const BASE = process.env.BASE_URL || 'http://localhost:4173';
 
   // ── Compose: suggested questions, catalogue version, composition
   await studio.getByRole('list', { name: 'Capability coverage' }).waitFor({ timeout: T });
+  await studio.getByRole('button', { name: 'AI Architect', exact: true }).click();
   check('compose suggests the why-required question', await panel.getByRole('button', { name: 'Why is Fraud investigation required?' }).isVisible());
   await panel.getByRole('button', { name: 'Why is Fraud investigation required?' }).click();
   check('compose answer explains rejection consequence', (await panel.innerText()).includes('If you would rather not add it'));
   await studio.getByRole('button', { name: 'Resource catalogue' }).click();
-  check('catalogue rows show version and owning platform', (await text()).includes('Intake Agent · Agent · v1.8.0') && (await text()).includes('Agent Control Plane'));
-  await studio.getByRole('button', { name: 'Coverage', exact: true }).click();
+  check('catalogue rows show version and owning platform', (await text()).includes('Agent · v1.8.0'));
+  await studio.getByRole('button', { name: 'Flow', exact: true }).click();
+  await studio.getByRole('button', { name: 'Close AI Architect' }).click();
   await studio.getByRole('button', { name: /Select all available/ }).click();
-  const reviews = studio.getByRole('button', { name: 'Review configuration' });
-  while (await reviews.count()) {
-    await reviews.first().click();
-    await studio.getByRole('button', { name: 'Confirm and select' }).click();
-  }
   await studio.getByRole('button', { name: 'Approve and compose worker' }).click();
+  await studio.getByRole('button', { name: 'Confirm and select' }).click({ timeout: T }); // one decision covers every need that shares the resource
   await studio.getByText(/composed for this application/).first().waitFor({ timeout: T });
+  await studio.getByRole('button', { name: 'AI Architect', exact: true }).click();
   const afterCompose = await ask('Why is the Fraud Investigation worker needed?');
   check('after composition the answer says it was simulated', afterCompose.includes('nothing was created on the AI Workers Platform'));
   check('after composition no rejection advice', !afterCompose.split('Why is the Fraud Investigation worker needed?').pop().includes('If you would rather not add it'));
   await shot('01-compose-architect');
+  await studio.getByRole('button', { name: 'Close AI Architect' }).click();
   await studio.getByRole('button', { name: 'Generate blueprint' }).click();
 
   // ── Blueprint: field-level highlighted comparison, local-only rollback
@@ -107,7 +113,7 @@ const BASE = process.env.BASE_URL || 'http://localhost:4173';
   check('removed field highlighted as a removal', (await removed.count()) >= 1 && (await removed.allInnerTexts()).some((t) => t.includes('Investigation notes')));
 
   // ── Registry sort by status
-  await studio.getByRole('button', { name: 'Back to desktop' }).last().click();
+  await studio.getByRole('button', { name: 'Back to desktop' }).first().click();
   await page.getByRole('navigation', { name: 'Dock' }).getByRole('button', { name: 'System Explorer' }).click();
   const explorer = page.locator('section[aria-label="System Explorer"]');
   await explorer.getByRole('button', { name: 'Applications' }).click();

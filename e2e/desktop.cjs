@@ -146,13 +146,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await page.locator('section[aria-label="Document AI"]').getByRole('button', { name: /Total incl. VAT/ }).click();
   await page.screenshot({ path: dir + '/08-docai.png' });
 
-  // assistant
-  await page.getByRole('button', { name: 'Assistant' }).click();
-  await page.getByRole('button', { name: 'What needs my approval?' }).click();
-  await page.waitForTimeout(200);
-  check('assistant answered', (await page.locator('aside[aria-label="Assistant"]').innerText()).includes('await your decision'));
-  await page.screenshot({ path: dir + '/09-assistant.png' });
-  await page.keyboard.press('Escape');
+  check('global Ask AI is gone', await page.getByRole('button', { name: /Ask AI|^Assistant$/ }).count() === 0);
 
   // settings: hide widget
   await page.getByRole('button', { name: /^Settings/ }).click(); // settings moved to the top bar's right section

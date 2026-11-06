@@ -4,13 +4,12 @@ import { WindowManager } from '@/app/windows/WindowManager'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { ApplicationLauncher } from './ApplicationLauncher'
-import { AssistantPanel } from './AssistantPanel'
 import { DesktopCanvas } from './DesktopCanvas'
 import { TopBar } from './TopBar'
 
 /**
  * The persistent OS shell. Layers, bottom to top:
- * top bar (with the dock) · desktop canvas → windows → assistant. Launcher and notifications are portalled overlays.
+ * top bar (with the dock) · desktop canvas → windows. Launcher and notifications are portalled overlays.
  */
 export function DesktopShell() {
   const { launcherOpen, setLauncherOpen } = useOs()
@@ -35,9 +34,6 @@ export function DesktopShell() {
           <div className="absolute inset-0">
             <DesktopCanvas />
             <WindowManager />
-          </div>
-          <div className="pointer-events-none absolute inset-0 z-10">
-            <AssistantPanel />
           </div>
         </main>
       </div>

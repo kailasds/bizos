@@ -86,6 +86,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   check('approver applied to approach', (await studio.getByRole('figure').innerText()).includes('Claims managers'));
   await shot('04-explore');
 
+  await studio.getByRole('button', { name: 'AI Architect', exact: true }).click(); // the architect floats on demand
   await panel.getByRole('button', { name: 'Can we reduce human intervention?' }).click();
   const reduce = await panel.innerText();
   check('architect reply references approaches', reduce.includes('people on') || reduce.includes('people do'));
@@ -99,6 +100,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await panel.getByLabel('Ask the AI Architect').fill('What is the weather tomorrow?');
   await panel.getByRole('button', { name: 'Send' }).click();
   check('unscripted question gets an honest reply', (await panel.innerText()).includes('I have scripted answers about'));
+  await studio.getByRole('button', { name: 'Close AI Architect' }).click();
   await studio.getByRole('tab', { name: /AI-Driven Claims Automation/ }).click();
   await studio.getByRole('button', { name: 'Select this approach' }).click();
   await studio.getByRole('button', { name: /Use AI-Driven Claims Automation/ }).click();
@@ -117,16 +119,18 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   check('detail shows used by', (await sheet.innerText()).includes('Claims Intelligence'));
   await shot('05-resource-detail');
   await page.keyboard.press('Escape');
-  await studio.getByRole('button', { name: 'Coverage' }).click();
+  await studio.getByRole('button', { name: 'Flow', exact: true }).click();
+  await studio.getByRole('button', { name: 'Resolve' }).click();
   await studio.getByRole('button', { name: 'Reject' }).click();
   check('rejection explains consequence', (await text()).includes('You rejected the proposed Fraud Investigation Worker'));
   check('rejection offers an alternative', await studio.getByRole('button', { name: 'Look at Assisted Claims Processing' }).isVisible());
   await studio.getByRole('button', { name: 'Reconsider the proposal' }).click();
+  await studio.getByRole('button', { name: 'All needs' }).click();
   await studio.getByRole('button', { name: /Select all available/ }).click();
-  await studio.getByRole('button', { name: 'Review configuration' }).first().click();
-  check('configuration explained before selecting', (await text()).includes('thresholds'));
-  await studio.getByRole('button', { name: 'Confirm and select' }).click();
   await studio.getByRole('button', { name: 'Approve and compose worker' }).click();
+  await studio.getByRole('button', { name: 'Confirm and select' }).waitFor({ timeout: T });
+  check('configuration explained before selecting', (await text()).includes('thresholds'));
+  await studio.getByRole('button', { name: 'Confirm and select' }).click({ timeout: T }); // one decision covers every need that shares the resource
   await studio.getByText(/composed for this application/).first().waitFor({ timeout: T });
   await shot('06-coverage');
   await studio.getByRole('button', { name: 'Generate blueprint' }).click();
@@ -173,7 +177,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await studio.getByRole('button', { name: 'Publish application' }).click();
   await studio.getByText(/^Published v0\.1\.2$/).waitFor({ timeout: T });
   await shot('10-published');
-  await studio.getByRole('button', { name: 'Back to desktop' }).last().click();
+  await studio.getByRole('button', { name: 'Back to desktop' }).first().click();
 
   // ── Registry and detail
   await page.getByRole('navigation', { name: 'Dock' }).getByRole('button', { name: 'System Explorer' }).click();

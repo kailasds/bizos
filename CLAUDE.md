@@ -15,7 +15,9 @@ This repository is the **Enterprise AI OS** frontend (built on the claude-react-
 - Studio state changes go through `studioReducer` actions. A change to an earlier stage must invalidate later stages (`invalidateAfter`), never silently rewrite them.
 - Operational records (executions, approvals, audit, outcomes, learning signals, proposals) live only in the runtime store (`src/app/runtime/store.ts`) and change only through engine transitions. Audit events and the activity stream are written by those transitions — never fabricated separately. Operational views derive counts from these records; no invented rates or KPIs.
 - A published application's blueprint never changes silently: improvements create a draft version that must be validated and published.
-- Application Studio is themed with the scoped `.theme-studio` class (indigo accent) in `src/index.css`; reasoning and explanations sit behind `InfoTip` (`src/components/os/InfoTip.tsx`) or expanders, not inline paragraphs.
+- Application Studio is themed with the scoped `.theme-studio` class in `src/index.css` (pastel wash, floating liquid glass, graphite tiles, one coral forward action; `design.md` §10). Its screens are pictorial: at most 1–2 lines of text per block, tiles and diagrams first. Reasoning and explanations sit behind `InfoTip` (`src/components/os/InfoTip.tsx`) or expanders, not inline paragraphs.
+- The chain of thought is drawn from project facts: `ThinkingChain` while the OS works, `ThoughtStrip` on each level (`services/mock/thought-chain-service.ts`). Never invent a link.
+- Flow canvases (Architect, Compose, Generate) use React Flow (`@xyflow/react`, MIT). Rebuilt nodes must keep `measured`, or the library hides them until it measures again.
 - Window content is a container-query context (`@container` on the window body); size app layouts with `@…:` variants, not viewport breakpoints.
 
 ## Stack

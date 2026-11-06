@@ -53,7 +53,6 @@ export function OsProvider({ children }: { children: ReactNode }) {
   const [windowState, dispatch] = useReducer(windowReducer, initialWindowState)
   const [desktopArea, setDesktopAreaState] = useState<Size>({ width: 1200, height: 760 })
   const [launcherOpen, setLauncherOpen] = useState(false)
-  const [assistantOpen, setAssistantOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [notifications, setNotifications] = useState<OsNotification[]>(initialNotifications)
   const [recentApps, setRecentApps] = useState<RecentApp[]>(loadRecents)
@@ -156,8 +155,6 @@ export function OsProvider({ children }: { children: ReactNode }) {
       recentApps,
       launcherOpen,
       setLauncherOpen,
-      assistantOpen,
-      setAssistantOpen,
       notificationsOpen,
       setNotificationsOpen,
       notifications,
@@ -187,7 +184,6 @@ export function OsProvider({ children }: { children: ReactNode }) {
       showDesktop,
       recentApps,
       launcherOpen,
-      assistantOpen,
       notificationsOpen,
       notifications,
       markNotificationRead,

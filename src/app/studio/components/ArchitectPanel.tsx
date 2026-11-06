@@ -1,12 +1,37 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { ArrowRight, ArrowUp, ChevronDown, Compass, MessageSquare, Sparkles, X } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { ArrowRight, ArrowUp, ChevronDown, Compass, Sparkles, X } from 'lucide-react'
 import { architectReply, stageGuidance, suggestedQuestions } from '@/app/services/mock/architecture-service'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { stageMeta } from '../stageMeta'
 import type { ArchitectAction, ArchitectMessage, StageId } from '../types'
 import { useStudio } from '../use-studio'
+
+/** The floating call button for the AI Architect. */
+export function ArchitectOrb({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          aria-label="AI Architect"
+          aria-pressed={open}
+          onClick={onToggle}
+          className="liquid-glass absolute right-3 bottom-3 z-30 flex size-[3.25rem] items-center justify-center rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <span aria-hidden className="studio-orbit absolute inset-1 rounded-full border border-dashed border-primary/35" />
+          <span aria-hidden className={cn('flex size-9 items-center justify-center rounded-full text-white', open ? 'bg-primary' : 'bg-studio-ink')}>
+            {open ? <X className="size-4" /> : <Sparkles className="size-4" />}
+          </span>
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="left">AI Architect</TooltipContent>
+    </Tooltip>
+  )
+}
 
 /**
  * Contextual AI Architect. Knows the stage and the application being designed; replies
@@ -67,9 +92,17 @@ export function ArchitectPanel({
   }
 
   return (
-    <aside aria-label="AI Architect" className="flex h-full min-h-0 w-full flex-col border-l bg-card">
+    <motion.aside
+      aria-label="AI Architect"
+      initial={{ opacity: 0, scale: 0.92, y: 14 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.96, y: 8 }}
+      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+      style={{ transformOrigin: 'bottom right' }}
+      className="liquid-glass absolute right-3 bottom-[4.5rem] z-30 flex max-h-[calc(100%-6rem)] min-h-[24rem] w-[23rem] max-w-[calc(100%-1.5rem)] flex-col overflow-hidden rounded-[28px] !bg-white/80"
+    >
       <header className="flex items-center gap-2.5 px-4 py-3">
-        <span aria-hidden className="flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+        <span aria-hidden className="flex size-8 items-center justify-center rounded-full bg-studio-ink text-white">
           <Sparkles className="size-4" />
         </span>
         <div className="min-w-0 flex-1 leading-tight">
@@ -81,7 +114,7 @@ export function ArchitectPanel({
         </Button>
       </header>
 
-      <div className="mx-3 mb-2 rounded-xl bg-accent/70 px-3 py-2.5">
+      <div className="mx-3 mb-2 rounded-2xl bg-accent/70 px-3 py-2.5">
         <button
           type="button"
           aria-expanded={showGuidance}
@@ -111,69 +144,55 @@ export function ArchitectPanel({
             ))}
           </dl>
         ) : (
-          <p className="mt-1.5 text-sm">
-            <span className="text-xs text-muted-foreground">Needs from you · </span>
-            <span className="font-medium">{guidance.needs}</span>
-          </p>
+          <p className="mt-1.5 line-clamp-2 text-sm font-medium">{guidance.needs}</p>
         )}
       </div>
 
       <div ref={listRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-2" aria-live="polite">
-        {log.length === 0 && (
-          <div className="flex flex-col items-center gap-2 px-4 py-8 text-center text-muted-foreground">
-            <MessageSquare aria-hidden className="size-6" />
-            <p className="text-xs">Ask about any decision on this stage.</p>
-          </div>
-        )}
         {log.map((m) =>
           m.role === 'user' ? (
             <div key={m.id} className="flex justify-end">
-              <p className="max-w-[85%] rounded-2xl rounded-br-md bg-primary px-3 py-2 text-sm text-primary-foreground">{m.text}</p>
+              <p className="max-w-[85%] rounded-2xl rounded-br-md bg-studio-ink px-3 py-2 text-sm text-white">{m.text}</p>
             </div>
           ) : (
-            <div key={m.id} className="flex gap-2">
-              <span aria-hidden className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground">
-                <Sparkles className="size-3" />
-              </span>
-              <div className="min-w-0 flex-1 space-y-2 rounded-2xl rounded-tl-md bg-muted px-3 py-2">
-                <p className="text-sm leading-relaxed">{m.text}</p>
-                {m.sources && m.sources.length > 0 && <p className="text-[11px] text-muted-foreground">Based on: {m.sources.join(' · ')}</p>}
-                {m.actions && m.actions.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {m.actions.map((a) => (
-                      <Button key={a.label} size="xs" variant="outline" className="bg-card" onClick={() => act(a)}>
-                        {a.label}
-                        <ArrowRight />
-                      </Button>
-                    ))}
-                  </div>
-                )}
-              </div>
+            <div key={m.id} className="min-w-0 space-y-2 rounded-2xl rounded-tl-md bg-white/80 px-3 py-2">
+              <p className="text-sm leading-relaxed">{m.text}</p>
+              {m.sources && m.sources.length > 0 && <p className="text-[11px] text-muted-foreground">Based on: {m.sources.join(' · ')}</p>}
+              {m.actions && m.actions.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {m.actions.map((a) => (
+                    <Button key={a.label} size="xs" variant="outline" className="bg-card" onClick={() => act(a)}>
+                      {a.label}
+                      <ArrowRight />
+                    </Button>
+                  ))}
+                </div>
+              )}
             </div>
           ),
         )}
       </div>
 
-      <div className="space-y-2 border-t p-3">
+      <div className="space-y-2 p-3">
         <div className="flex flex-wrap gap-1.5">
           {suggestedQuestions(project, stage).map((p) => (
             <button
               key={p}
               type="button"
               onClick={() => ask(p)}
-              className="rounded-full border bg-card px-2.5 py-1 text-left text-xs text-foreground outline-none hover:border-primary/40 hover:bg-accent/50 focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="rounded-full border border-white bg-white/70 px-2.5 py-1 text-left text-xs outline-none hover:bg-white focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               {p}
             </button>
           ))}
         </div>
-        <form onSubmit={onSubmit} className="flex items-center gap-1 rounded-xl border bg-card p-1 focus-within:ring-3 focus-within:ring-ring/40">
-          <Input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Ask the architect…" aria-label="Ask the AI Architect" className="border-0 shadow-none focus-visible:ring-0" />
-          <Button type="submit" size="icon-sm" aria-label="Send" disabled={!draft.trim()} className="rounded-lg">
+        <form onSubmit={onSubmit} className="flex items-center gap-1 rounded-full border border-white bg-white/90 p-1 focus-within:ring-3 focus-within:ring-ring/40">
+          <Input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Ask the architect…" aria-label="Ask the AI Architect" className="border-0 bg-transparent shadow-none focus-visible:ring-0" />
+          <Button type="submit" size="icon-sm" aria-label="Send" disabled={!draft.trim()} className="rounded-full bg-studio-cta hover:bg-studio-cta-hover">
             <ArrowUp />
           </Button>
         </form>
       </div>
-    </aside>
+    </motion.aside>
   )
 }

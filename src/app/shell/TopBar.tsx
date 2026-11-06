@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { Bell, Hexagon, Settings, Sparkles } from 'lucide-react'
+import { Bell, Hexagon, Settings } from 'lucide-react'
 import { useOs } from '@/app/os/use-os'
 import { getApp } from '@/app/registry/applicationRegistry'
 import { Popover, PopoverTrigger } from '@/components/ui/popover'
@@ -41,11 +41,10 @@ function BarTooltip({ label, children }: { label: string; children: ReactNode })
 
 /**
  * The top bar keeps its left (identity, focused app) and right (status, clock) sections;
- * the dock sits in the centre. Assistant, notifications and settings moved here from the old
- * bottom dock, unchanged in behaviour.
+ * the dock sits in the centre. Notifications and settings moved here from the old bottom dock.
  */
 export function TopBar() {
-  const { windows, focusedId, assistantOpen, setAssistantOpen, notificationsOpen, setNotificationsOpen, unreadCount, activateFromDock } = useOs()
+  const { windows, focusedId, notificationsOpen, setNotificationsOpen, unreadCount, activateFromDock } = useOs()
   const focused = windows.find((w) => w.id === focusedId && w.status !== 'minimized')
   const settingsWin = windows.find((w) => w.appId === 'settings')
   const settingsLabel = !settingsWin ? 'Settings' : settingsWin.status === 'minimized' ? 'Settings · Minimized' : settingsWin.id === focusedId ? 'Settings · Active' : 'Settings · Open'
@@ -68,21 +67,6 @@ export function TopBar() {
       </div>
 
       <div className="flex shrink-0 items-center justify-end gap-1 text-glass-dark-foreground md:gap-1.5">
-        <button
-          type="button"
-          aria-label="Assistant"
-          aria-pressed={assistantOpen}
-          onClick={() => setAssistantOpen(!assistantOpen)}
-          className={cn(
-            'mr-1 flex h-10 shrink-0 items-center gap-2 rounded-full px-3 text-sm font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-white/80 md:px-4',
-            assistantOpen
-              ? 'bg-primary text-primary-foreground shadow-[0_0_0_3px_oklch(1_0_0/0.25)]'
-              : 'bg-white text-primary shadow-[0_4px_14px_-4px_oklch(0.55_0.14_248/0.6)] hover:bg-white/90',
-          )}
-        >
-          <Sparkles aria-hidden className="size-4" />
-          <span className="hidden sm:inline">Ask AI</span>
-        </button>
         <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
           <Tooltip>
             <TooltipTrigger asChild>
