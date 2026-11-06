@@ -126,7 +126,7 @@ apps, widget preferences. Settings → Demo data → Reset clears them.
   on hover, and the active item expands to show its name. *Ask AI*, notifications and settings sit
   on the right.
 - Desktop: domain folders are groups sized by the apps they hold (icon + name); standalone apps
-  are cards with a one-line tagline. Minimal light wallpaper.
+  are cards with a one-line tagline. Teal-to-warm-horizon wallpaper.
 - Windows scale and fade in on open, shrink into their dock tab on minimize, return from it on
   restore, and fade out on close. Focus changes are not animated; `prefers-reduced-motion` disables
   the motion.

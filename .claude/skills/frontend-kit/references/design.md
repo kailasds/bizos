@@ -260,7 +260,7 @@ Spacing is airy:
 
 ## Amendments (product owner, Nov 2026)
 
-- **Wallpaper** is now minimal: a soft cool-neutral field with two faint light pools (`--wallpaper`);
+- **Wallpaper** is the teal sky → warm horizon gradient from §2 (a minimal variant was tried and reverted);
   the top bar uses a slate tint (`--glass-dark: oklch(0.27 0.03 252 / 0.86)`) and is 72px tall.
 - **Dock** floats in the top bar: magnifying icon tiles, names on hover, active item expands with its
   name. *Ask AI* is a white pill with the primary sparkle, the most prominent control on the right.
