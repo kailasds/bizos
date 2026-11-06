@@ -43,7 +43,9 @@ export function SidebarNav<T extends string>({
             )}
           >
             <Icon aria-hidden className="size-4 shrink-0" />
-            <span className="flex-1">{item.label}</span>
+            <span className="min-w-0 flex-1 truncate" title={item.label}>
+              {item.label}
+            </span>
             {item.meta && <span className="hidden text-xs text-muted-foreground @3xl:inline">{item.meta}</span>}
           </button>
         )

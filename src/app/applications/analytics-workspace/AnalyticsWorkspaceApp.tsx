@@ -11,8 +11,10 @@ function Stat({ label, value, hint }: { label: string; value: string; hint: stri
   return (
     <div className="min-w-0">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-2xl font-semibold tabular-nums">{value}</p>
-      <p className="text-xs text-muted-foreground">{hint}</p>
+      <p className="text-2xl font-semibold tabular-nums" title={hint}>
+        {value}
+      </p>
+      <p className="truncate text-xs text-muted-foreground">{hint}</p>
     </div>
   )
 }
@@ -24,7 +26,7 @@ function DailyBars({ data }: { data: DailyCount[] }) {
   const labelEvery = data.length > 10 ? 5 : 1
 
   return (
-    <div className="mt-3 flex gap-2">
+    <div className="mt-6 flex gap-2">
       <div className="relative h-52 w-6 shrink-0 text-right text-xs text-muted-foreground tabular-nums" aria-hidden>
         {ticks.map((t) => (
           <span key={t} className="absolute right-0 -translate-y-1/2" style={{ bottom: `${(t / max) * 100}%` }}>
@@ -85,6 +87,7 @@ export function AnalyticsWorkspaceApp() {
     <div className="h-full overflow-y-auto p-6">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-lg font-semibold">Claims throughput</h3>
+        <span className="text-sm text-muted-foreground">Claims Intelligence</span>
         <MockBadge label="Mock dataset" />
         <div role="group" aria-label="Period" className="ml-auto flex gap-1">
           {(['7d', '30d'] as const).map((p) => (
@@ -94,15 +97,13 @@ export function AnalyticsWorkspaceApp() {
           ))}
         </div>
       </div>
-      <p className="mt-1 text-sm text-muted-foreground">Claims Intelligence · all products</p>
-
-      <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-3">
+      <div className="mt-6 grid grid-cols-3 gap-6 border-b pb-6">
         <Stat label="Claims received" value={data.received.toLocaleString('en-GB')} hint={period === '7d' ? 'in 7 days' : 'in 30 days'} />
         <Stat label="Straight-through" value={`${data.straightThrough}%`} hint="settled without a handler" />
         <Stat label="Median cycle time" value={`${data.medianCycleDays} days`} hint="report to settlement" />
       </div>
 
-      <section className="mt-8 rounded-xl border p-4">
+      <section className="mt-6">
         <div className="mb-4 flex items-center gap-2">
           <h4 className="text-sm font-medium">Claims received per day</h4>
           <div role="group" aria-label="Display" className="ml-auto flex gap-1">
@@ -137,9 +138,6 @@ export function AnalyticsWorkspaceApp() {
           </div>
         )}
       </section>
-      <p className="mt-4 text-xs text-muted-foreground">
-        Preview application. Reporting is generated from a fixed sample dataset, not from live claims.
-      </p>
     </div>
   )
 }

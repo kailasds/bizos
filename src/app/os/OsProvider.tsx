@@ -107,6 +107,9 @@ export function OsProvider({ children }: { children: ReactNode }) {
     [],
   )
   const closeAllWindows = useCallback(() => dispatch({ type: 'closeAll' }), [])
+  const showDesktop = useCallback(() => {
+    for (const w of windows) if (w.status !== 'minimized') dispatch({ type: 'minimize', id: w.id })
+  }, [windows])
 
   const markNotificationRead = useCallback((id: string) => {
     setNotifications((list) => list.map((n) => (n.id === id ? { ...n, read: true } : n)))
@@ -149,6 +152,7 @@ export function OsProvider({ children }: { children: ReactNode }) {
       toggleMaximize,
       setWindowBounds,
       closeAllWindows,
+      showDesktop,
       recentApps,
       launcherOpen,
       setLauncherOpen,
@@ -180,6 +184,7 @@ export function OsProvider({ children }: { children: ReactNode }) {
       toggleMaximize,
       setWindowBounds,
       closeAllWindows,
+      showDesktop,
       recentApps,
       launcherOpen,
       assistantOpen,

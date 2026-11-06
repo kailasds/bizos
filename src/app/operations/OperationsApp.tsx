@@ -72,11 +72,7 @@ function Overview({ state, go, appName }: { state: RuntimeState; go: (n: Nav) =>
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="min-w-0 flex-1">
-          <h3 className="text-lg font-semibold">Operations</h3>
-          <p className="text-sm text-muted-foreground">What published applications are doing, and what needs you.</p>
-        </div>
-        <MockBadge label="Simulated runtime" />
+        <h3 className="min-w-0 flex-1 text-lg font-semibold">Operations</h3>
       </div>
 
       <div className="grid gap-4 @3xl:grid-cols-2">
@@ -156,7 +152,7 @@ function Overview({ state, go, appName }: { state: RuntimeState; go: (n: Nav) =>
       </section>
 
       <div className="flex flex-wrap items-center gap-2 border-t pt-3 text-xs text-muted-foreground">
-        <span className="min-w-0 flex-1">Runtime records are simulated and stored in this browser. Studio drafts and published applications are kept when you restart the demo scenario.</span>
+        <span className="min-w-0 flex-1">Simulated records, stored in this browser.</span>
         <Button size="xs" variant="outline" onClick={() => setConfirm(true)}>
           <RotateCcw /> Restart demo scenario
         </Button>
@@ -233,7 +229,6 @@ export function OperationsApp({ params }: AppProps) {
             ) : (
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold">Applications</h3>
-                <p className="text-sm text-muted-foreground">Published applications that run transactions on this OS.</p>
                 <ul aria-label="Runtime applications" className="divide-y rounded-lg border bg-card">
                   {apps.map((a) => {
                     const s = appSummary(state, a.appId)
@@ -272,21 +267,18 @@ export function OperationsApp({ params }: AppProps) {
             ) : (
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold">Approvals</h3>
-                <p className="text-sm text-muted-foreground">Human decisions requested by running executions, across every application.</p>
                 <ApprovalQueue approvals={state.approvals} state={state} onOpen={links.openApproval} />
               </div>
             ))}
           {nav.section === 'activity' && (
             <div className="space-y-3">
               <h3 className="text-lg font-semibold">Activity</h3>
-              <p className="text-sm text-muted-foreground">Every state change across applications, newest first. Expand an event for links to its execution, approval, resource and application.</p>
               <EventStream state={state} mode="activity" appName={appName} />
             </div>
           )}
           {nav.section === 'audit' && (
             <div className="space-y-3">
               <h3 className="text-lg font-semibold">Audit</h3>
-              <p className="text-sm text-muted-foreground">Append-only record of who did what, when, and the state it changed. Entries cannot be edited or deleted.</p>
               <EventStream state={state} mode="audit" appName={appName} />
             </div>
           )}
@@ -296,7 +288,6 @@ export function OperationsApp({ params }: AppProps) {
             ) : (
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold">Resources</h3>
-                <p className="text-sm text-muted-foreground">Workers, agents, services and connectors used by published applications, with their runtime activity. Their lifecycle is managed by the owning platform.</p>
                 <ResourceList resources={resources} appName={appName} onOpen={links.openResource} />
               </div>
             ))}

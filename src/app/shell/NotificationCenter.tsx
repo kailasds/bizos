@@ -73,9 +73,9 @@ export function NotificationCenter() {
 
   return (
     <PopoverContent
-      side="top"
+      side="bottom"
       align="end"
-      sideOffset={12}
+      sideOffset={10}
       className="w-[min(24rem,calc(100vw-1.5rem))] gap-0 overflow-hidden rounded-2xl p-0 shadow-overlay"
     >
       <div className="flex items-center gap-2 border-b px-4 py-3">

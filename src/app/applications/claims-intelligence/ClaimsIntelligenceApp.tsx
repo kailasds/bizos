@@ -221,7 +221,7 @@ export function ClaimsIntelligenceApp({ params }: AppProps) {
         <NavItem active={view === 'runtime' && runtimeView.kind !== 'new'} icon={ListChecks} label="Executions" count={runCount} onClick={() => openRuntime({ kind: 'list' })} />
         <div className="mt-auto space-y-1 px-1 text-xs text-muted-foreground">
           <MockBadge />
-          <p>Runs blueprint v{runtime.builtin['claims-intelligence']?.published.version} (AI-Driven Claims Automation)</p>
+          <p>Runs blueprint v{runtime.builtin['claims-intelligence']?.published.version}</p>
         </div>
       </nav>
 
@@ -286,11 +286,6 @@ export function ClaimsIntelligenceApp({ params }: AppProps) {
                   ))}
                 </div>
               </div>
-            )}
-            {view === 'approvals' && (
-              <p className="text-sm text-muted-foreground">
-                Settlements that need a human decision before the workflow can continue.
-              </p>
             )}
           </div>
 

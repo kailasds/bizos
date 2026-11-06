@@ -47,7 +47,7 @@ function SectionHeader({ title, source, children }: { title: string; source?: st
         <h3 className="text-lg font-semibold">{title}</h3>
         {children}
       </div>
-      {source && <p className="text-sm text-muted-foreground">{source}</p>}
+      {source && <p className="text-xs text-muted-foreground">{source}</p>}
     </div>
   )
 }
@@ -55,20 +55,20 @@ function SectionHeader({ title, source, children }: { title: string; source?: st
 function Overview() {
   return (
     <>
-      <SectionHeader title="Platform health" source="Status of the runtime and the platforms this OS depends on.">
+      <SectionHeader title="Platform health">
         <MockBadge />
       </SectionHeader>
-      <ul className="grid gap-3 @2xl:grid-cols-2">
+      <ul className="divide-y border-y">
         {platformServices.map((s) => (
-          <li key={s.id} className="rounded-lg border p-3">
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-medium">{s.name}</span>
-              <StatusBadge tone={s.state === 'operational' ? 'success' : s.state === 'degraded' ? 'warning' : 'danger'}>
-                {s.state === 'operational' ? 'Operational' : s.state === 'degraded' ? 'Degraded' : 'Outage'}
-              </StatusBadge>
-            </div>
-            <p className="mt-1 text-sm text-muted-foreground">{s.note}</p>
-            <p className="mt-2 text-xs text-muted-foreground">Owned by {s.owner}</p>
+          <li key={s.id} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 py-2.5">
+            <span className="min-w-0 flex-1 basis-56">
+              <span className="block text-sm font-medium">{s.name}</span>
+              <span className="block truncate text-xs text-muted-foreground">{s.note}</span>
+            </span>
+            <span className="hidden w-44 truncate text-xs text-muted-foreground @2xl:block">{s.owner}</span>
+            <StatusBadge tone={s.state === 'operational' ? 'success' : s.state === 'degraded' ? 'warning' : 'danger'}>
+              {s.state === 'operational' ? 'Operational' : s.state === 'degraded' ? 'Degraded' : 'Outage'}
+            </StatusBadge>
           </li>
         ))}
       </ul>
@@ -76,12 +76,12 @@ function Overview() {
   )
 }
 
-const resourceSections: Partial<Record<Section, { kind: ResourceKind; title: string; source: string }>> = {
-  workers: { kind: 'worker', title: 'AI Workers', source: 'Read from the AI Workers Platform, which owns composition and lifecycle. Not connected in this prototype.' },
-  agents: { kind: 'agent', title: 'Agents', source: 'Read from the Agent Control Plane, which remains the source of truth. Not connected in this prototype.' },
-  connectors: { kind: 'connector', title: 'Connectors', source: 'Governed integrations with enterprise systems. Not connected in this prototype.' },
-  services: { kind: 'service', title: 'Services', source: 'Services provided by Enterprise AI OS itself.' },
-  'domain-packs': { kind: 'knowledge', title: 'Domain knowledge', source: 'Versioned domain packs from the Domain Intelligence Kernel.' },
+const resourceSections: Partial<Record<Section, { kind: ResourceKind; title: string }>> = {
+  workers: { kind: 'worker', title: 'AI Workers' },
+  agents: { kind: 'agent', title: 'Agents' },
+  connectors: { kind: 'connector', title: 'Connectors' },
+  services: { kind: 'service', title: 'Services' },
+  'domain-packs': { kind: 'knowledge', title: 'Domain knowledge' },
 }
 
 function Resources({ section }: { section: Section }) {
@@ -90,7 +90,7 @@ function Resources({ section }: { section: Section }) {
   const list = searchCatalogue({ kind: meta.kind })
   return (
     <>
-      <SectionHeader title={meta.title} source={meta.source}>
+      <SectionHeader title={meta.title}>
         <MockBadge />
       </SectionHeader>
       <ul className="divide-y rounded-lg border bg-card">
@@ -105,7 +105,7 @@ function Resources({ section }: { section: Section }) {
                 <span className="block text-sm font-medium">
                   {r.name} <span className="font-normal text-muted-foreground tabular-nums">· {r.version}</span>
                 </span>
-                <span className="block text-sm text-muted-foreground">{r.purpose}</span>
+                <span className="line-clamp-1 block text-sm text-muted-foreground">{r.purpose}</span>
                 {r.runtime && (
                   <span className="mt-1 block text-xs text-muted-foreground">
                     Simulated: {r.runtime.state === 'busy' ? 'busy' : r.runtime.state === 'validating' ? 'in validation' : 'idle'}
@@ -131,7 +131,7 @@ function Executions() {
   const { openApp } = useOs()
   return (
     <RuntimeLinksContext.Provider value={links}>
-      <SectionHeader title="Workflow executions" source="Executions of published applications, from the shared simulated runtime. Investigate one in Operations.">
+      <SectionHeader title="Workflow executions">
         <MockBadge label="Simulated" />
       </SectionHeader>
       <ExecutionList executions={runtime.executions} state={runtime} onOpen={links.openExecution} showApplication label="Workflow executions" />
@@ -161,7 +161,7 @@ function ActivityLog() {
   const present = [...new Set(all.map((a) => a.category))]
   return (
     <>
-      <SectionHeader title="Activity" source="Publications, blueprint changes, validation runs, compositions and approvals. Seed events are simulated; Studio events are your own." />
+      <SectionHeader title="Activity" />
       <div role="group" aria-label="Filter activity" className="mb-3 flex flex-wrap gap-1">
         <Button size="xs" variant={category === 'all' ? 'secondary' : 'ghost'} aria-pressed={category === 'all'} onClick={() => setCategory('all')}>
           All
@@ -194,7 +194,7 @@ function Applications({ appId, onSelect }: { appId: string | null; onSelect: (id
   if (appId) return <ApplicationDetail id={appId} onBack={() => onSelect(null)} />
   return (
     <>
-      <SectionHeader title="Application registry" source="Every application on this OS: built-in, published from Application Studio, and drafts still being designed." />
+      <SectionHeader title="Application registry" />
       <ApplicationRegistry onSelect={onSelect} />
     </>
   )

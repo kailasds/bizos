@@ -40,11 +40,7 @@ function Overview({ state, go }: { state: RuntimeState; go: (n: Nav) => void }) 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="min-w-0 flex-1">
-          <h3 className="text-lg font-semibold">Learning and improvement</h3>
-          <p className="text-sm text-muted-foreground">What the OS observed in operations, and the application changes it suggests. Nothing changes until you accept, validate and publish.</p>
-        </div>
-        <MockBadge label="Simulated observations" />
+        <h3 className="min-w-0 flex-1 text-lg font-semibold">Learning and improvement</h3>
       </div>
       <dl className="grid grid-cols-3 gap-3 rounded-lg border bg-card p-3">
         <div>
@@ -64,7 +60,7 @@ function Overview({ state, go }: { state: RuntimeState; go: (n: Nav) => void }) 
       <section aria-label="Requires review" className="space-y-1">
         <h4 className="text-sm font-semibold">Requires review</h4>
         {open.length === 0 ? (
-          <p className="rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">No proposals waiting. A proposal appears when the same issue is observed at least twice.</p>
+          <p className="rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">No proposals waiting.</p>
         ) : (
           <ProposalRows proposals={open} state={state} go={go} />
         )}
@@ -496,7 +492,6 @@ export function LearningApp({ params }: AppProps) {
             ) : (
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold">Improvement proposals</h3>
-                <p className="text-sm text-muted-foreground">Each proposal is based on at least two observations of the same issue.</p>
                 {state.proposals.length === 0 ? (
                   <p className="rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">No proposals yet.</p>
                 ) : (
@@ -510,7 +505,6 @@ export function LearningApp({ params }: AppProps) {
             ) : (
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold">Observations</h3>
-                <p className="text-sm text-muted-foreground">Signals captured from executions, grouped by application, step and type.</p>
                 {themes.length === 0 ? <p className="text-sm text-muted-foreground">Nothing observed yet.</p> : <ThemeRows themes={themes} go={setNav} />}
               </div>
             ))}

@@ -23,8 +23,8 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await page.getByRole('button', { name: 'Claims Intelligence, application' }).click();
   await page.waitForTimeout(300);
   check('claims window open', await page.locator('section[aria-label="Claims Intelligence"]').isVisible());
-  // open document ai via dock
-  await page.getByRole('navigation', { name: 'Dock' }).getByRole('button', { name: 'Document AI' }).click();
+  // open document ai (closed apps are not in the dock; it lists open apps)
+  await page.keyboard.press('Control+k'); await page.waitForTimeout(150); await page.keyboard.type('Document AI'); await page.waitForTimeout(150); await page.keyboard.press('Enter'); await page.getByRole('dialog').waitFor({ state: 'hidden' }); // closed apps open from the launcher; the dock lists open apps
   await page.waitForTimeout(300);
   check('two windows', await page.locator('section[aria-label="Document AI"]').isVisible() && await page.locator('section[aria-label="Claims Intelligence"]').isVisible());
   check('doc ai focused', (await page.locator('section[aria-label="Document AI"]').getAttribute('data-focused')) === 'true');
@@ -37,6 +37,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
 
   // minimize claims
   await page.getByRole('button', { name: 'Minimize Claims Intelligence' }).click();
+  await page.locator('section[aria-label="Claims Intelligence"]').waitFor({ state: 'hidden' }); // minimize animates into the dock
   check('claims hidden after minimize', !(await page.locator('section[aria-label="Claims Intelligence"]').isVisible()));
   check('dock shows minimized', await page.getByRole('button', { name: 'Claims Intelligence · Minimized' }).count() === 1);
   // restore via dock
@@ -44,6 +45,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   check('claims restored', await page.locator('section[aria-label="Claims Intelligence"]').isVisible());
   // dock click on focused -> minimize
   await page.getByRole('button', { name: 'Claims Intelligence · Active' }).click();
+  await page.locator('section[aria-label="Claims Intelligence"]').waitFor({ state: 'hidden' });
   check('dock click on active minimizes', !(await page.locator('section[aria-label="Claims Intelligence"]').isVisible()));
   await page.getByRole('button', { name: 'Claims Intelligence · Minimized' }).click();
 
@@ -95,7 +97,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
 
   // folder (minimize covering windows first)
   for (const n of ['Workflow Studio','Claims Intelligence','Document AI']) {
-    if (await page.locator(`section[aria-label="${n}"]`).isVisible()) await page.getByRole('button', { name: 'Minimize ' + n }).click();
+    if (await page.locator(`section[aria-label="${n}"]`).isVisible()) { await page.getByRole('button', { name: 'Minimize ' + n }).click(); await page.locator(`section[aria-label="${n}"]`).waitFor({ state: 'hidden' }); }
   }
   await page.getByRole('button', { name: /^Insurance, folder/ }).click();
   await page.waitForTimeout(300);
@@ -110,6 +112,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
     await page.getByRole('button', { name: new RegExp('^' + n + ' · Minimized') }).click();
     await page.getByRole('button', { name: 'Close ' + n }).click();
   }
+  await page.waitForFunction(() => document.querySelectorAll('main section[aria-label][data-focused]').length === 0, null, { timeout: 3000 }).catch(() => {}); // close animation
   check('all closed', await page.locator('main section[aria-label][data-focused]').count() === 0);
   await page.getByRole('button', { name: /Worker activity — open/ }).click();
   await page.waitForTimeout(300);
@@ -133,7 +136,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await page.waitForTimeout(300);
   check('notification opened doc ai at DOC-7812', (await page.locator('section[aria-label="Document AI"]').innerText()).includes("couldn't be read"));
   await page.screenshot({ path: dir + '/07-docai-failed.png' });
-  await page.getByRole('navigation', { name: 'Dock' }).getByRole('button', { name: /Notifications/ }).click();
+  await page.getByRole('button', { name: /^Notifications/ }).click(); // notifications moved to the top bar's right section
   await page.getByRole('button', { name: 'Clear all' }).click();
   check('notifications empty state', await page.getByText("You're all caught up").isVisible());
   await page.keyboard.press('Escape');
@@ -152,14 +155,14 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await page.keyboard.press('Escape');
 
   // settings: hide widget
-  await page.getByRole('navigation', { name: 'Dock' }).getByRole('button', { name: /^Settings/ }).click();
+  await page.getByRole('button', { name: /^Settings/ }).click(); // settings moved to the top bar's right section
   await page.waitForTimeout(300);
   await page.getByRole('switch', { name: /Platform activity/ }).click();
   check('widget hidden', await page.getByRole('button', { name: /Platform activity — open/ }).count() === 0);
   await page.getByRole('button', { name: 'Reset widgets' }).click();
 
   // analytics
-  await page.getByRole('navigation', { name: 'Dock' }).getByRole('button', { name: 'Analytics Workspace' }).click();
+  await page.keyboard.press('Control+k'); await page.waitForTimeout(150); await page.keyboard.type('Analytics Workspace'); await page.waitForTimeout(150); await page.keyboard.press('Enter'); await page.getByRole('dialog').waitFor({ state: 'hidden' }); // closed apps open from the launcher; the dock lists open apps
   await page.waitForTimeout(300);
   await page.getByRole('button', { name: 'Last 30 days' }).click();
   await page.screenshot({ path: dir + '/10-analytics.png' });

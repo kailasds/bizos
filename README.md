@@ -34,7 +34,7 @@ src/
                    app-id → component map (lazy), useApplications()
     os/            OS state: windows, overlays, notifications, preferences (OsProvider, useOs)
     windows/       Pure window reducer, WindowFrame (chrome, drag, resize), WindowManager
-    shell/         DesktopShell, TopBar, DesktopCanvas, Dock, ApplicationLauncher,
+    shell/         DesktopShell, TopBar (with the dock tabs centred), DesktopCanvas, Dock, ApplicationLauncher,
                    NotificationCenter, AssistantPanel
     widgets/       Desktop widgets + shared WidgetCard
     runtime/       Simulated runtime: types (one shared model), engine (deterministic state machine),
@@ -117,6 +117,16 @@ Everything below is simulated in the browser; there is no backend, model or plat
 Persisted in `localStorage` (prefix `enterprise-ai-os:`): drafts with version snapshots,
 published apps, runtime records (executions, approvals, audit, outcomes, signals, proposals, built-in drafts), records inside published apps, Claims Intelligence decisions, recently opened
 apps, widget preferences. Settings → Demo data → Reset clears them.
+
+## Shell: dock and window motion
+
+- The dock sits in the centre of the top bar as **dock tabs** (Framer Motion): Desktop, Applications
+  (launcher), Application Studio, Operations, Learning and System Explorer, then a divider and every
+  open application in opening order. The active tab gets a sliding pill; names are in tooltips.
+  Assistant, notifications and settings are in the bar's right section.
+- Windows scale and fade in on open, shrink into their dock tab on minimize, return from it on
+  restore, and fade out on close. Focus changes are not animated; `prefers-reduced-motion` disables
+  the motion.
 
 ## Operational runtime (Milestone 4)
 

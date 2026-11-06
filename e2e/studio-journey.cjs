@@ -142,6 +142,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
 
   // 13-14. Back to desktop, open new app
   await studio.getByRole('button', { name: 'Back to desktop' }).last().click();
+  await studio.waitFor({ state: 'hidden' }); // minimize animates into the dock
   check('studio minimized', !(await studio.isVisible()));
   const icon = page.getByRole('button', { name: 'Claims Processing Hub, application' });
   check('new app on desktop', await icon.isVisible());
@@ -155,6 +156,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   check('dock shows generated app', await page.getByRole('navigation', { name: 'Dock' }).getByRole('button', { name: /Claims Processing Hub/ }).count() === 1);
   // folder
   await page.getByRole('button', { name: 'Minimize Claims Processing Hub' }).click();
+  await appWin.waitFor({ state: 'hidden' });
   await page.getByRole('button', { name: /^Insurance, folder, 4 applications/ }).click();
   await page.locator('section[aria-label="Folders"]').getByText('Claims Processing Hub').waitFor({ timeout: T }).catch(() => {});
   check('insurance folder lists new app', (await page.locator('section[aria-label="Folders"]').innerText()).includes('Claims Processing Hub'));
@@ -166,7 +168,8 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await page.keyboard.press('Escape');
 
   // 15. existing desktop still works
-  await page.getByRole('navigation', { name: 'Dock' }).getByRole('button', { name: 'Claims Intelligence' }).click();
+  await page.keyboard.press('Control+k'); await page.waitForTimeout(150); await page.keyboard.type('Claims Intelligence'); await page.waitForTimeout(150); await page.keyboard.press('Enter'); await page.getByRole('dialog').waitFor({ state: 'hidden' }); // closed apps open from the launcher; the dock lists open apps
+  await page.locator('section[aria-label="Claims Intelligence"]').waitFor();
   check('claims intelligence opens', await page.locator('section[aria-label="Claims Intelligence"]').isVisible());
   await page.getByRole('button', { name: 'Maximize Claims Intelligence' }).click();
   await page.getByRole('button', { name: 'Restore Claims Intelligence' }).click();

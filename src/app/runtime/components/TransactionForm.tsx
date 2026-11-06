@@ -48,13 +48,11 @@ export function TransactionForm({ app, onSubmitted }: { app: RuntimeApp; onSubmi
     <form onSubmit={onSubmit} aria-label={schema.action} className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-lg font-semibold">{schema.action}</h3>
+        <span className="text-sm text-muted-foreground tabular-nums">v{app.version}</span>
         <MockBadge label="Simulated runtime" className="ml-auto" />
       </div>
-      <p className="text-sm text-muted-foreground">
-        Runs on {app.name} v{app.version}. Each step is simulated in this browser; no real {schema.noun} is processed.
-      </p>
       <fieldset className="space-y-2">
-        <legend className="text-xs text-muted-foreground">Start from a sample</legend>
+        <legend className="text-xs text-muted-foreground">Samples</legend>
         <div className="grid gap-2 @xl:grid-cols-2">
           {schema.presets.map((p) => (
             <button
@@ -65,7 +63,7 @@ export function TransactionForm({ app, onSubmitted }: { app: RuntimeApp; onSubmi
               className="rounded-lg border bg-card px-3 py-2 text-left outline-none hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 aria-pressed:border-primary aria-pressed:bg-accent/60"
             >
               <span className="block text-sm font-medium">{p.label}</span>
-              <span className="block text-xs text-muted-foreground">Shows: {p.shows}</span>
+              <span className="block text-xs text-muted-foreground">{p.shows}</span>
             </button>
           ))}
         </div>

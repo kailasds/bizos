@@ -27,7 +27,6 @@ export function StageFrame({
           <header className="mb-6 flex flex-wrap items-start gap-3">
             <div className="min-w-0 flex-1">
               <h2 className="text-lg font-semibold">{stageMeta[stage].title}</h2>
-              <p className="mt-0.5 max-w-prose text-sm text-muted-foreground">{stageMeta[stage].description}</p>
             </div>
             {aside}
           </header>

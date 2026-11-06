@@ -33,6 +33,8 @@ export interface OsContextValue {
   toggleMaximize: (id: string) => void
   setWindowBounds: (id: string, bounds: Bounds) => void
   closeAllWindows: () => void
+  /** Minimizes every visible window to reveal the desktop. */
+  showDesktop: () => void
   /** Recently opened applications, newest first (persisted). */
   recentApps: RecentApp[]
 

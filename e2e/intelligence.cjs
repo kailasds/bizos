@@ -228,7 +228,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await page.waitForTimeout(300);
 
   // ── Reset demo data
-  await page.getByRole('navigation', { name: 'Dock' }).getByRole('button', { name: /^Settings/ }).click();
+  await page.getByRole('button', { name: /^Settings/ }).click(); // settings moved to the top bar's right section
   const settings = page.locator('section[aria-label="Settings"]');
   await settings.getByRole('button', { name: 'Demo data' }).click();
   check('demo data counts drafts', /Application Studio drafts\s+1/.test(await settings.innerText()));

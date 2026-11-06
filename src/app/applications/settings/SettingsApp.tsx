@@ -37,7 +37,6 @@ function DesktopSettings() {
     <div className="max-w-lg space-y-8">
       <section>
         <h3 className="text-lg font-semibold">Widgets</h3>
-        <p className="text-sm text-muted-foreground">Choose what appears in the desktop's system overview.</p>
         <ul className="mt-4 divide-y rounded-lg border">
           {widgetOrder.map((w) => {
             const id = `widget-${w.id}`
@@ -55,7 +54,6 @@ function DesktopSettings() {
       </section>
       <section>
         <h3 className="text-base font-semibold">Reset</h3>
-        <p className="text-sm text-muted-foreground">Show every widget again. Open windows are not affected.</p>
         <Button
           size="sm"
           variant="outline"
@@ -71,7 +69,6 @@ function DesktopSettings() {
       </section>
       <section>
         <h3 className="text-base font-semibold">Windows</h3>
-        <p className="text-sm text-muted-foreground">Close every open window, including this one.</p>
         <Button size="sm" variant="destructive" className="mt-3" onClick={closeAllWindows}>
           Close all windows
         </Button>

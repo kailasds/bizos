@@ -1,4 +1,5 @@
 import { Suspense, useLayoutEffect, useRef } from 'react'
+import { AnimatePresence } from 'framer-motion'
 import { useOs } from '@/app/os/use-os'
 import { resolveAppComponent } from '@/app/registry/applicationComponents'
 import { getApp } from '@/app/registry/applicationRegistry'
@@ -38,6 +39,7 @@ export function WindowManager() {
 
   return (
     <div ref={rootRef} className="pointer-events-none absolute inset-0 isolate z-[1]">
+      <AnimatePresence>
       {windows.map((win) => {
         const Component = resolveAppComponent(win.appId)
         return (
@@ -56,6 +58,7 @@ export function WindowManager() {
           </WindowFrame>
         )
       })}
+      </AnimatePresence>
     </div>
   )
 }

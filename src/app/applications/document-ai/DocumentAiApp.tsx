@@ -206,11 +206,12 @@ export function DocumentAiApp({ params }: AppProps) {
 
           {(doc.status === 'extracted' || doc.status === 'needs-review') && (
             <aside aria-label="Extracted fields" className="flex max-h-[45%] w-full shrink-0 flex-col border-t @4xl:max-h-none @4xl:w-72 @4xl:border-t-0 @4xl:border-l">
-              <div className="border-b px-4 py-3">
-                <h4 className="text-sm font-semibold">Extracted fields</h4>
-                <p className="text-xs text-muted-foreground">
-                  {lowConfidence > 0 ? `${lowConfidence} below ${LOW_CONFIDENCE * 100}% confidence` : 'All fields above review threshold'}
-                </p>
+              <div className="flex items-center gap-2 border-b px-4 py-3">
+                <h4 className="text-sm font-semibold">Fields</h4>
+                <span className="text-xs text-muted-foreground tabular-nums">{doc.fields.length}</span>
+                <StatusBadge tone={lowConfidence > 0 ? 'warning' : 'success'} className="ml-auto">
+                  {lowConfidence > 0 ? `${lowConfidence} to check` : 'All confident'}
+                </StatusBadge>
               </div>
               {doc.issue && (
                 <p className="mx-4 mt-3 flex gap-2 rounded-lg bg-warning-soft px-3 py-2 text-xs text-warning-ink">
@@ -239,20 +240,21 @@ export function DocumentAiApp({ params }: AppProps) {
                           </span>
                         </span>
                         <span className="mt-0.5 block text-sm font-medium tabular-nums">{f.value}</span>
+                        <span aria-hidden className="mt-1.5 block h-1 overflow-hidden rounded-full bg-muted">
+                          <span className={cn('block h-full rounded-full', low ? 'bg-warning' : 'bg-primary/60')} style={{ width: `${Math.round(f.confidence * 100)}%` }} />
+                        </span>
                       </button>
                     </li>
                   )
                 })}
               </ul>
-              <div className="border-t p-3">
-                {doc.status === 'extracted' ? (
-                  <p className="px-1 text-sm text-muted-foreground">No review needed. Fields are ready for the workflow.</p>
-                ) : (
+              {doc.status === 'needs-review' && (
+                <div className="border-t p-3">
                   <Button className="w-full" onClick={confirmFields}>
                     Confirm fields
                   </Button>
-                )}
-              </div>
+                </div>
+              )}
             </aside>
           )}
         </div>

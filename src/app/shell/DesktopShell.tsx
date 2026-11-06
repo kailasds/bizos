@@ -6,12 +6,11 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { ApplicationLauncher } from './ApplicationLauncher'
 import { AssistantPanel } from './AssistantPanel'
 import { DesktopCanvas } from './DesktopCanvas'
-import { Dock } from './Dock'
 import { TopBar } from './TopBar'
 
 /**
  * The persistent OS shell. Layers, bottom to top:
- * desktop canvas → windows → assistant → dock. Launcher and notifications are portalled overlays.
+ * top bar (with the dock) · desktop canvas → windows → assistant. Launcher and notifications are portalled overlays.
  */
 export function DesktopShell() {
   const { launcherOpen, setLauncherOpen } = useOs()
@@ -31,17 +30,14 @@ export function DesktopShell() {
     <TooltipProvider delayDuration={500} skipDelayDuration={300}>
       <div className="flex h-full flex-col">
         <TopBar />
-        {/* Desktop area: everything between the top bar and the dock reserve. */}
+        {/* Desktop area: everything below the top bar. */}
         <main className="relative flex-1">
-          <div className="absolute inset-x-0 top-0 bottom-[84px]">
+          <div className="absolute inset-0">
             <DesktopCanvas />
             <WindowManager />
           </div>
-          <div className="pointer-events-none absolute inset-x-0 top-0 bottom-[84px] z-10">
+          <div className="pointer-events-none absolute inset-0 z-10">
             <AssistantPanel />
-          </div>
-          <div className="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center px-3">
-            <Dock />
           </div>
         </main>
       </div>

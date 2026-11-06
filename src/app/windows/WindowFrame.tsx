@@ -1,4 +1,5 @@
 import { useRef, useState, type PointerEvent, type ReactNode } from 'react'
+import { motion, useReducedMotion, type Variants } from 'framer-motion'
 import { Maximize2, Minimize2, Minus, X } from 'lucide-react'
 import { useOs } from '@/app/os/use-os'
 import type { AppDefinition, Size } from '@/app/registry/types'
@@ -66,6 +67,39 @@ export function WindowFrame({ win, app, title, focused, area, compact, children 
   const { focusWindow, closeWindow, minimizeWindow, toggleMaximize, setWindowBounds } = useOs()
   const [live, setLive] = useState<Bounds | null>(null)
   const gesture = useRef<Gesture | null>(null)
+  const ref = useRef<HTMLElement>(null)
+  const reduce = useReducedMotion()
+  const minimized = win.status === 'minimized'
+
+  /**
+   * Window transitions. Minimize shrinks the window into its dock tab (measured when the
+   * animation starts, so it follows the dock wherever it is); restore plays the reverse from
+   * there. Focus changes are not animated. Framer Motion retargets mid-flight, so rapid clicks
+   * never stack animations.
+   */
+  const variants: Variants = {
+    shown: { x: 0, y: 0, scale: 1, opacity: 1, visibility: 'visible', transition: reduce ? { duration: 0 } : { duration: 0.28, ease: [0.2, 0.8, 0.2, 1] } },
+    minimized: () => {
+      const node = ref.current
+      const target = document.querySelector(`[data-dock-app="${win.appId}"]`)
+      let x = 0
+      let y = -240
+      if (node) {
+        const r = node.getBoundingClientRect()
+        const d = target?.getBoundingClientRect()
+        x = d ? d.left + d.width / 2 - (r.left + r.width / 2) : 0
+        y = d ? d.top + d.height / 2 - (r.top + r.height / 2) : -(r.top + r.height / 2)
+      }
+      return {
+        x,
+        y,
+        scale: 0.12,
+        opacity: 0,
+        transition: reduce ? { duration: 0 } : { duration: 0.3, ease: [0.4, 0, 0.7, 0.2], opacity: { duration: 0.26, delay: 0.04, ease: 'easeIn' } },
+        transitionEnd: { visibility: 'hidden' },
+      }
+    },
+  }
 
   const maximized = compact || win.status === 'maximized'
   const bounds = live ?? clampBounds(win.bounds, area)
@@ -107,10 +141,17 @@ export function WindowFrame({ win, app, title, focused, area, compact, children 
   })
 
   return (
-    <section
+    <motion.section
+      ref={ref}
       aria-label={title}
+      aria-hidden={minimized || undefined}
+      inert={minimized}
       data-focused={focused}
-      hidden={win.status === 'minimized'}
+      data-status={win.status}
+      variants={variants}
+      initial={reduce ? false : { opacity: 0, scale: 0.97 }}
+      animate={minimized ? 'minimized' : 'shown'}
+      exit={reduce ? { opacity: 0, transition: { duration: 0 } } : { opacity: 0, scale: 0.96, transition: { duration: 0.15, ease: 'easeIn' } }}
       onPointerDownCapture={() => focusWindow(win.id)}
       onFocusCapture={() => focusWindow(win.id)}
       style={
@@ -119,7 +160,8 @@ export function WindowFrame({ win, app, title, focused, area, compact, children 
           : { zIndex: win.z, left: bounds.x, top: bounds.y, width: bounds.width, height: bounds.height }
       }
       className={cn(
-        'group/window glass pointer-events-auto absolute flex flex-col overflow-hidden text-card-foreground animate-in fade-in-0 zoom-in-[0.985] [animation-duration:150ms]',
+        'group/window glass absolute flex origin-center flex-col overflow-hidden text-card-foreground will-change-transform',
+        minimized ? 'pointer-events-none' : 'pointer-events-auto',
         maximized ? 'rounded-none border-x-0 border-t-0 sm:rounded-2xl sm:border' : 'rounded-2xl',
         focused ? 'shadow-window-active' : 'shadow-window',
         live && 'select-none',
@@ -169,6 +211,6 @@ export function WindowFrame({ win, app, title, focused, area, compact, children 
           {...gestureHandlers('resize')}
         />
       )}
-    </section>
+    </motion.section>
   )
 }
