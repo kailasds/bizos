@@ -5,7 +5,6 @@ import { useRuntime } from '@/app/runtime/store'
 import { useParamsChange } from '@/app/windows/use-params-change'
 import type { AppProps } from '@/app/registry/types'
 import { useMockServices } from '@/app/services/use-mock-services'
-import { MockBadge } from '@/components/os/MockBadge'
 import { StatusBadge } from '@/components/os/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
@@ -220,7 +219,6 @@ export function ClaimsIntelligenceApp({ params }: AppProps) {
         <NavItem active={view === 'runtime' && runtimeView.kind === 'new'} icon={FilePlus2} label="Submit a claim" count={0} hideCount onClick={() => openRuntime({ kind: 'new' })} />
         <NavItem active={view === 'runtime' && runtimeView.kind !== 'new'} icon={ListChecks} label="Executions" count={runCount} onClick={() => openRuntime({ kind: 'list' })} />
         <div className="mt-auto space-y-1 px-1 text-xs text-muted-foreground">
-          <MockBadge />
           <p>Runs blueprint v{runtime.builtin['claims-intelligence']?.published.version}</p>
         </div>
       </nav>

@@ -6,7 +6,7 @@ This repository is the **Enterprise AI OS** frontend (built on the claude-react-
 
 - Application metadata lives in `src/app/registry/applicationRegistry.ts`; the id → component map is `applicationComponents.ts`. Add an app by registering it in both — never hardcode a window/modal per app.
 - Window state is a pure reducer (`src/app/windows/windowReducer.ts`); shell components talk to it only through `useOs()`.
-- Mock data lives in `src/data/*.mock.ts` (one concern per file; `resources.mock.ts` is the only resource catalogue). Any surface showing fabricated data must carry `MockBadge` (or sit in a container that does).
+- Mock data lives in `src/data/*.mock.ts` (one concern per file; `resources.mock.ts` is the only resource catalogue). The UI shows no mock/prototype tags (removed at the product owner's request); keep that data clearly separated in `src/data` instead.
 - Simulated intelligence lives in typed services under `src/app/services/mock/` — UI never hardcodes scenario logic. Services must stay deterministic, must not claim a model understood something, and must not invent metrics, percentages or validation findings.
 - The OS reads platform resources (agents, workers, connectors, domain packs); it is not their registry. Registry, activity and approvals views are derived from the registry store and Studio projects — never a second copy.
 - Status is always shown with the shared `StatusBadge` (`src/components/os/`).
@@ -15,6 +15,7 @@ This repository is the **Enterprise AI OS** frontend (built on the claude-react-
 - Studio state changes go through `studioReducer` actions. A change to an earlier stage must invalidate later stages (`invalidateAfter`), never silently rewrite them.
 - Operational records (executions, approvals, audit, outcomes, learning signals, proposals) live only in the runtime store (`src/app/runtime/store.ts`) and change only through engine transitions. Audit events and the activity stream are written by those transitions — never fabricated separately. Operational views derive counts from these records; no invented rates or KPIs.
 - A published application's blueprint never changes silently: improvements create a draft version that must be validated and published.
+- Application Studio is themed with the scoped `.theme-studio` class (indigo accent) in `src/index.css`; reasoning and explanations sit behind `InfoTip` (`src/components/os/InfoTip.tsx`) or expanders, not inline paragraphs.
 - Window content is a container-query context (`@container` on the window body); size app layouts with `@…:` variants, not viewport breakpoints.
 
 ## Stack

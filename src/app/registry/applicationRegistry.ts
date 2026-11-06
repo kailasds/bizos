@@ -28,6 +28,7 @@ import type { AppDefinition, AppId, AppTint, DomainId, FolderDefinition, Generat
 const builtinApplications: AppDefinition[] = [
   {
     id: 'application-studio',
+    tagline: 'Design and publish apps',
     name: 'Application Studio',
     description: 'Describe a business problem and design, generate and publish an application for it.',
     kind: 'system',
@@ -46,6 +47,7 @@ const builtinApplications: AppDefinition[] = [
   },
   {
     id: 'claims-intelligence',
+    tagline: 'Triage and approve claims',
     name: 'Claims Intelligence',
     description: 'Triage, assess and approve insurance claims with AI-assisted review.',
     kind: 'application',
@@ -63,6 +65,7 @@ const builtinApplications: AppDefinition[] = [
   },
   {
     id: 'document-ai',
+    tagline: 'Classify and extract documents',
     name: 'Document AI',
     description: 'Classify incoming documents and review extracted fields before they enter a workflow.',
     kind: 'application',
@@ -80,6 +83,7 @@ const builtinApplications: AppDefinition[] = [
   },
   {
     id: 'workflow-studio',
+    tagline: 'Workflow definitions',
     name: 'Workflow Studio',
     description: 'Browse the workflow definitions that applications run on.',
     kind: 'application',
@@ -97,6 +101,7 @@ const builtinApplications: AppDefinition[] = [
   },
   {
     id: 'analytics-workspace',
+    tagline: 'Throughput and outcomes',
     name: 'Analytics Workspace',
     description: 'Throughput and outcome reporting for published applications.',
     kind: 'application',
@@ -114,6 +119,7 @@ const builtinApplications: AppDefinition[] = [
   },
   {
     id: 'system-explorer',
+    tagline: 'Apps, resources and activity',
     name: 'System Explorer',
     description: 'Inspect the applications, resources and activity this OS contains.',
     kind: 'system',
@@ -131,6 +137,7 @@ const builtinApplications: AppDefinition[] = [
   },
   {
     id: 'operations',
+    tagline: 'Executions, approvals and audit',
     name: 'Operations',
     description: 'What published applications are doing: executions, approvals, activity and audit.',
     kind: 'system',
@@ -148,6 +155,7 @@ const builtinApplications: AppDefinition[] = [
   },
   {
     id: 'learning',
+    tagline: 'Observations and improvements',
     name: 'Learning',
     description: 'What the OS observed in operations, and the application improvements it proposes.',
     kind: 'system',
@@ -165,6 +173,7 @@ const builtinApplications: AppDefinition[] = [
   },
   {
     id: 'settings',
+    tagline: 'Desktop and data preferences',
     name: 'Settings',
     description: 'Desktop, widget and notification preferences.',
     kind: 'system',

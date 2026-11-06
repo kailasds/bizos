@@ -66,7 +66,7 @@ export function ApplicationStudioApp({ windowId, params }: AppProps) {
   }
 
   return (
-    <div className="@container flex h-full min-h-0 flex-col bg-background">
+    <div className="theme-studio @container flex h-full min-h-0 flex-col bg-background text-foreground">
       <StudioHeader
         windowId={windowId}
         panelOpen={panelOpen}
@@ -87,7 +87,7 @@ export function ApplicationStudioApp({ windowId, params }: AppProps) {
         <>
           <StageNav project={project} active={stage} onSelect={(s) => project && goTo(s)} />
           <div className="relative flex min-h-0 flex-1">
-            <main className="min-w-0 flex-1 bg-card">{content()}</main>
+            <main className="min-w-0 flex-1 bg-background">{content()}</main>
             {panelOpen && (
               <div
                 className={cn(

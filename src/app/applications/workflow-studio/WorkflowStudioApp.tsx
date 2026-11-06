@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { ArrowRight, Bot, Cpu, Eye, Plug, Scale, User, Workflow, X, type LucideIcon } from 'lucide-react'
 import { useOs } from '@/app/os/use-os'
 import { getApp } from '@/app/registry/applicationRegistry'
-import { MockBadge } from '@/components/os/MockBadge'
 import { SidebarNav } from '@/components/os/SidebarNav'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -39,7 +38,6 @@ export function WorkflowStudioApp() {
           setStepIndex(null)
         }}
         items={workflowDefinitions.map((w) => ({ id: w.id, label: w.name, icon: Workflow }))}
-        footer={<MockBadge />}
       />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <header className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-6 py-3">

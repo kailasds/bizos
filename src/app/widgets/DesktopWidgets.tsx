@@ -12,7 +12,6 @@ import { useMockServices } from '@/app/services/use-mock-services'
 import { lifecycleOf } from '@/app/studio/lifecycle'
 import { useStudio } from '@/app/studio/use-studio'
 import { AppIcon } from '@/components/os/AppIcon'
-import { MockBadge } from '@/components/os/MockBadge'
 import { StatusBadge } from '@/components/os/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
@@ -271,8 +270,8 @@ function ActiveExecutionsWidget() {
   return (
     <WidgetCard
       icon={Workflow}
-      title="Simulated executions"
-      openLabel="Simulated executions — open Operations executions"
+      title="Executions"
+      openLabel="Executions — open Operations executions"
       onOpen={() => openApp('operations', { section: 'executions' })}
       aside={failed > 0 ? <StatusBadge tone="danger">{failed} failed</StatusBadge> : undefined}
     >
@@ -395,7 +394,6 @@ export function DesktopWidgets() {
     <aside aria-label="System overview" className="flex flex-col gap-3">
       <div className="flex items-center gap-2 px-1">
         <h2 className="text-sm font-semibold whitespace-nowrap">System overview</h2>
-        <MockBadge />
         <Button size="xs" variant="ghost" className="ml-auto text-foreground/80 hover:bg-white/45" onClick={() => openApp('settings', { section: 'desktop' })}>
           <LayoutDashboard />
           Customize

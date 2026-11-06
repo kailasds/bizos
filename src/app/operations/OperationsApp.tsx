@@ -18,7 +18,6 @@ import { resetRuntime, useRuntime } from '@/app/runtime/store'
 import type { ExecutionStatus, RuntimeState } from '@/app/runtime/types'
 import { useApplications } from '@/app/registry/use-applications'
 import { useParamsChange } from '@/app/windows/use-params-change'
-import { MockBadge } from '@/components/os/MockBadge'
 import { SidebarNav } from '@/components/os/SidebarNav'
 import { StatusBadge } from '@/components/os/StatusBadge'
 import {
@@ -152,7 +151,7 @@ function Overview({ state, go, appName }: { state: RuntimeState; go: (n: Nav) =>
       </section>
 
       <div className="flex flex-wrap items-center gap-2 border-t pt-3 text-xs text-muted-foreground">
-        <span className="min-w-0 flex-1">Simulated records, stored in this browser.</span>
+        <span className="min-w-0 flex-1">Records are stored in this browser.</span>
         <Button size="xs" variant="outline" onClick={() => setConfirm(true)}>
           <RotateCcw /> Restart demo scenario
         </Button>
@@ -214,7 +213,6 @@ export function OperationsApp({ params }: AppProps) {
             { id: 'audit', label: 'Audit', icon: Server },
             { id: 'resources', label: 'Resources', icon: Cpu, meta: resources.length },
           ]}
-          footer={<MockBadge label="Simulated runtime" />}
         />
         <main className="min-h-0 flex-1 overflow-y-auto p-4 @3xl:p-6">
           {nav.section === 'overview' && <Overview state={state} go={setNav} appName={appName} />}

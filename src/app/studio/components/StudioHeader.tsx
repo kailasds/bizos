@@ -1,18 +1,42 @@
 import { useState } from 'react'
-import { ArrowRight, Blocks, Check, CloudOff, FolderOpen, Minus, PanelRightClose, PanelRightOpen, Pencil } from 'lucide-react'
+import { ArrowRight, Blocks, Check, CloudOff, FolderOpen, Minus, Pencil, Sparkles } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { useOs } from '@/app/os/use-os'
-import { MockBadge } from '@/components/os/MockBadge'
 import { StatusBadge } from '@/components/os/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
 import { lifecycleMeta, lifecycleOf, nextAction } from '../lifecycle'
 import { LifecycleTrack } from './LifecycleTrack'
 import { useStudio } from '../use-studio'
 
 
 const timeFormat = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' })
+
+function IconAction({ label, onClick, pressed, children }: { label: string; onClick: () => void; pressed?: boolean; children: ReactNode }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          aria-label={label}
+          aria-pressed={pressed}
+          onClick={onClick}
+          className={cn(
+            'flex size-8 items-center justify-center rounded-lg text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 [&_svg]:size-4',
+            pressed && 'bg-accent text-accent-foreground hover:bg-accent',
+          )}
+        >
+          {children}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{label}</TooltipContent>
+    </Tooltip>
+  )
+}
 
 export function StudioHeader({
   windowId,
@@ -40,11 +64,13 @@ export function StudioHeader({
   const next = project ? nextAction(project) : null
 
   return (
-    <header className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b bg-chrome px-4 py-2.5">
+    <header className="flex h-14 shrink-0 items-center gap-3 border-b bg-card px-4">
       {/* The window title already names the Studio; inside a project the header leads with the project. */}
       {!project && (
         <div className="flex items-center gap-2 text-sm font-semibold">
-          <Blocks aria-hidden className="size-4 text-muted-foreground" />
+          <span aria-hidden className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Blocks className="size-4" />
+          </span>
           Application Studio
         </div>
       )}
@@ -75,10 +101,10 @@ export function StudioHeader({
                 setDraftName(project.name)
                 setEditing(true)
               }}
-              className="group flex min-w-0 items-center gap-1.5 rounded-md px-1 text-sm outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="group flex min-w-0 items-center gap-1.5 rounded-md px-1 text-[15px] outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
               aria-label={`Rename ${project.name}`}
             >
-              <span className="truncate font-medium">{project.name}</span>
+              <span className="truncate font-semibold">{project.name}</span>
               <Pencil aria-hidden className="size-3 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100" />
             </button>
           )}
@@ -95,48 +121,44 @@ export function StudioHeader({
               </PopoverContent>
             </Popover>
           )}
-          {next &&
-            (next.stage === project.activeStage ? (
-              <span className="text-xs text-muted-foreground">Next: {next.label}</span>
-            ) : (
-              <Button size="xs" variant="outline" onClick={() => dispatch({ type: 'stage/go', stage: next.stage })} aria-label={`Go to next step: ${next.label}`}>
-                Next: {next.label}
-                <ArrowRight />
-              </Button>
-            ))}
-          <span className="flex items-center gap-1 text-xs text-muted-foreground" aria-live="polite">
+        </>
+      )}
+      <div className="ml-auto flex items-center gap-2">
+        {project && (
+          <span className="hidden items-center gap-1 text-xs text-muted-foreground @3xl:flex" aria-live="polite">
             {saveStatus === 'saving' ? (
               <>
                 <Spinner className="size-3" /> Saving…
               </>
             ) : saveStatus === 'unavailable' ? (
               <>
-                <CloudOff className="size-3" /> Not saved — browser storage unavailable
+                <CloudOff className="size-3" /> Not saved
               </>
             ) : (
               <>
-                <Check className="size-3" /> {savedAt ? `Saved locally ${timeFormat.format(new Date(savedAt))}` : 'Saved locally'}
+                <Check className="size-3 text-success-ink" /> {savedAt ? `Saved ${timeFormat.format(new Date(savedAt))}` : 'Saved'}
               </>
             )}
           </span>
-        </>
-      )}
-      <div className="ml-auto flex items-center gap-1">
-        <MockBadge label="Prototype intelligence" className="hidden @3xl:inline-flex" />
-        {project && (
-          <Button size="sm" variant="ghost" onClick={onAllProjects}>
-            <FolderOpen />
-            All projects
+        )}
+        {project && next && next.stage !== project.activeStage && (
+          <Button size="sm" onClick={() => dispatch({ type: 'stage/go', stage: next.stage })} aria-label={`Go to next step: ${next.label}`}>
+            <span className="hidden @3xl:inline">{next.label}</span>
+            <ArrowRight />
           </Button>
         )}
-        <Button size="sm" variant="ghost" onClick={onTogglePanel} aria-pressed={panelOpen}>
-          {panelOpen ? <PanelRightClose /> : <PanelRightOpen />}
-          <span className="hidden @3xl:inline">AI Architect</span>
-        </Button>
-        <Button size="sm" variant="ghost" onClick={() => minimizeWindow(windowId)}>
+        <span aria-hidden className="mx-1 h-5 w-px bg-border" />
+        {project && (
+          <IconAction label="All projects" onClick={onAllProjects}>
+            <FolderOpen />
+          </IconAction>
+        )}
+        <IconAction label="AI Architect" onClick={onTogglePanel} pressed={panelOpen}>
+          <Sparkles />
+        </IconAction>
+        <IconAction label="Back to desktop" onClick={() => minimizeWindow(windowId)}>
           <Minus />
-          <span className="hidden @3xl:inline">Back to desktop</span>
-        </Button>
+        </IconAction>
       </div>
     </header>
   )

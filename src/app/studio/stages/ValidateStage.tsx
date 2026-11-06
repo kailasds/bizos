@@ -13,6 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { InfoTip } from '@/components/os/InfoTip'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
@@ -39,12 +40,13 @@ function IssueCard({
   onAccept: (f: ValidationFinding) => void
 }) {
   const { dispatch } = useStudio()
+  const [open, setOpen] = useState(finding.status === 'blocked' && !accepted)
   const now = () => new Date().toISOString()
   const tone: StatusTone = accepted ? 'info' : finding.status === 'blocked' ? 'danger' : 'warning'
   const label = accepted ? 'Accepted as known gap' : finding.status === 'blocked' ? 'Blocked' : 'Needs attention'
   return (
     <li className={cn('rounded-lg border bg-card', finding.status === 'blocked' && !accepted && 'border-danger/30')}>
-      <div className="flex flex-wrap items-start gap-2 border-b px-4 py-3">
+      <div className="flex flex-wrap items-start gap-2 px-4 py-3">
         <div className="min-w-0 flex-1">
           <p className="text-xs text-muted-foreground">{categoryLabel[finding.category]}</p>
           <h4 className="text-sm font-semibold">{finding.title}</h4>
@@ -55,8 +57,13 @@ function IssueCard({
           </span>
         )}
         <StatusBadge tone={tone}>{label}</StatusBadge>
+        <Button size="xs" variant="ghost" aria-expanded={open} onClick={() => setOpen(!open)}>
+          Details
+          <ChevronDown className={cn('transition-transform', open && 'rotate-180')} />
+        </Button>
       </div>
-      <dl className="grid gap-x-6 gap-y-3 px-4 py-3 text-sm @3xl:grid-cols-2">
+      {open && (
+      <dl className="grid gap-x-6 gap-y-3 border-b px-4 py-3 text-sm @3xl:grid-cols-2">
         <div>
           <dt className="text-xs font-medium text-muted-foreground">What is wrong</dt>
           <dd>{finding.explanation}</dd>
@@ -80,8 +87,9 @@ function IssueCard({
           </div>
         )}
       </dl>
+      )}
       {!accepted && (
-        <div className="flex flex-wrap items-center gap-2 border-t px-4 py-3">
+        <div className="flex flex-wrap items-center gap-2 px-4 py-3">
           {finding.quickFix?.kind === 'assign-role' && (
             <NativeSelect
               size="sm"
@@ -208,23 +216,20 @@ export function ValidateStage({ goTo }: { goTo: (stage: StageId, tab?: GenerateT
               <span className="text-sm font-medium tabular-nums">
                 {passedCategories} of {validationCategories.length} checks passed
               </span>
+              {readiness !== 'outdated' && <InfoTip label="About readiness">{readinessMeta[readiness].description}</InfoTip>}
               {readiness === 'outdated' && (
                 <Button size="sm" className="ml-auto" onClick={run}>
                   Re-run validation
                 </Button>
               )}
             </div>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {readiness === 'outdated'
-                ? `The blueprint changed to v${bp.version} since this run. Re-run validation to confirm your changes.`
-                : readinessMeta[readiness].description}
-            </p>
+            {readiness === 'outdated' && <p className="mt-2 text-sm text-muted-foreground">Blueprint changed to v{bp.version} since this run.</p>}
           </section>
 
           {issues.length > 0 && (
             <section aria-label="Issues" className="space-y-2">
               <h3 className="text-sm font-semibold">Issues</h3>
-              <ul className="space-y-3">
+              <ul aria-label="Validation issues" className="space-y-3">
                 {issues.map((f) => (
                   <IssueCard key={f.id} finding={f} accepted={isAck(f)} goTo={goTo} onAccept={setAccepting} />
                 ))}

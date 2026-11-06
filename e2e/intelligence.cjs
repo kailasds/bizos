@@ -43,6 +43,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await studio.getByRole('button', { name: 'Start discovery' }).click();
   await studio.getByRole('region', { name: 'Summary of understanding' }).waitFor({ timeout: T });
   check('summary sentence', (await text()).includes('You want an application that takes insurance claims'));
+  await studio.getByRole('button', { name: 'Evidence' }).click(); // reasoning is shown on request
   check('evidence cue from description', (await text()).includes('Based on your words'));
   check('fraud not assumed when not mentioned', !(await studio.getByRole('group', { name: 'What the application must do' }).innerText()).includes('fraud'));
   await studio.getByRole('button', { name: 'Accept: Screen claims for potential fraud before payment.' }).click();
@@ -162,6 +163,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   check('no approver issue when answered', !(await text()).includes('Nobody is assigned to approve'));
   check('rolled-back field issue detected', (await text()).includes('shows a field the data model does not have'));
   check('readiness: needs attention', (await studio.getByRole('region', { name: 'Readiness' }).innerText()).includes('Needs attention'));
+  await studio.getByRole('list', { name: 'Validation issues' }).getByRole('button', { name: 'Details' }).first().click(); // reasoning opens on request
   check('issue explains why it matters', (await text()).includes('Why it matters'));
   await shot('09-readiness');
   await studio.getByRole('button', { name: 'Accept as known gap' }).click();

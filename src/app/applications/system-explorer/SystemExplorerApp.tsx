@@ -8,7 +8,6 @@ import { formatActivityTime, platformActivity } from '@/app/services/mock/activi
 import { searchCatalogue } from '@/app/services/mock/resource-discovery-service'
 import { useStudio } from '@/app/studio/use-studio'
 import { useParamsChange } from '@/app/windows/use-params-change'
-import { MockBadge } from '@/components/os/MockBadge'
 import { SidebarNav } from '@/components/os/SidebarNav'
 import { StatusBadge, type StatusTone } from '@/components/os/StatusBadge'
 import { Button } from '@/components/ui/button'
@@ -56,7 +55,6 @@ function Overview() {
   return (
     <>
       <SectionHeader title="Platform health">
-        <MockBadge />
       </SectionHeader>
       <ul className="divide-y border-y">
         {platformServices.map((s) => (
@@ -91,7 +89,6 @@ function Resources({ section }: { section: Section }) {
   return (
     <>
       <SectionHeader title={meta.title}>
-        <MockBadge />
       </SectionHeader>
       <ul className="divide-y rounded-lg border bg-card">
         {list.map((r) => (
@@ -108,7 +105,7 @@ function Resources({ section }: { section: Section }) {
                 <span className="line-clamp-1 block text-sm text-muted-foreground">{r.purpose}</span>
                 {r.runtime && (
                   <span className="mt-1 block text-xs text-muted-foreground">
-                    Simulated: {r.runtime.state === 'busy' ? 'busy' : r.runtime.state === 'validating' ? 'in validation' : 'idle'}
+                    {r.runtime.state === 'busy' ? 'Busy' : r.runtime.state === 'validating' ? 'In validation' : 'Idle'}
                     {r.runtime.currentTask ? ` — ${r.runtime.currentTask}` : ''}
                   </span>
                 )}
@@ -132,7 +129,6 @@ function Executions() {
   return (
     <RuntimeLinksContext.Provider value={links}>
       <SectionHeader title="Workflow executions">
-        <MockBadge label="Simulated" />
       </SectionHeader>
       <ExecutionList executions={runtime.executions} state={runtime} onOpen={links.openExecution} showApplication label="Workflow executions" />
       <Button size="sm" variant="outline" className="mt-3" onClick={() => openApp('operations', { section: 'executions' })}>

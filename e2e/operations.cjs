@@ -50,7 +50,7 @@ const BASE = process.env.BASE_URL || 'http://localhost:4173';
   await ops.waitFor({ timeout: T });
   await ops.getByText('Needs your attention').waitFor({ timeout: T });
   check('operations overview shows seeded failure', (await ops.innerText()).includes('CLM-24-1994 failed'));
-  check('operations mock-labelled', (await ops.innerText()).includes('Simulated runtime'));
+  check('no mock or prototype tags', !/Simulated runtime|Mock data|Prototype/.test(await ops.innerText()));
   await shot('01-operations-overview');
   await page.getByRole('button', { name: 'Close Operations' }).click();
 
@@ -83,7 +83,7 @@ const BASE = process.env.BASE_URL || 'http://localhost:4173';
   await ops.waitFor({ timeout: T });
   const approval = await ops.innerText();
   check('approval shows business context and reasons', approval.includes('Business context') && approval.includes('£10,000 approval threshold') && approval.includes('high risk'));
-  check('recommendation labelled simulated', approval.includes('Simulated — not a real financial, clinical or legal decision'));
+  check('recommendation shown', approval.includes('Recommendation') && approval.includes('Approve the claim'));
   check('recommendation cites policy', approval.includes('R-INS-HIGH-VALUE'));
   await shot('04-approval-detail');
   await ops.getByRole('button', { name: 'Approval queue' }).click();

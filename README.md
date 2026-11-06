@@ -65,7 +65,7 @@ src/
                    settings incl. demo-data reset, folder-browser)
   components/
     ui/            shadcn/ui primitives (unchanged)
-    os/            Shared OS micro-patterns: AppIcon, StatusBadge, MockBadge, SidebarNav
+    os/            Shared OS micro-patterns: AppIcon, StatusBadge, InfoTip, SidebarNav
   data/            MOCK fixtures, one concern per file:
                    resources.mock (single catalogue of agents, workers, connectors, services,
                    domain knowledge + worker proposals), studio-scenarios.mock (Insurance /
@@ -80,7 +80,7 @@ Key principles (from `context.md` §12):
 - The OS shell is separate from application content; the window manager knows only window
   state and which component the registry maps an app id to.
 - Applications are identified by stable ids (`AppId`), never display names.
-- Mock data lives in `src/data/` and every mock surface carries a "Mock data" marker.
+- Mock data lives in `src/data/`; the UI shows no mock/prototype tags.
 - Visual design is defined in `.claude/skills/frontend-kit/references/design.md` and applied
   only through CSS variables in `src/index.css`.
 
@@ -120,10 +120,13 @@ apps, widget preferences. Settings → Demo data → Reset clears them.
 
 ## Shell: dock and window motion
 
-- The dock sits in the centre of the top bar as **dock tabs** (Framer Motion): Desktop, Applications
-  (launcher), Application Studio, Operations, Learning and System Explorer, then a divider and every
-  open application in opening order. The active tab gets a sliding pill; names are in tooltips.
-  Assistant, notifications and settings are in the bar's right section.
+- The dock floats in the centre of the top bar (Framer Motion, floating-dock style): Desktop,
+  Applications (launcher), Application Studio, Operations, Learning and System Explorer, then a
+  divider and every open application in opening order. Tiles magnify near the pointer, names show
+  on hover, and the active item expands to show its name. *Ask AI*, notifications and settings sit
+  on the right.
+- Desktop: domain folders are groups sized by the apps they hold (icon + name); standalone apps
+  are cards with a one-line tagline. Minimal light wallpaper.
 - Windows scale and fade in on open, shrink into their dock tab on minimize, return from it on
   restore, and fade out on close. Focus changes are not animated; `prefers-reduced-motion` disables
   the motion.

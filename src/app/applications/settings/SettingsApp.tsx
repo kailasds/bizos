@@ -83,13 +83,7 @@ function About() {
       <h3 className="text-lg font-semibold">Enterprise AI OS</h3>
       <dl className="grid grid-cols-[8rem_1fr] gap-y-2">
         <dt className="text-muted-foreground">Release</dt>
-        <dd>Milestone 3 · Intelligence experience</dd>
-        <dt className="text-muted-foreground">Data</dt>
-        <dd>All applications, metrics and activity are mock data held in this browser. Reset it under Demo data.</dd>
-        <dt className="text-muted-foreground">Integrations</dt>
-        <dd>None. Agent Control Plane, AI Workers Platform and connectors are not connected.</dd>
-        <dt className="text-muted-foreground">Assistant</dt>
-        <dd>Scripted responses. No AI model is called.</dd>
+        <dd>Milestone 4 · Runtime and learning</dd>
       </dl>
     </div>
   )
@@ -102,7 +96,7 @@ function DemoData() {
     <div className="max-w-lg space-y-6 text-sm">
       <section>
         <h3 className="text-lg font-semibold">Demo data</h3>
-        <p className="text-muted-foreground">Everything you create in this prototype is stored in this browser only. Nothing is sent to a server.</p>
+        <p className="text-muted-foreground">Everything you create is stored in this browser.</p>
         <ul className="mt-4 divide-y rounded-lg border">
           <li className="flex justify-between px-4 py-2.5">
             <span>Application Studio drafts</span>
@@ -117,7 +111,7 @@ function DemoData() {
       </section>
       <section>
         <h3 className="text-base font-semibold">Reset</h3>
-        <p className="text-muted-foreground">Return the prototype to its original seed data. The page reloads.</p>
+        <p className="text-muted-foreground">Return to the original seed data. The page reloads.</p>
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button size="sm" variant="destructive" className="mt-3">

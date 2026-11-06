@@ -3,7 +3,6 @@ import { ArrowLeft, FileText, FileWarning, Inbox, Lock } from 'lucide-react'
 import { toast } from 'sonner'
 import { useParamsChange } from '@/app/windows/use-params-change'
 import type { AppProps } from '@/app/registry/types'
-import { MockBadge } from '@/components/os/MockBadge'
 import { StatusBadge, type StatusTone } from '@/components/os/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
@@ -62,7 +61,7 @@ function DocumentPreview({ doc, highlight }: { doc: MockDocument; highlight: num
         </p>
       ))}
       <p className="mt-6 text-xs text-muted-foreground">
-        Page 1 of {doc.pages} · rendered from mock content
+        Page 1 of {doc.pages}
       </p>
     </article>
   )
@@ -115,7 +114,6 @@ export function DocumentAiApp({ params }: AppProps) {
         <div className="space-y-2 border-b px-3 py-3">
           <div className="flex items-center gap-2 px-1">
             <h3 className="text-base font-semibold">Inbox</h3>
-            <MockBadge className="ml-auto" />
           </div>
           <div role="group" aria-label="Filter documents" className="flex gap-1">
             {filters.map((f) => (

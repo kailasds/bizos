@@ -245,7 +245,6 @@ Spacing is airy:
   (`--tint-*`). Inline UI icons sit bare at 16px with stroke 1.75.
 - **List termination.** Lists end on whitespace; no trailing divider. Panels end with a ghost
   action ("Clear all", "All apps") right-aligned in muted text.
-- **Mock marker.** `MockBadge` stays a muted soft pill; on glass it uses `--glass-strong`.
 
 **Icon map (lucide-react, every visible icon):**
 
@@ -258,6 +257,16 @@ Spacing is airy:
 | Quick settings | brightness → `Sun` · volume → `Volume2` · airplane → `Plane` · bluetooth → `Bluetooth` · dark mode → `Contrast` · focus assist → `Moon` · battery saver → `Leaf` · screen snip → `Scissors` · read mode → `Eye` · hotspot → `Smartphone` · project → `Cast` |
 | Top bar and system | weather → `Cloud` · wifi → `Wifi` · battery → `Battery` · notifications → `MessageSquare` (product uses `Bell`) · power → `Power` · start/launcher → `LayoutGrid` · recycle bin → `Trash2` |
 | Window controls | `Maximize2` / `Minus` / `X` on hover |
+
+## Amendments (product owner, Nov 2026)
+
+- **Wallpaper** is now minimal: a soft cool-neutral field with two faint light pools (`--wallpaper`);
+  the top bar uses a slate tint (`--glass-dark: oklch(0.27 0.03 252 / 0.86)`) and is 72px tall.
+- **Dock** floats in the top bar: magnifying icon tiles, names on hover, active item expands with its
+  name. *Ask AI* is a white pill with the primary sparkle, the most prominent control on the right.
+- **No mock/prototype badges** anywhere in the UI.
+- **Application Studio** uses the scoped `.theme-studio` palette (indigo primary/accent, violet-grey
+  canvas), a centred icon stepper, and keeps reasoning behind info icons and expanders.
 
 ## 9. What the reference doesn't cover
 

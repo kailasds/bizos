@@ -4,6 +4,7 @@ import type { AutomationLevel, SolutionOption } from '@/app/blueprint/types'
 import { ResourceDetailSheet } from '@/app/resources/ResourceDetailSheet'
 import { approachInsights, type StepInsight } from '@/app/services/mock/architecture-service'
 import { capabilityLabel } from '@/app/services/mock/capability-analysis-service'
+import { InfoTip } from '@/components/os/InfoTip'
 import { Button } from '@/components/ui/button'
 import { getScenario } from '@/data/studio-scenarios.mock'
 import { resourceKindLabel, type PlatformResource } from '@/data/resources.mock'
@@ -292,31 +293,27 @@ export function ArchitectStage({ focusId, onFocus }: { focusId: string | null; o
             )}
           </div>
 
-          <div className="grid gap-4 @4xl:grid-cols-2">
-            <div>
-              <h4 className="text-xs font-medium text-muted-foreground">Operating model</h4>
-              <p className="mt-1 text-sm">{focused.operatingModel ?? focused.summary}</p>
-            </div>
-            <div>
-              <h4 className="text-xs font-medium text-muted-foreground">How it addresses your problem</h4>
-              <p className="mt-1 text-sm">{focused.howItAddresses ?? focused.summary}</p>
-            </div>
-          </div>
-
-          {focused.recommended && (
-            <p className="flex gap-2 rounded-lg border border-primary/20 bg-accent/40 px-3 py-2 text-sm">
-              <Info aria-hidden className="mt-0.5 size-4 shrink-0 text-primary" />
-              <span>
-                <span className="font-medium">Why recommended: </span>
-                {focused.recommended.reason}
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1">
+              Operating model
+              <InfoTip label="Operating model">{focused.operatingModel ?? focused.summary}</InfoTip>
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1">
+              How it addresses your problem
+              <InfoTip label="How it addresses your problem">{focused.howItAddresses ?? focused.summary}</InfoTip>
+            </span>
+            {focused.recommended && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 font-medium text-accent-foreground">
+                <Info aria-hidden className="size-3.5" />
+                Why recommended
+                <InfoTip label="Why recommended">{focused.recommended.reason}</InfoTip>
               </span>
-            </p>
-          )}
+            )}
+          </div>
 
           <div className="space-y-3">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h4 className="text-sm font-semibold">Main workflow</h4>
-              <p className="text-xs text-muted-foreground">Select a step to see who or what does it.</p>
             </div>
             <WorkflowLanes
               label={`${focused.name} workflow`}

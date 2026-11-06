@@ -1,6 +1,5 @@
 import { BellOff, X } from 'lucide-react'
 import { useOs } from '@/app/os/use-os'
-import { MockBadge } from '@/components/os/MockBadge'
 import { StatusBadge, type StatusTone } from '@/components/os/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
@@ -80,7 +79,6 @@ export function NotificationCenter() {
     >
       <div className="flex items-center gap-2 border-b px-4 py-3">
         <h2 className="text-base font-semibold">Notifications</h2>
-        <MockBadge />
         <div className="ml-auto flex gap-1">
           <Button size="xs" variant="ghost" disabled={unreadCount === 0} onClick={markAllNotificationsRead}>
             Mark all read

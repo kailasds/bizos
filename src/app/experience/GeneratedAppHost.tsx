@@ -5,7 +5,6 @@ import { useOs } from '@/app/os/use-os'
 import { getGeneratedApp } from '@/app/registry/applicationRegistry'
 import type { AppProps } from '@/app/registry/types'
 import { useApplications } from '@/app/registry/use-applications'
-import { MockBadge } from '@/components/os/MockBadge'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { scenarioForDomain } from '@/data/studio-scenarios.mock'
@@ -53,7 +52,6 @@ export function GeneratedAppHost({ windowId }: AppProps) {
             Transactions
           </Button>
         </div>
-        <MockBadge />
         <Button size="xs" variant="ghost" onClick={() => openApp('system-explorer', { section: 'applications', app: record.id })}>
           Details
         </Button>

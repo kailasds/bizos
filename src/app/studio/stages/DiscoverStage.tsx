@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowRight, Check, HelpCircle, Lightbulb, Pencil, Plus, Quote, Trash2, Undo2 } from 'lucide-react'
+import { ArrowRight, Check, Database, FileText, HeartPulse, HelpCircle, Landmark, Lightbulb, Pencil, Plus, Puzzle, Quote, Scale, ShieldCheck, Sparkles, Target, Trash2, Undo2, Users, Workflow, type LucideIcon } from 'lucide-react'
+import { InfoTip } from '@/components/os/InfoTip'
 import type { DomainId } from '@/app/registry/types'
 import {
   answerQuestion,
@@ -9,7 +10,6 @@ import {
   suggestDomain,
   understandIntent,
 } from '@/app/services/mock/intent-service'
-import { MockBadge } from '@/components/os/MockBadge'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,11 +22,12 @@ import { useSimulation } from '../hooks/use-simulation'
 import type { StudioScenario, Understanding, UnderstandingGroup, UnderstandingItem, UnderstandingKind } from '../types'
 import { useStudio } from '../use-studio'
 
-const domains: { id: DomainId; label: string; note: string }[] = [
-  { id: 'insurance', label: 'Insurance', note: 'Domain pack draft available' },
-  { id: 'healthcare', label: 'Healthcare', note: 'Domain pack planned' },
-  { id: 'banking', label: 'Banking', note: 'Domain pack planned' },
+const domains: { id: DomainId; label: string; note: string; icon: LucideIcon }[] = [
+  { id: 'insurance', label: 'Insurance', note: 'Domain pack draft available', icon: ShieldCheck },
+  { id: 'healthcare', label: 'Healthcare', note: 'Domain pack planned', icon: HeartPulse },
+  { id: 'banking', label: 'Banking', note: 'Domain pack planned', icon: Landmark },
 ]
+const domainIcon = (id: DomainId) => domains.find((d) => d.id === id)!.icon
 
 const understandingSteps = [
   'Identifying the business objective',
@@ -101,20 +102,25 @@ function DescribeForm({
 
   if (sim.running) {
     return (
-      <div className="rounded-xl border bg-card p-6" aria-busy>
-        <p className="mb-1 text-sm font-medium">Understanding your request…</p>
-        <p className="mb-4 text-xs text-muted-foreground">Simulated: matching your words against scripted scenarios. No AI model is called.</p>
+      <div className="mx-auto max-w-xl rounded-2xl border bg-card p-6 shadow-sm" aria-busy>
+        <p className="mb-4 flex items-center gap-2 text-sm font-semibold">
+          <Sparkles aria-hidden className="size-4 animate-pulse text-primary motion-reduce:animate-none" />
+          Understanding your request…
+        </p>
         <StepList label="Discovery progress" steps={understandingSteps} current={sim.step} />
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <label htmlFor="studio-prompt" className="mb-2 block text-sm font-medium">
-          What should the application help your teams achieve?
-        </label>
+    <div className="mx-auto max-w-3xl space-y-8">
+      <div className="rounded-2xl border bg-card shadow-sm focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/10">
+        <div className="flex items-center gap-1.5 px-4 pt-4">
+          <label htmlFor="studio-prompt" className="text-sm font-semibold">
+            What should the application help your teams achieve?
+          </label>
+          <InfoTip label="Writing tips">Plain language is best. You do not need to mention agents, workflows or systems.</InfoTip>
+        </div>
         <Textarea
           id="studio-prompt"
           ref={inputRef}
@@ -124,82 +130,84 @@ function DescribeForm({
             if (error) setError(null)
           }}
           aria-invalid={Boolean(error)}
-          aria-describedby={error ? 'studio-prompt-error' : 'studio-prompt-hint'}
+          aria-describedby={error ? 'studio-prompt-error' : undefined}
           placeholder="Describe the business problem, who is involved and what a good outcome looks like…"
-          className="min-h-36 text-base md:text-base"
+          className="min-h-36 resize-none border-0 px-4 text-base shadow-none focus-visible:ring-0 md:text-base"
         />
-        {error ? (
-          <p id="studio-prompt-error" className="mt-1.5 text-sm text-danger-ink">
+        {error && (
+          <p id="studio-prompt-error" className="px-4 pb-2 text-sm text-danger-ink">
             {error}
           </p>
-        ) : (
-          <p id="studio-prompt-hint" className="mt-1.5 text-xs text-muted-foreground">
-            Plain language is best. You do not need to mention agents, workflows or systems.
-          </p>
         )}
+        <div className="flex flex-wrap items-center gap-2 border-t px-3 py-2.5">
+          <div role="radiogroup" aria-label="Domain" className="flex flex-wrap gap-1.5">
+            {domains.map((d) => {
+              const selected = d.id === domain
+              const Icon = d.icon
+              return (
+                <button
+                  key={d.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  title={d.note}
+                  onClick={() => setChosen(d.id)}
+                  className={cn(
+                    'flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+                    selected ? 'border-primary bg-accent font-medium text-accent-foreground' : 'bg-card text-muted-foreground hover:bg-muted hover:text-foreground',
+                  )}
+                >
+                  <Icon aria-hidden className="size-3.5" />
+                  {d.label}
+                  {suggested === d.id && <span className="rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">Suggested</span>}
+                </button>
+              )
+            })}
+          </div>
+          <div className="ml-auto flex gap-2">
+            {onCancel && (
+              <Button variant="ghost" onClick={onCancel}>
+                Cancel
+              </Button>
+            )}
+            <Button onClick={start}>
+              Start discovery
+              <ArrowRight />
+            </Button>
+          </div>
+        </div>
       </div>
 
-      <fieldset>
-        <legend className="mb-2 text-sm font-medium">Domain</legend>
-        <div role="radiogroup" aria-label="Domain" className="flex flex-wrap gap-2">
-          {domains.map((d) => {
-            const selected = d.id === domain
+      <section aria-label="Example business problems" className="space-y-3">
+        <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Start from an example</h3>
+        <ul className="grid gap-3 @3xl:grid-cols-3">
+          {studioScenarios.map((s) => {
+            const Icon = domainIcon(s.domain)
             return (
-              <button
-                key={d.id}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                onClick={() => setChosen(d.id)}
-                className={cn(
-                  'flex min-w-40 flex-col rounded-lg border px-3 py-2 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
-                  selected ? 'border-primary/50 bg-accent' : 'bg-card hover:bg-muted',
-                )}
-              >
-                <span className="flex items-center gap-2 text-sm font-medium">
-                  {d.label}
-                  {suggested === d.id && <span className="rounded-full bg-info-soft px-1.5 text-[11px] font-medium text-info-ink">Suggested</span>}
-                </span>
-                <span className="text-xs text-muted-foreground">{d.note}</span>
-              </button>
+              <li key={s.id}>
+                <button
+                  type="button"
+                  aria-label={`${s.label}: ${s.examplePrompt}`}
+                  onClick={() => {
+                    setPrompt(s.examplePrompt)
+                    setChosen(s.domain)
+                    setError(null)
+                  }}
+                  className="flex h-full w-full flex-col gap-2 rounded-xl border bg-card p-4 text-left outline-none hover:border-primary/40 hover:shadow-sm focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  <span className="flex items-center gap-2">
+                    <span aria-hidden className="flex size-8 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+                      <Icon className="size-4" />
+                    </span>
+                    <span className="text-sm font-semibold">{s.label}</span>
+                  </span>
+                  <span className="line-clamp-3 text-sm text-muted-foreground">{s.examplePrompt}</span>
+                </button>
+              </li>
             )
           })}
-        </div>
-      </fieldset>
-
-      <section aria-label="Example business problems">
-        <h3 className="mb-2 text-sm font-medium">Or start from an example</h3>
-        <ul className="space-y-1.5">
-          {studioScenarios.map((s) => (
-            <li key={s.id}>
-              <button
-                type="button"
-                onClick={() => {
-                  setPrompt(s.examplePrompt)
-                  setChosen(s.domain)
-                  setError(null)
-                }}
-                className="w-full rounded-lg border bg-card px-3 py-2 text-left text-sm outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
-              >
-                <span className="mr-2 text-xs font-medium text-muted-foreground">{s.label}</span>
-                {s.examplePrompt}
-              </button>
-            </li>
-          ))}
         </ul>
       </section>
-
-      <div className="flex justify-end gap-2">
-        {onCancel && (
-          <Button variant="ghost" onClick={onCancel}>
-            Cancel
-          </Button>
-        )}
-        <Button onClick={start}>
-          Start discovery
-          <ArrowRight />
-        </Button>
-      </div>
     </div>
   )
 }
@@ -225,7 +233,7 @@ function FallbackView({ unmatched, onDone }: { unmatched: Unmatched; onDone: () 
       <section role="status" className="rounded-xl border bg-card p-5">
         <h3 className="text-base font-semibold">I don’t have a scripted understanding for this description</h3>
         <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-          This prototype’s intelligence is simulated. It recognises three scenarios — insurance claims, healthcare prior authorization and banking SME
+          It recognises three scenarios — insurance claims, healthcare prior authorization and banking SME
           lending — and has not interpreted your text. Rather than guess, it keeps your points exactly as you wrote them.
         </p>
         <h4 className="mt-4 text-xs font-medium text-muted-foreground">Your points, unchanged</h4>
@@ -267,6 +275,8 @@ function FallbackView({ unmatched, onDone }: { unmatched: Unmatched; onDone: () 
 }
 
 // ── Understanding ─────────────────────────────────────────────────────────
+
+const groupIcon: Record<UnderstandingGroup, LucideIcon> = { objective: Target, people: Users, process: Workflow, information: Database, rules: Scale, capabilities: Puzzle }
 
 const GROUPS: { id: UnderstandingGroup; title: string; kinds: { kind: UnderstandingKind; label: string; add?: string }[] }[] = [
   {
@@ -359,10 +369,10 @@ function ItemRow({
     )
   }
   return (
-    <li className="group flex items-start gap-2 px-3 py-2">
-      <div className="min-w-0 flex-1">
-        <p className="text-sm">{item.text}</p>
-        <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+    <li className="group flex items-center gap-3 px-3 py-2">
+      <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-0.5">
+        <p className="min-w-0 flex-1 basis-64 text-sm">{item.text}</p>
+        <p className="flex max-w-[45%] shrink-0 items-center gap-1 truncate text-[11px] text-muted-foreground">
           <SourceCue item={item} domainLabel={domainLabel} />
         </p>
       </div>
@@ -425,28 +435,45 @@ function UnderstandingView({ understanding, scenario, domainLabel, onEditPrompt 
   const update = (u: Understanding) => dispatch({ type: 'discover/update', understanding: u })
   const setItems = (items: UnderstandingItem[]) => update({ ...understanding, items })
   const pendingQuestions = understanding.questions.filter((q) => !q.answer)
+  const [showEvidence, setShowEvidence] = useState(false)
+  const [showPrompt, setShowPrompt] = useState(false)
 
   return (
     <div className="space-y-6">
-      <section aria-label="Summary of understanding" className="rounded-xl border bg-card p-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-base font-semibold">What I understood</h3>
-          <span className="rounded-full border px-2 text-[11px] leading-5 text-muted-foreground">{scenario.label} scenario · scripted</span>
-        </div>
-        <p className="mt-2 max-w-prose text-base">{understanding.summary}</p>
-        {understanding.matchedPhrases.length > 0 && (
-          <p className="mt-2 text-xs text-muted-foreground">
-            Based on your words {understanding.matchedPhrases.map((p) => `“${p}”`).join(', ')} and the {domainLabel} domain pack.
-          </p>
-        )}
-        <div className="mt-3 flex items-start gap-3 border-t pt-3">
-          <p className="min-w-0 flex-1 text-xs text-muted-foreground">
-            Your description: <span className="text-foreground">“{project?.discover.prompt}”</span>
-          </p>
-          <Button size="xs" variant="ghost" onClick={onEditPrompt}>
-            <Pencil />
-            Edit description
-          </Button>
+      <section aria-label="Summary of understanding" className="rounded-2xl border bg-card p-5 shadow-sm">
+        <div className="flex items-start gap-3">
+          <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <Sparkles className="size-4" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-sm font-semibold">What I understood</h3>
+              <span className="rounded-full bg-accent px-2 text-[11px] leading-5 font-medium text-accent-foreground">{scenario.label}</span>
+            </div>
+            <p className="mt-1.5 text-[15px] leading-relaxed">{understanding.summary}</p>
+            <div className="mt-3 flex flex-wrap items-center gap-1">
+              {understanding.matchedPhrases.length > 0 && (
+                <Button size="xs" variant="ghost" aria-expanded={showEvidence} onClick={() => setShowEvidence(!showEvidence)}>
+                  <Quote />
+                  Evidence
+                </Button>
+              )}
+              <Button size="xs" variant="ghost" aria-expanded={showPrompt} onClick={() => setShowPrompt(!showPrompt)}>
+                <FileText />
+                Your description
+              </Button>
+              <Button size="xs" variant="ghost" onClick={onEditPrompt}>
+                <Pencil />
+                Edit description
+              </Button>
+            </div>
+            {showEvidence && (
+              <p className="mt-2 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+                Based on your words {understanding.matchedPhrases.map((p) => `“${p}”`).join(', ')} and the {domainLabel} domain pack.
+              </p>
+            )}
+            {showPrompt && <p className="mt-2 rounded-lg bg-muted px-3 py-2 text-sm">“{project?.discover.prompt}”</p>}
+          </div>
         </div>
       </section>
 
@@ -461,8 +488,10 @@ function UnderstandingView({ understanding, scenario, domainLabel, onEditPrompt 
               const chosen = q.options.find((o) => o.id === q.answer)
               return (
                 <li key={q.id} className="px-4 py-3">
-                  <p className="text-sm font-medium">{q.text}</p>
-                  <p className="text-xs text-muted-foreground">{q.why}</p>
+                  <p className="flex items-center gap-1 text-sm font-medium">
+                    {q.text}
+                    <InfoTip label={`Why this question: ${q.text}`}>{q.why}</InfoTip>
+                  </p>
                   {q.answer ? (
                     <p className="mt-2 flex items-center gap-2 text-sm">
                       {chosen ? (
@@ -495,13 +524,21 @@ function UnderstandingView({ understanding, scenario, domainLabel, onEditPrompt 
         </section>
       )}
 
-      <Accordion type="multiple" defaultValue={['objective', 'capabilities']} className="rounded-lg border bg-card">
+      <Accordion type="multiple" defaultValue={['objective', 'capabilities']} className="rounded-2xl border bg-card shadow-sm">
         {GROUPS.map((group) => {
           const items = understanding.items.filter((i) => group.kinds.some((k) => k.kind === i.kind))
           return (
             <AccordionItem key={group.id} value={group.id} className="px-4">
               <AccordionTrigger className="py-3 hover:no-underline">
-                <span className="flex min-w-0 flex-1 items-baseline gap-2 text-left">
+                <span className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
+                  {(() => {
+                    const GroupIcon = groupIcon[group.id]
+                    return (
+                      <span aria-hidden className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+                        <GroupIcon className="size-3.5" />
+                      </span>
+                    )
+                  })()}
                   <span className="text-sm font-semibold">{group.title}</span>
                   <span className="text-xs font-normal text-muted-foreground tabular-nums">{items.length}</span>
                   <span className="hidden min-w-0 flex-1 truncate text-xs font-normal text-muted-foreground @3xl:inline">{items[0]?.text}</span>
@@ -556,9 +593,9 @@ function UnderstandingView({ understanding, scenario, domainLabel, onEditPrompt 
           <ul className="divide-y rounded-lg border bg-card">
             {understanding.suggestions.map((s) => (
               <li key={s.id} className={cn('flex flex-wrap items-start gap-2 px-4 py-3', s.status !== 'pending' && 'bg-muted/40')}>
-                <div className="min-w-0 flex-1">
+                <div className="flex min-w-0 flex-1 items-center gap-1">
                   <p className={cn('text-sm font-medium', s.status === 'rejected' && 'text-muted-foreground line-through')}>{s.text}</p>
-                  <p className="text-xs text-muted-foreground">{s.reason}</p>
+                  <InfoTip label={`Why suggested: ${s.text}`}>{s.reason}</InfoTip>
                 </div>
                 {s.status === 'pending' ? (
                   <div className="flex gap-1">
@@ -584,7 +621,6 @@ function UnderstandingView({ understanding, scenario, domainLabel, onEditPrompt 
           </ul>
         </section>
       )}
-      <MockBadge label="Simulated understanding" />
     </div>
   )
 }

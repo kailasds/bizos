@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react'
 import { FileText, Play, X } from 'lucide-react'
-import { MockBadge } from '@/components/os/MockBadge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -49,7 +48,6 @@ export function TransactionForm({ app, onSubmitted }: { app: RuntimeApp; onSubmi
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-lg font-semibold">{schema.action}</h3>
         <span className="text-sm text-muted-foreground tabular-nums">v{app.version}</span>
-        <MockBadge label="Simulated runtime" className="ml-auto" />
       </div>
       <fieldset className="space-y-2">
         <legend className="text-xs text-muted-foreground">Samples</legend>

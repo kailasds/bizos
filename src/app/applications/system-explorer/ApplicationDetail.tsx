@@ -17,7 +17,6 @@ import { LifecycleTrack } from '@/app/studio/components/LifecycleTrack'
 import { VersionHistory } from '@/app/studio/components/VersionHistory'
 import { lifecycleOf, nextAction } from '@/app/studio/lifecycle'
 import { useStudio } from '@/app/studio/use-studio'
-import { MockBadge } from '@/components/os/MockBadge'
 import { StatusBadge } from '@/components/os/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
@@ -131,7 +130,7 @@ export function ApplicationDetail({ id, onBack }: { id: string; onBack: () => vo
         )}
       </Section>
 
-      <Section title="Associated resources" aside={<MockBadge label="Mock records" />}>
+      <Section title="Associated resources">
         {resources.length ? (
           <ul className="divide-y rounded-lg border bg-card">
             {resources.map((r) => (

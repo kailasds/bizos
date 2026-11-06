@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { AlertTriangle, ArrowRight } from 'lucide-react'
+import { InfoTip } from '@/components/os/InfoTip'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { useStudio } from '../use-studio'
@@ -20,13 +21,18 @@ export function StageFrame({
 }) {
   const { project } = useStudio()
   const reason = project?.progress[stage] === 'needs-review' ? project.staleReasons[stage] : undefined
+  const StageIcon = stageMeta[stage].icon
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-5xl px-6 py-6">
-          <header className="mb-6 flex flex-wrap items-start gap-3">
-            <div className="min-w-0 flex-1">
-              <h2 className="text-lg font-semibold">{stageMeta[stage].title}</h2>
+        <div className="mx-auto w-full max-w-5xl px-6 py-8">
+          <header className="mb-6 flex flex-wrap items-center gap-3">
+            <span aria-hidden className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+              <StageIcon className="size-5" />
+            </span>
+            <div className="flex min-w-0 flex-1 items-center gap-1.5">
+              <h2 className="text-xl font-semibold tracking-tight">{stageMeta[stage].title}</h2>
+              <InfoTip label={`About ${stageMeta[stage].label}`}>{stageMeta[stage].description}</InfoTip>
             </div>
             {aside}
           </header>
@@ -43,7 +49,7 @@ export function StageFrame({
         </div>
       </div>
       {footer && (
-        <footer className="shrink-0 border-t bg-card">
+        <footer className="shrink-0 border-t bg-card/90 backdrop-blur">
           <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-end gap-2 px-6 py-3">{footer}</div>
         </footer>
       )}

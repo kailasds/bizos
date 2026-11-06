@@ -116,22 +116,17 @@
 
     --glass: oklch(1 0 0 / 0.62);
     --glass-strong: oklch(0.99 0.003 220 / 0.84);
-    --glass-dark: oklch(0.42 0.06 209 / 0.55);
+    --glass-dark: oklch(0.27 0.03 252 / 0.86);
     --glass-dark-foreground: oklch(0.97 0.02 228);
     --glass-border: oklch(1 0 0 / 0.5);
     --glass-blur: 28px;
     --glass-saturate: 1.6;
 
+    /* Minimal wallpaper: a soft cool-neutral field with two faint light pools. */
     --wallpaper:
-      radial-gradient(90% 55% at 78% 108%, oklch(0.72 0.02 215 / 0.95), transparent 70%),
-      radial-gradient(60% 40% at 20% 100%, oklch(0.52 0.05 45 / 0.55), transparent 70%),
-      linear-gradient(180deg,
-        oklch(0.615 0.087 209) 0%,
-        oklch(0.700 0.061 213) 30%,
-        oklch(0.861 0.014 208) 56%,
-        oklch(0.921 0.032 55) 72%,
-        oklch(0.66 0.04 45) 86%,
-        oklch(0.70 0.02 215) 100%);
+      radial-gradient(55% 45% at 12% 8%, oklch(0.9 0.035 245 / 0.9), transparent 70%),
+      radial-gradient(50% 50% at 88% 92%, oklch(0.9 0.03 205 / 0.8), transparent 70%),
+      linear-gradient(165deg, oklch(0.965 0.008 245) 0%, oklch(0.94 0.012 235) 100%);
 
     --success: oklch(0.673 0.164 154);
     --success-soft: oklch(0.94 0.05 154);
@@ -239,6 +234,25 @@
     }
 }
 
+/*
+ * Application Studio theme: a scoped indigo accent and a soft violet-grey canvas, so the
+ * create-application flow reads as its own workspace. Status colours are unchanged.
+ */
+.theme-studio {
+    --primary: oklch(0.51 0.2 277);
+    --primary-foreground: oklch(1 0 0);
+    --ring: oklch(0.6 0.18 277);
+    --accent: oklch(0.95 0.03 280);
+    --accent-foreground: oklch(0.42 0.18 277);
+    --background: oklch(0.975 0.007 285);
+    --chrome: oklch(0.97 0.012 282);
+    --muted: oklch(0.965 0.007 285);
+    --secondary: oklch(0.955 0.015 282);
+    --info: oklch(0.6 0.17 277);
+    --info-soft: oklch(0.95 0.03 280);
+    --info-ink: oklch(0.45 0.18 277);
+}
+
 /* Liquid glass material. Glass frames content; text-dense surfaces use .glass-strong. */
 @utility glass {
   background-color: var(--glass);
@@ -264,7 +278,7 @@
     --glass: oklch(0.97 0.006 220 / 0.94);
     --glass-strong: oklch(0.99 0.003 220 / 0.97);
     --popover: oklch(0.99 0.003 220);
-    --glass-dark: oklch(0.42 0.06 209 / 0.92);
+    --glass-dark: oklch(0.27 0.03 252 / 0.96);
   }
 }
 @media (prefers-reduced-transparency: reduce) {
@@ -272,6 +286,6 @@
     --glass: oklch(0.97 0.006 220);
     --glass-strong: oklch(0.99 0.003 220);
     --popover: oklch(0.99 0.003 220);
-    --glass-dark: oklch(0.40 0.06 209);
+    --glass-dark: oklch(0.27 0.03 252);
   }
 }

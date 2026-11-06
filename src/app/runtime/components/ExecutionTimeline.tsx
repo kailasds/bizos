@@ -120,7 +120,7 @@ export function StepDetail({ execution, step, onRetry }: { execution: Execution;
         </Field>
         {step.input && <Field label="What it received">{step.input}</Field>}
         {step.output && <Field label="What it produced">{step.output}</Field>}
-        {step.status === 'running' && <Field label="What is happening">Processing now (simulated).</Field>}
+        {step.status === 'running' && <Field label="What is happening">Processing now.</Field>}
         {step.status === 'awaiting-approval' && step.approvalId && (
           <Field label="Waiting for">
             <button type="button" className="text-left font-medium text-primary underline-offset-2 outline-none hover:underline focus-visible:underline" onClick={() => links.openApproval(step.approvalId!)}>

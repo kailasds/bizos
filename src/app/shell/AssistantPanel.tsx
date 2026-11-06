@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { ArrowUp, Sparkles, X } from 'lucide-react'
+import { AlertTriangle, ArrowRight, ArrowUp, ClipboardCheck, Loader, Plus, ScanText, Sparkles, X, type LucideIcon } from 'lucide-react'
 import { useOs } from '@/app/os/use-os'
 import { listApps } from '@/app/registry/applicationRegistry'
 import type { AppId, WindowParams } from '@/app/registry/types'
@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input'
 import { getRuntimeState } from '@/app/runtime/store'
 import type { Claim } from '@/data/claims.mock'
 import { formatCurrency } from '@/data/claims.mock'
-import { cn } from '@/lib/utils'
 
 interface AssistantAction {
   label: string
@@ -26,6 +25,13 @@ interface Message {
 }
 
 const suggestions = ['Create an application', 'What needs my approval?', 'What is running right now?', 'Why did something fail?', 'Open Document AI']
+const suggestionIcon: Record<string, LucideIcon> = {
+  'Create an application': Plus,
+  'What needs my approval?': ClipboardCheck,
+  'What is running right now?': Loader,
+  'Why did something fail?': AlertTriangle,
+  'Open Document AI': ScanText,
+}
 
 /**
  * Phase 1 assistant: deterministic, scripted responses over mock data.
@@ -71,7 +77,7 @@ function respond(input: string, pending: Claim[], drafts: number): Omit<Message,
     }
   }
   return {
-    text: 'In this prototype I can create an application with you, open applications, summarise pending approvals, show what is running and explain failures. Try one of the suggestions below.',
+    text: 'I can create an application with you, open applications, summarise pending approvals, show what is running and explain failures. Try one of the suggestions below.',
   }
 }
 
@@ -128,66 +134,98 @@ export function AssistantPanel() {
   return (
     <aside
       aria-label="Assistant"
-      className="pointer-events-auto absolute top-3 right-3 bottom-3 flex w-[min(24rem,calc(100vw-1.5rem))] flex-col overflow-hidden glass-strong rounded-2xl shadow-overlay animate-in fade-in-0 slide-in-from-right-2 [animation-duration:150ms]"
+      className="pointer-events-auto absolute top-3 right-3 bottom-3 flex w-[min(25rem,calc(100vw-1.5rem))] flex-col overflow-hidden glass-strong rounded-2xl shadow-overlay animate-in fade-in-0 slide-in-from-right-2 [animation-duration:150ms]"
     >
-      <header className="flex items-center gap-2 border-b px-4 py-3">
-        <Sparkles className="size-4 text-primary" />
-        <h2 className="text-base font-semibold">Assistant</h2>
-        <span className="rounded-full border px-2 text-xs leading-5 text-muted-foreground">Scripted prototype</span>
-        <Button variant="ghost" size="icon-sm" className="ml-auto" aria-label="Close assistant" onClick={() => setAssistantOpen(false)}>
+      <header className="flex items-center gap-2.5 px-4 py-3">
+        <span aria-hidden className="flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+          <Sparkles className="size-4" />
+        </span>
+        <h2 className="flex-1 text-sm font-semibold">Assistant</h2>
+        <Button variant="ghost" size="icon-sm" aria-label="Close assistant" onClick={() => setAssistantOpen(false)}>
           <X />
         </Button>
       </header>
 
-      <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto p-4">
+      <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto px-4 pb-4">
         {messages.length === 0 && (
-          <div className="space-y-1 pt-2">
-            <p className="text-sm font-medium">How can I help?</p>
-            <p className="text-sm text-muted-foreground">
-              Responses in Phase 1 are scripted from mock data — no AI model is called.
-            </p>
+          <div className="space-y-4 pt-6">
+            <div className="text-center">
+              <span aria-hidden className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
+                <Sparkles className="size-6" />
+              </span>
+              <p className="mt-3 text-base font-semibold">How can I help?</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {suggestions.map((s) => {
+                const Icon = suggestionIcon[s] ?? Sparkles
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => ask(s)}
+                    className="flex flex-col items-start gap-2 rounded-xl border bg-card p-3 text-left text-sm outline-none hover:border-primary/40 hover:bg-accent/40 focus-visible:ring-3 focus-visible:ring-ring/50 last:col-span-2"
+                  >
+                    <Icon aria-hidden className="size-4 text-primary" />
+                    {s}
+                  </button>
+                )
+              })}
+            </div>
           </div>
         )}
-        {messages.map((m) => (
-          <div key={m.id} className={cn('flex flex-col gap-2', m.role === 'user' && 'items-end')}>
-            <p
-              className={cn(
-                'max-w-[85%] rounded-lg px-3 py-2 text-sm',
-                m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted',
-              )}
-            >
-              {m.text}
-            </p>
-            {m.actions && m.actions.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {m.actions.map((a) => (
-                  <Button key={a.label} size="sm" variant="outline" onClick={() => openApp(a.appId, a.params)}>
-                    {a.label}
-                  </Button>
-                ))}
+        {messages.map((m) =>
+          m.role === 'user' ? (
+            <div key={m.id} className="flex justify-end">
+              <p className="max-w-[85%] rounded-2xl rounded-br-md bg-primary px-3 py-2 text-sm text-primary-foreground">{m.text}</p>
+            </div>
+          ) : (
+            <div key={m.id} className="flex gap-2">
+              <span aria-hidden className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground">
+                <Sparkles className="size-3" />
+              </span>
+              <div className="min-w-0 flex-1 space-y-2">
+                <p className="rounded-2xl rounded-tl-md bg-card px-3 py-2 text-sm leading-relaxed shadow-[0_1px_2px_oklch(0.2_0.02_220/0.08)]">{m.text}</p>
+                {m.actions && m.actions.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {m.actions.map((a) => (
+                      <Button key={a.label} size="xs" variant="outline" className="bg-card" onClick={() => openApp(a.appId, a.params)}>
+                        {a.label}
+                        <ArrowRight />
+                      </Button>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        ))}
+            </div>
+          ),
+        )}
       </div>
 
-      <div className="border-t p-3">
-        <div className="mb-3 flex flex-wrap gap-1.5">
-          {suggestions.map((s) => (
-            <Button key={s} size="xs" variant="secondary" onClick={() => ask(s)}>
-              {s}
-            </Button>
-          ))}
-        </div>
-        <form onSubmit={onSubmit} className="flex gap-2">
+      <div className="space-y-2 border-t p-3">
+        {messages.length > 0 && (
+          <div className="no-scrollbar flex gap-1.5 overflow-x-auto">
+            {suggestions.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => ask(s)}
+                className="shrink-0 rounded-full border bg-card px-2.5 py-1 text-xs outline-none hover:border-primary/40 focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+        <form onSubmit={onSubmit} className="flex items-center gap-1 rounded-xl border bg-card p-1 focus-within:ring-3 focus-within:ring-ring/40">
           <Input
             ref={inputRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Ask about applications or activity…"
             aria-label="Message the assistant"
+            className="border-0 shadow-none focus-visible:ring-0"
           />
-          <Button type="submit" size="icon" aria-label="Send" disabled={!draft.trim()}>
+          <Button type="submit" size="icon-sm" aria-label="Send" disabled={!draft.trim()} className="rounded-lg">
             <ArrowUp />
           </Button>
         </form>

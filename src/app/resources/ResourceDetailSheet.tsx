@@ -5,7 +5,6 @@ import type { AppId } from '@/app/registry/types'
 import { useApplications } from '@/app/registry/use-applications'
 import { getResource, resourceUsage } from '@/app/services/mock/resource-discovery-service'
 import { useStudio } from '@/app/studio/use-studio'
-import { MockBadge } from '@/components/os/MockBadge'
 import { StatusBadge, type StatusTone } from '@/components/os/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
@@ -64,7 +63,6 @@ export function ResourceDetailSheet({
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 <StatusBadge tone={availabilityTone[r.availability]}>{availabilityLabel[r.availability]}</StatusBadge>
                 <span className="text-xs text-muted-foreground tabular-nums">Version {r.version}</span>
-                <MockBadge label="Mock record" />
               </div>
             </SheetHeader>
 
@@ -114,7 +112,7 @@ export function ResourceDetailSheet({
                 )}
               </Block>
               {r.runtime && (
-                <Block title="Current activity (simulated)">
+                <Block title="Current activity">
                   <p>
                     {r.runtime.state === 'busy' ? 'Busy' : r.runtime.state === 'validating' ? 'In validation' : 'Idle'}
                     {r.runtime.currentTask ? ` — ${r.runtime.currentTask}` : ''}

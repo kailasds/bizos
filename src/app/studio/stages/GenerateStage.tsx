@@ -120,9 +120,6 @@ function Overview({ project, onOpen }: { project: StudioProject; onOpen: (t: Gen
   return (
     <div className="space-y-5">
       <SectionHeader tab="overview" project={project} />
-      {readinessOf(project) === 'not-validated' || readinessOf(project) === 'outdated' ? (
-        <p className="text-sm text-muted-foreground">Section statuses appear after validation runs on this version.</p>
-      ) : null}
       <ul className="divide-y rounded-lg border bg-card" aria-label="Blueprint sections">
         {nav
           .filter((n) => !['overview', 'json'].includes(n.id))
@@ -190,7 +187,6 @@ function Requirements({ project }: { project: StudioProject }) {
           <List items={req.outputs.map((c) => c.label)} />
         </Block>
       </div>
-      <p className="text-xs text-muted-foreground">Snapshot of requirement specification v{req.version} taken when the blueprint was generated.</p>
     </div>
   )
 }
@@ -544,7 +540,7 @@ function Deployment({ project }: { project: StudioProject }) {
         </div>
         <div>
           <dt className="text-xs text-muted-foreground">Runtime</dt>
-          <dd>Prototype runtime (simulated) — no infrastructure is provisioned</dd>
+          <dd>Enterprise AI OS runtime</dd>
         </div>
         <div>
           <dt className="text-xs text-muted-foreground">Application id</dt>
@@ -578,7 +574,7 @@ function Json({ bp }: { bp: ApplicationBlueprint }) {
     <div className="space-y-2">
       <header className="mb-3">
         <h3 className="text-base font-semibold">Technical view (JSON)</h3>
-        <p className="text-sm text-muted-foreground">Schema {bp.schemaVersion}, for developers and advanced review. Edits happen in the other sections.</p>
+        <p className="text-xs text-muted-foreground">Schema {bp.schemaVersion}</p>
       </header>
       <Button
         size="sm"
@@ -634,7 +630,6 @@ export function GenerateStage({ tab, onTabChange }: { tab: GenerateTab; onTabCha
           <div className="space-y-5">
             <header>
               <h3 className="text-base font-semibold">Version history</h3>
-              <p className="text-sm text-muted-foreground">Every generated or edited version, why it changed, and which one is published.</p>
             </header>
             <VersionHistory
               revisions={project.revisions}

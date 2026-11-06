@@ -4,8 +4,8 @@ import type { ResourceKind, SolutionOption } from '@/app/blueprint/types'
 import { ResourceDetailSheet } from '@/app/resources/ResourceDetailSheet'
 import { composedWorker, compositionPlan, coverageCounts, proposalFor } from '@/app/services/mock/capability-analysis-service'
 import { searchCatalogue } from '@/app/services/mock/resource-discovery-service'
-import { MockBadge } from '@/components/os/MockBadge'
 import { StatusBadge, type StatusTone } from '@/components/os/StatusBadge'
+import { InfoTip } from '@/components/os/InfoTip'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Input } from '@/components/ui/input'
@@ -56,7 +56,7 @@ function CoverageRow({ mapping, option, onDetails }: { mapping: CapabilityMappin
                 </button>
                 <p className="text-xs text-muted-foreground">
                   {resourceKindLabel[r.kind]}
-                  {mapping.created ? ' · composed for this application (simulated)' : ''}
+                  {mapping.created ? ' · composed for this application' : ''}
                 </p>
               </div>
             </>
@@ -92,7 +92,6 @@ function CoverageRow({ mapping, option, onDetails }: { mapping: CapabilityMappin
         <div className="mt-3 rounded-lg border border-warning/40 bg-warning-soft/50 p-3 text-sm">
           <p className="font-medium text-warning-ink">Before {r.name} can be used</p>
           <p className="mt-1">{r.configuration ?? r.note}</p>
-          <p className="mt-1 text-xs text-muted-foreground">Confirming records that this condition will be met before go-live. Nothing is configured in this prototype.</p>
           <div className="mt-2 flex gap-2">
             <Button
               size="sm"
@@ -145,9 +144,19 @@ function GapResolver({ mapping, option, alternatives, onLookAt }: { mapping: Cap
       <header className="flex items-start gap-2 border-b px-4 py-3">
         <SearchX aria-hidden className="mt-0.5 size-4 shrink-0 text-danger-ink" />
         <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-semibold">{mapping.need} is missing</h3>
-          <p className="text-sm text-muted-foreground">{proposal?.whyNeeded ?? 'The selected approach needs this capability, and no existing resource provides it.'}</p>
-          {steps.length > 0 && <p className="mt-1 text-xs text-muted-foreground">Workflow steps affected: {steps.join(', ')}</p>}
+          <h3 className="flex items-center gap-1 text-sm font-semibold">
+            {mapping.need} is missing
+            <InfoTip label={`Why ${mapping.need} is needed`}>{proposal?.whyNeeded ?? 'The selected approach needs this capability, and no existing resource provides it.'}</InfoTip>
+          </h3>
+          {steps.length > 0 && (
+            <ul className="mt-1.5 flex flex-wrap gap-1" aria-label="Workflow steps affected">
+              {steps.map((st) => (
+                <li key={st} className="rounded-full bg-muted px-2 text-xs leading-5 text-muted-foreground">
+                  {st}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </header>
 
@@ -216,7 +225,7 @@ function GapResolver({ mapping, option, alternatives, onLookAt }: { mapping: Cap
 
           {sim.running || failure ? (
             <div aria-busy={sim.running}>
-              <p className="mb-2 text-sm font-medium">{failure ? `Simulated composition of ${proposal.name} failed` : `Composing ${proposal.name} (simulated)…`}</p>
+              <p className="mb-2 text-sm font-medium">{failure ? `Composition of ${proposal.name} failed` : `Composing ${proposal.name} (simulated)…`}</p>
               <StepList label="Worker composition" steps={compositionPlan(mapping.capabilityId, 0).steps} current={sim.step} failedAt={failure?.at ?? null} />
               {failure && !sim.running && (
                 <div role="alert" className="mt-3 rounded-lg border border-danger/30 bg-danger-soft/60 p-3 text-sm">
@@ -238,10 +247,7 @@ function GapResolver({ mapping, option, alternatives, onLookAt }: { mapping: Cap
               <Button variant="ghost" onClick={() => dispatch({ type: 'compose/rejectWorker', capabilityId: mapping.capabilityId, now: now() })}>
                 Reject
               </Button>
-              <p className="w-full text-xs text-muted-foreground">
-                Your approval is required before the OS asks the AI Workers Platform for a new worker. In this prototype the composition is simulated — no
-                worker is provisioned.
-              </p>
+              <InfoTip label="About worker composition">Your approval is required before the OS asks the AI Workers Platform for a new worker.</InfoTip>
             </div>
           )}
         </div>
@@ -292,9 +298,7 @@ function CatalogueBrowser({ mappings, onDetails }: { mappings: CapabilityMapping
             </Button>
           ))}
         </div>
-        <MockBadge label="Mock catalogue" className="ml-auto" />
       </div>
-      <p className="text-xs text-muted-foreground">Resources available to {domain ? `the ${domain} domain` : 'this application'}, read from their owning platforms.</p>
       {results.length === 0 ? (
         <Empty className="rounded-lg border border-dashed">
           <EmptyHeader>

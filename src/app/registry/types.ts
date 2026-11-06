@@ -40,6 +40,8 @@ export interface AppDefinition {
   id: AppId
   name: string
   description: string
+  /** A few words for compact surfaces (desktop cards). */
+  tagline?: string
   kind: AppKind
   icon: LucideIcon
   tint: AppTint

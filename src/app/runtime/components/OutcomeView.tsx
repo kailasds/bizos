@@ -49,7 +49,6 @@ export function OutcomeView({ outcome, execution }: { outcome: Outcome; executio
           </ul>
         </div>
       )}
-      <p className="text-[11px] text-muted-foreground">Simulated outcome. Not a real claims, clinical or credit decision.</p>
     </section>
   )
 }

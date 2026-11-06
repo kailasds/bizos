@@ -1,6 +1,7 @@
 import { ArrowRight, Lightbulb } from 'lucide-react'
 import type { RequirementSpec, SpecItem } from '@/app/blueprint/types'
 import { explainRequirement } from '@/app/services/mock/architecture-service'
+import { InfoTip } from '@/components/os/InfoTip'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { EditableList } from '../components/EditableList'
@@ -130,9 +131,9 @@ export function DefineStage({ openArchitect }: { openArchitect: () => void }) {
         </div>
 
         <section aria-label="Business context" className="space-y-4 border-t pt-6">
-          <div>
+          <div className="flex items-center gap-1">
             <h3 className="text-sm font-semibold">Business context</h3>
-            <p className="text-sm text-muted-foreground">Captured in Discover. Used to explain the application, not to generate steps.</p>
+            <InfoTip label="About business context">Captured in Discover. Used to explain the application, not to generate steps.</InfoTip>
           </div>
           <div className="grid gap-8 @4xl:grid-cols-3">
             {contextSections.map((c) => (

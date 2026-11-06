@@ -7,5 +7,5 @@ export const widgetOrder: { id: WidgetId; name: string; description: string }[] 
   { id: 'active-applications', name: 'Application activity', description: 'Open, recently published and changed applications.' },
   { id: 'worker-activity', name: 'Worker activity', description: 'AI workers involved in application workflows.' },
   { id: 'recent-activity', name: 'Platform activity', description: 'Publications, blueprint changes, validations and compositions.' },
-  { id: 'active-executions', name: 'Simulated executions', description: 'Workflow runs in progress (simulated).' },
+  { id: 'active-executions', name: 'Executions', description: 'Workflow runs in progress.' },
 ]

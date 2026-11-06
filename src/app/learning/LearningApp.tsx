@@ -14,7 +14,6 @@ import { sectionLabel } from '@/app/services/mock/blueprint-service'
 import { BlueprintDiff } from '@/app/studio/components/BlueprintDiff'
 import { useStudio } from '@/app/studio/use-studio'
 import { useParamsChange } from '@/app/windows/use-params-change'
-import { MockBadge } from '@/components/os/MockBadge'
 import { SidebarNav } from '@/components/os/SidebarNav'
 import { StatusBadge } from '@/components/os/StatusBadge'
 import { Button } from '@/components/ui/button'
@@ -482,7 +481,6 @@ export function LearningApp({ params }: AppProps) {
             { id: 'proposals', label: 'Proposals', icon: ListTree, meta: open || undefined },
             { id: 'observations', label: 'Observations', icon: Eye, meta: state.signals.length },
           ]}
-          footer={<MockBadge label="Simulated observations" />}
         />
         <main className="min-h-0 flex-1 overflow-y-auto p-4 @3xl:p-6">
           {nav.section === 'overview' && <Overview state={state} go={setNav} />}

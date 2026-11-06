@@ -173,7 +173,7 @@ export function VersionHistory({
             <AlertDialogTitle>Restore v{restore?.version}?</AlertDialogTitle>
             <AlertDialogDescription>
               Its content becomes a new draft version{currentVersion ? ` v${bumpVersion(currentVersion, 'patch')}` : ''}. Nothing is deleted — v{currentVersion} stays in the history.
-              {live ? ` The published application (v${live}) does not change until you publish again.` : ''} Validation will need to run again. Rollback only changes this prototype’s local state in your browser — no runtime is changed, and no platform or published version is touched.
+              {live ? ` The published application (v${live}) does not change until you publish again.` : ''} Validation will need to run again. Rollback only changes the local state in your browser — no runtime is changed, and no platform or published version is touched.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

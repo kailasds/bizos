@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { ArrowLeft, Ban, Hand, Pause, Play, RotateCcw } from 'lucide-react'
-import { MockBadge } from '@/components/os/MockBadge'
 import { StatusBadge } from '@/components/os/StatusBadge'
 import {
   AlertDialog,
@@ -196,7 +195,6 @@ export function ExecutionDetail({ executionId, onBack }: { executionId: string; 
           <div className="space-y-3 rounded-lg border bg-card p-4">
             <div className="flex items-center gap-2">
               <h4 className="text-sm font-semibold">Submitted {schema.noun}</h4>
-              <MockBadge className="ml-auto" />
             </div>
             <dl className="grid gap-3 @xl:grid-cols-2">
               {schema.fields.map((f) => (
@@ -223,7 +221,7 @@ export function ExecutionDetail({ executionId, onBack }: { executionId: string; 
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel {exec.id}?</AlertDialogTitle>
             <AlertDialogDescription>
-              The remaining steps will not run{pending ? ` and approval ${pending.id} will be withdrawn` : ''}. Cancellation is recorded in the audit trail and cannot be undone. Simulated: no real transaction is affected.
+              The remaining steps will not run{pending ? ` and approval ${pending.id} will be withdrawn` : ''}. Cancellation is recorded in the audit trail and cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <Textarea aria-label="Reason for cancelling (optional)" placeholder="Reason (optional)" value={reason} onChange={(e) => setReason(e.target.value)} />

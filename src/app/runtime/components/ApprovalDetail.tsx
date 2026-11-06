@@ -100,7 +100,6 @@ export function ApprovalDetail({ approvalId, onBack }: { approvalId: string; onB
         <div className="flex flex-wrap items-center gap-2">
           <Sparkles aria-hidden className="size-4 text-info-ink" />
           <h4 className="text-sm font-semibold">Recommendation</h4>
-          <span className="rounded-full border border-info/30 bg-card px-2 text-[11px] leading-5 text-info-ink">Simulated — not a real financial, clinical or legal decision</span>
         </div>
         <p className="text-sm">
           <span className="font-medium">{r.decision}.</span> {r.explanation}

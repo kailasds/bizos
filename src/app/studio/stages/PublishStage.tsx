@@ -4,6 +4,7 @@ import { useOs } from '@/app/os/use-os'
 import { getFolder, registerGeneratedApp } from '@/app/registry/applicationRegistry'
 import type { GeneratedAppId } from '@/app/registry/types'
 import { StatusBadge } from '@/components/os/StatusBadge'
+import { InfoTip } from '@/components/os/InfoTip'
 import { Button } from '@/components/ui/button'
 import { getScenario } from '@/data/studio-scenarios.mock'
 import { StageFrame, StagePrerequisite } from '../components/StageFrame'
@@ -115,14 +116,16 @@ export function PublishStage({ windowId }: { windowId: string }) {
     >
       {sim.running ? (
         <div className="rounded-xl border bg-card p-6" aria-busy>
-          <p className="mb-4 text-sm font-medium">Publishing {project.name} (simulated deployment)…</p>
+          <p className="mb-4 text-sm font-medium">Publishing {project.name}…</p>
           <StepList label="Publishing" steps={steps} current={sim.step} />
         </div>
       ) : (
         <div className="space-y-6">
           <section aria-label="Lifecycle" className="space-y-2">
-            <LifecycleTrack lifecycle={lifecycle} />
-            <p className="text-sm text-muted-foreground">{lifecycleMeta[lifecycle].description}</p>
+            <div className="flex items-center gap-1">
+              <LifecycleTrack lifecycle={lifecycle} />
+              <InfoTip label="About this stage of the lifecycle">{lifecycleMeta[lifecycle].description}</InfoTip>
+            </div>
           </section>
           {project.publication && (
             <div role="status" className={published ? 'flex items-start gap-3 rounded-xl border border-success/40 bg-success-soft/60 p-4' : 'flex items-start gap-3 rounded-xl border border-warning/40 bg-warning-soft/60 p-4'}>
@@ -174,7 +177,7 @@ export function PublishStage({ windowId }: { windowId: string }) {
               )}
             </Fact>
             <Fact label="Deployment">
-              Enterprise AI OS desktop · {folder?.name} folder · prototype runtime (mock). No external infrastructure is used.
+              Enterprise AI OS desktop · {folder?.name} folder
             </Fact>
           </dl>
         </div>

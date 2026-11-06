@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { MockBadge } from '@/components/os/MockBadge'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { analytics, type DailyCount, type Period } from '@/data/analytics.mock'
@@ -88,7 +87,6 @@ export function AnalyticsWorkspaceApp() {
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-lg font-semibold">Claims throughput</h3>
         <span className="text-sm text-muted-foreground">Claims Intelligence</span>
-        <MockBadge label="Mock dataset" />
         <div role="group" aria-label="Period" className="ml-auto flex gap-1">
           {(['7d', '30d'] as const).map((p) => (
             <Button key={p} size="xs" variant={period === p ? 'secondary' : 'ghost'} aria-pressed={period === p} onClick={() => setPeriod(p)}>
