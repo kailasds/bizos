@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { GitCompare, History, Minus, PenLine, Plus, RotateCcw, type LucideIcon } from 'lucide-react'
+import { GitCompare, History, RotateCcw } from 'lucide-react'
 import type { ApplicationBlueprint } from '@/app/blueprint/types'
-import { changeKind, diffBlueprints, sectionLabel, type ChangeKind } from '@/app/services/mock/blueprint-service'
+import { sectionLabel } from '@/app/services/mock/blueprint-service'
 import { StatusBadge } from '@/components/os/StatusBadge'
 import {
   AlertDialog,
@@ -18,8 +18,8 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { bumpVersion } from '@/app/blueprint/generate'
 import type { BlueprintRevision, BlueprintSection } from '../types'
+import { BlueprintDiff } from './BlueprintDiff'
 import { BlueprintSummary } from './BlueprintSummary'
-import { cn } from '@/lib/utils'
 
 const kindLabel: Record<NonNullable<BlueprintRevision['kind']>, string> = {
   generated: 'Generated',
@@ -38,8 +38,6 @@ function Compare({ revisions }: { revisions: BlueprintRevision[] }) {
   const [target, setTarget] = useState(withSnap[0]?.version ?? '')
   const a = withSnap.find((r) => r.version === base)?.snapshot
   const b = withSnap.find((r) => r.version === target)?.snapshot
-  const diff = a && b ? diffBlueprints(a, b) : []
-  const unchanged = ALL.filter((s) => !diff.some((d) => d.section === s))
 
   if (withSnap.length < 2) return <p className="text-sm text-muted-foreground">At least two versions with snapshots are needed to compare.</p>
 
@@ -63,46 +61,11 @@ function Compare({ revisions }: { revisions: BlueprintRevision[] }) {
           ))}
         </NativeSelect>
       </div>
-      {base === target ? (
-        <p className="text-sm text-muted-foreground">Choose two different versions.</p>
-      ) : diff.length === 0 ? (
-        <p className="text-sm">No differences between v{base} and v{target}.</p>
-      ) : (
-        <ul className="space-y-3" aria-label="Changed sections">
-          {diff.map((d) => (
-            <li key={d.section}>
-              <h4 className="text-sm font-medium">{sectionLabel[d.section]}</h4>
-              <ul className="mt-1.5 space-y-1 text-sm">
-                {d.changes.map((c) => {
-                  const kind = changeKind(c)
-                  return (
-                    <li key={c} data-change={kind} className={cn('flex items-start gap-2 rounded-md border-l-2 px-2 py-1', changeStyle[kind].row)}>
-                      <ChangeIcon kind={kind} />
-                      <span className="min-w-0">{c}</span>
-                    </li>
-                  )
-                })}
-              </ul>
-            </li>
-          ))}
-        </ul>
-      )}
-      {diff.length > 0 && <p className="text-xs text-muted-foreground">Unchanged: {unchanged.map((s) => sectionLabel[s]).join(', ')}.</p>}
+      {base === target ? <p className="text-sm text-muted-foreground">Choose two different versions.</p> : a && b ? <BlueprintDiff before={a} after={b} /> : null}
     </section>
   )
 }
 
-const changeStyle: Record<ChangeKind, { icon: LucideIcon; row: string; ink: string }> = {
-  added: { icon: Plus, row: 'border-success bg-success-soft/60', ink: 'text-success-ink' },
-  removed: { icon: Minus, row: 'border-danger bg-danger-soft/60', ink: 'text-danger-ink' },
-  changed: { icon: PenLine, row: 'border-info bg-info-soft/60', ink: 'text-info-ink' },
-}
-
-/** The change sentence already starts with Added / Removed / Changed, so the icon is decorative. */
-function ChangeIcon({ kind }: { kind: ChangeKind }) {
-  const Icon = changeStyle[kind].icon
-  return <Icon aria-hidden className={cn('mt-0.5 size-3.5 shrink-0', changeStyle[kind].ink)} />
-}
 
 /**
  * Frontend-only version history of a blueprint: what changed, why, which version is

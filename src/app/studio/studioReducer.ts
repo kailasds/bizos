@@ -58,6 +58,8 @@ export type StudioAction =
   | { type: 'validate/acknowledge'; findingId: string; now: string }
   | { type: 'publish/done'; appId: string; version: string; now: string }
   | { type: 'architect/message'; message: Omit<ArchitectMessage, 'id'> }
+  /** An improvement accepted in the Learning workspace (Milestone 4): a new draft version of a named project, never the published app. */
+  | { type: 'improvement/apply'; projectId: string; patch: BlueprintPatch; reason: string; now: string }
 
 const stageIndex = (stage: StageId) => STAGES.indexOf(stage)
 
@@ -466,6 +468,15 @@ export function studioReducer(state: StudioState, action: StudioAction): StudioS
       return {
         projects: state.projects.filter((p) => p.id !== action.id),
         activeProjectId: state.activeProjectId === action.id ? null : state.activeProjectId,
+      }
+    case 'improvement/apply':
+      return {
+        ...state,
+        projects: state.projects.map((p) =>
+          p.id === action.projectId
+            ? { ...projectReducer(p, { type: 'generate/patch', patch: action.patch, reason: action.reason, now: action.now }), updatedAt: action.now }
+            : p,
+        ),
       }
     default: {
       const now = 'now' in action ? action.now : undefined

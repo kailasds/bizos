@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This repository is the **Enterprise AI OS** frontend (built on the claude-react-starter foundation). Read `context.md` before product, UX or architecture work — it is the shared product context. Current scope: desktop shell, Application Studio and the intelligence experience (Milestone 3) — mock data and deterministic mock intelligence only (no backend, LLM, agent or worker integrations).
+This repository is the **Enterprise AI OS** frontend (built on the claude-react-starter foundation). Read `context.md` before product, UX or architecture work — it is the shared product context. Current scope: desktop shell, Application Studio, the intelligence experience (Milestone 3) and the simulated operational runtime (Milestone 4: executions, approvals, audit, outcomes, learning) — mock data and deterministic mock intelligence only (no backend, LLM, agent or worker integrations).
 
 ## Architecture rules
 
@@ -13,6 +13,8 @@ This repository is the **Enterprise AI OS** frontend (built on the claude-react-
 - Every visible control must work; if a feature is out of scope, omit the control or label it clearly as a placeholder.
 - Generated applications are data, not code: the Application Blueprint (`src/app/blueprint/types.ts`) is the source of truth and `ExperienceRenderer` interprets it with trusted components. Never generate or execute code.
 - Studio state changes go through `studioReducer` actions. A change to an earlier stage must invalidate later stages (`invalidateAfter`), never silently rewrite them.
+- Operational records (executions, approvals, audit, outcomes, learning signals, proposals) live only in the runtime store (`src/app/runtime/store.ts`) and change only through engine transitions. Audit events and the activity stream are written by those transitions — never fabricated separately. Operational views derive counts from these records; no invented rates or KPIs.
+- A published application's blueprint never changes silently: improvements create a draft version that must be validated and published.
 - Window content is a container-query context (`@container` on the window body); size app layouts with `@…:` variants, not viewport breakpoints.
 
 ## Stack

@@ -1,7 +1,10 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import type { FlowStep } from '@/app/blueprint/types'
 import { useOs } from '@/app/os/use-os'
+import { appSummary } from '@/app/runtime/observability'
+import { isRunnable } from '@/app/runtime/runtime-apps'
+import { useRuntime } from '@/app/runtime/store'
 import { folders, getGeneratedApp } from '@/app/registry/applicationRegistry'
 import { useApplications } from '@/app/registry/use-applications'
 import { ResourceDetailSheet } from '@/app/resources/ResourceDetailSheet'
@@ -44,7 +47,8 @@ export function ApplicationDetail({ id, onBack }: { id: string; onBack: () => vo
   const { state } = useStudio()
   const { openApp } = useOs()
   const [resource, setResource] = useState<PlatformResource | null>(null)
-  const entry = useMemo(() => listRegistryEntries(apps, state.projects).find((e) => e.id === id), [apps, state.projects, id])
+  const runtime = useRuntime()
+  const entry = listRegistryEntries(apps, state.projects).find((e) => e.id === id)
 
   if (!entry) {
     return (
@@ -210,6 +214,35 @@ export function ApplicationDetail({ id, onBack }: { id: string; onBack: () => vo
           <p className="text-sm text-muted-foreground">Governance is defined when the blueprint is generated.</p>
         )}
       </Section>
+
+      {entry.appId && isRunnable(entry.appId, runtime) && (
+        <Section title="Operations">
+          {(() => {
+            const s = appSummary(runtime, entry.appId)
+            return (
+              <p className="text-sm">
+                {s.total} executions · {s.inProgress} in progress · {s.waiting} waiting for approval · {s.failed} failed · {s.completed} completed · {s.humanDecisions} human decisions
+              </p>
+            )
+          })()}
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Operational details">
+            {(
+              [
+                ['overview', 'Overview'],
+                ['executions', 'Executions'],
+                ['resources', 'Resources'],
+                ['governance', 'Governance'],
+                ['activity', 'Activity'],
+                ['outcomes', 'Outcomes'],
+              ] as const
+            ).map(([tab, label]) => (
+              <Button key={tab} size="xs" variant="outline" onClick={() => openApp('operations', { section: 'applications', app: entry.appId!, tab })}>
+                {label}
+              </Button>
+            ))}
+          </div>
+        </Section>
+      )}
 
       <Section title="Recent activity">
         {activity.length ? (

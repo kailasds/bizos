@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
-import { ClipboardCheck, Inbox, Search, SearchX } from 'lucide-react'
+import { ClipboardCheck, FilePlus2, Inbox, ListChecks, Search, SearchX } from 'lucide-react'
+import { AppRuntimePanel, type RuntimeView } from '@/app/runtime/components/AppRuntimePanel'
+import { useRuntime } from '@/app/runtime/store'
 import { useParamsChange } from '@/app/windows/use-params-change'
 import type { AppProps } from '@/app/registry/types'
 import { useMockServices } from '@/app/services/use-mock-services'
@@ -13,7 +15,7 @@ import { cn } from '@/lib/utils'
 import { ClaimDetail } from './ClaimDetail'
 import { riskLabel, riskTone, stageTone } from './claimStatus'
 
-type View = 'queue' | 'approvals'
+type View = 'queue' | 'approvals' | 'runtime'
 
 const stageFilters: { id: 'all' | 'open' | ClaimStage; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -30,12 +32,14 @@ function NavItem({
   icon: Icon,
   label,
   count,
+  hideCount = false,
   onClick,
 }: {
   active: boolean
   icon: typeof Inbox
   label: string
   count: number
+  hideCount?: boolean
   onClick: () => void
 }) {
   return (
@@ -50,7 +54,7 @@ function NavItem({
     >
       <Icon aria-hidden className="size-4" />
       <span className="flex-1">{label}</span>
-      <span className="text-xs text-muted-foreground tabular-nums">{count}</span>
+      {!hideCount && <span className="text-xs text-muted-foreground tabular-nums">{count}</span>}
     </button>
   )
 }
@@ -162,7 +166,10 @@ function ApprovalList({
 
 export function ClaimsIntelligenceApp({ params }: AppProps) {
   const { claims, pendingApprovals } = useMockServices()
-  const [view, setView] = useState<View>(params.view === 'approvals' ? 'approvals' : 'queue')
+  const [view, setView] = useState<View>(params.view === 'approvals' ? 'approvals' : params.view === 'submit' || params.view === 'executions' ? 'runtime' : 'queue')
+  const [runtimeView, setRuntimeView] = useState<RuntimeView>(params.view === 'submit' ? { kind: 'new' } : { kind: 'list' })
+  const runtime = useRuntime()
+  const runCount = runtime.executions.filter((e) => e.appId === 'claims-intelligence').length
   const [selectedId, setSelectedId] = useState<string | null>(params.claim ?? null)
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<(typeof stageFilters)[number]['id']>('all')
@@ -170,6 +177,10 @@ export function ClaimsIntelligenceApp({ params }: AppProps) {
   // Deep links (widgets, notifications, assistant) re-target an already open window.
   useParamsChange(params, (p) => {
     if (p.view === 'approvals' || p.view === 'queue') setView(p.view)
+    if (p.view === 'submit' || p.view === 'executions') {
+      setView('runtime')
+      setRuntimeView(p.view === 'submit' ? { kind: 'new' } : { kind: 'list' })
+    }
     if (p.claim) setSelectedId(p.claim)
   })
 
@@ -189,6 +200,10 @@ export function ClaimsIntelligenceApp({ params }: AppProps) {
     setView(next)
     setSelectedId(null)
   }
+  const openRuntime = (next: RuntimeView) => {
+    setView('runtime')
+    setRuntimeView(next)
+  }
 
   return (
     <div className="@container flex h-full min-h-0">
@@ -201,12 +216,33 @@ export function ClaimsIntelligenceApp({ params }: AppProps) {
           count={pendingApprovals.length}
           onClick={() => switchView('approvals')}
         />
+        <div className="my-2 border-t" />
+        <NavItem active={view === 'runtime' && runtimeView.kind === 'new'} icon={FilePlus2} label="Submit a claim" count={0} hideCount onClick={() => openRuntime({ kind: 'new' })} />
+        <NavItem active={view === 'runtime' && runtimeView.kind !== 'new'} icon={ListChecks} label="Executions" count={runCount} onClick={() => openRuntime({ kind: 'list' })} />
         <div className="mt-auto space-y-1 px-1 text-xs text-muted-foreground">
           <MockBadge />
-          <p>Workflow: Motor claim — automation first v1.3.0</p>
+          <p>Runs blueprint v{runtime.builtin['claims-intelligence']?.published.version} (AI-Driven Claims Automation)</p>
         </div>
       </nav>
 
+      {view === 'runtime' ? (
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex gap-1 border-b px-4 py-2 @3xl:hidden">
+            <Button size="xs" variant="ghost" onClick={() => switchView('queue')}>
+              Queue
+            </Button>
+            <Button size="xs" variant={runtimeView.kind === 'new' ? 'secondary' : 'ghost'} onClick={() => openRuntime({ kind: 'new' })}>
+              Submit a claim
+            </Button>
+            <Button size="xs" variant={runtimeView.kind !== 'new' ? 'secondary' : 'ghost'} onClick={() => openRuntime({ kind: 'list' })}>
+              Executions
+            </Button>
+          </div>
+          <div className="min-h-0 flex-1">
+            <AppRuntimePanel appId="claims-intelligence" view={runtimeView} onView={setRuntimeView} />
+          </div>
+        </div>
+      ) : (
       <div className="flex min-w-0 flex-1">
         <div className={cn('min-w-0 flex-1 flex-col', selected ? 'hidden @5xl:flex' : 'flex')}>
           <div className="space-y-3 border-b px-4 py-3">
@@ -218,6 +254,9 @@ export function ClaimsIntelligenceApp({ params }: AppProps) {
                 </Button>
                 <Button size="xs" variant={view === 'approvals' ? 'secondary' : 'ghost'} onClick={() => switchView('approvals')}>
                   Approvals · {pendingApprovals.length}
+                </Button>
+                <Button size="xs" variant="ghost" onClick={() => openRuntime({ kind: 'list' })}>
+                  Executions
                 </Button>
               </div>
             </div>
@@ -306,6 +345,7 @@ export function ClaimsIntelligenceApp({ params }: AppProps) {
           </div>
         )}
       </div>
+      )}
     </div>
   )
 }

@@ -7,7 +7,7 @@ import { useMockServices } from '@/app/services/use-mock-services'
 import { useStudio } from '@/app/studio/use-studio'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { executions } from '@/data/platform.mock'
+import { getRuntimeState } from '@/app/runtime/store'
 import type { Claim } from '@/data/claims.mock'
 import { formatCurrency } from '@/data/claims.mock'
 import { cn } from '@/lib/utils'
@@ -56,10 +56,12 @@ function respond(input: string, pending: Claim[], drafts: number): Omit<Message,
     }
   }
   if (/(run|status|execut|happening|busy)/.test(q)) {
-    const running = executions.filter((e) => e.state === 'running')
+    const running = getRuntimeState().executions.filter((e) => e.status === 'running' || e.status === 'queued' || e.status === 'waiting-approval')
     return {
-      text: `${running.length} workflows are running: ${running.map((e) => `${e.workflow} on ${e.subject} (${e.step})`).join('; ')}.`,
-      actions: [{ label: 'View executions', appId: 'system-explorer', params: { section: 'workflows' } }],
+      text: running.length
+        ? `${running.length} execution${running.length === 1 ? ' is' : 's are'} in progress: ${running.map((e) => `${e.transaction.id} in ${e.appName} (${e.status === 'waiting-approval' ? 'waiting for approval' : e.steps[e.current]?.name})`).join('; ')}.`
+        : 'No executions are in progress. Submit a transaction from a published application to start one.',
+      actions: [{ label: 'Open Operations', appId: 'operations', params: { section: 'executions' } }],
     }
   }
   if (/(fail|error|broken|wrong)/.test(q)) {

@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Search, SearchX } from 'lucide-react'
 import { useOs } from '@/app/os/use-os'
+import { useRuntime } from '@/app/runtime/store'
 import { findAppIcon } from './registry-helpers'
 import { folders } from '@/app/registry/applicationRegistry'
 import type { DomainId } from '@/app/registry/types'
@@ -39,7 +40,8 @@ export function ApplicationRegistry({ onSelect }: { onSelect: (id: string) => vo
   const [lifecycle, setLifecycle] = useState<RegistryLifecycle | 'all'>('all')
   const [sort, setSort] = useState<RegistrySort>('updated')
 
-  const entries = useMemo(() => listRegistryEntries(apps, state.projects), [apps, state.projects])
+  useRuntime() // re-render when accepted improvements change a built-in app's lifecycle or version
+  const entries = listRegistryEntries(apps, state.projects)
   const shown = filterEntries(entries, { query, domain, lifecycle, sort })
 
   const open = (e: RegistryEntry) => {

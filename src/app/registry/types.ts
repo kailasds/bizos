@@ -8,6 +8,8 @@ export type BuiltinAppId =
   | 'workflow-studio'
   | 'analytics-workspace'
   | 'system-explorer'
+  | 'operations'
+  | 'learning'
   | 'settings'
   | 'folder-browser'
 

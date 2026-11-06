@@ -22,6 +22,8 @@ const builtinComponents: Record<BuiltinAppId, ComponentType<AppProps>> = {
   'system-explorer': lazy(() =>
     import('@/app/applications/system-explorer/SystemExplorerApp').then((m) => ({ default: m.SystemExplorerApp })),
   ),
+  operations: lazy(() => import('@/app/operations/OperationsApp').then((m) => ({ default: m.OperationsApp }))),
+  learning: lazy(() => import('@/app/learning/LearningApp').then((m) => ({ default: m.LearningApp }))),
   settings: lazy(() => import('@/app/applications/settings/SettingsApp').then((m) => ({ default: m.SettingsApp }))),
   'folder-browser': lazy(() =>
     import('@/app/applications/folder-browser/FolderBrowserApp').then((m) => ({ default: m.FolderBrowserApp })),

@@ -17,6 +17,22 @@ import {
 
 const domainLabel = { insurance: 'Insurance', healthcare: 'Healthcare', banking: 'Banking' } as const
 
+/**
+ * Name matches rank above description matches, and every typed word must appear somewhere —
+ * so “Learning” opens Learning rather than a fuzzy match buried in another app's description.
+ */
+function launcherFilter(value: string, search: string, keywords: string[] = []): number {
+  const name = value.toLowerCase()
+  const q = search.trim().toLowerCase()
+  if (!q) return 1
+  if (name.startsWith(q)) return 1
+  if (name.includes(q)) return 0.9
+  const words = q.split(/\s+/)
+  const text = [name, ...keywords.map((k) => k.toLowerCase())].join(' ')
+  if (words.every((w) => name.includes(w))) return 0.8
+  return words.every((w) => text.includes(w)) ? 0.4 : 0
+}
+
 export function ApplicationLauncher() {
   const { launcherOpen, setLauncherOpen, openApp, setAssistantOpen } = useOs()
 
@@ -37,7 +53,7 @@ export function ApplicationLauncher() {
       description="Search applications, folders and system workspaces"
       className="sm:max-w-xl"
     >
-      <Command>
+      <Command filter={launcherFilter}>
         <CommandInput placeholder="Search applications and workspaces…" />
         <CommandList className="max-h-[min(26rem,60vh)]">
           <CommandEmpty>No applications match that search.</CommandEmpty>

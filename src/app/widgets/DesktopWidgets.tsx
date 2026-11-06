@@ -18,7 +18,8 @@ import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 import { Progress } from '@/components/ui/progress'
 import { formatCurrency } from '@/data/claims.mock'
-import { executions, platformServices } from '@/data/platform.mock'
+import { platformServices } from '@/data/platform.mock'
+import { useRuntime } from '@/app/runtime/store'
 import { platformResources } from '@/data/resources.mock'
 import { scenarioForDomain } from '@/data/studio-scenarios.mock'
 import { cn } from '@/lib/utils'
@@ -80,9 +81,10 @@ function ApprovalsWidget() {
   const { pendingApprovals } = useMockServices()
   const { state } = useStudio()
   const generated = useGeneratedApprovals()
+  const runtimeApprovals = useRuntime().approvals.filter((a) => a.status === 'pending' || a.status === 'info-requested')
   const attention = studioAttention(state.projects).slice(0, 2)
   const next = [...pendingApprovals].sort((a, b) => a.slaHoursRemaining - b.slaHoursRemaining)[0]
-  const total = pendingApprovals.length + generated.reduce((n, g) => n + g.count, 0)
+  const total = pendingApprovals.length + generated.reduce((n, g) => n + g.count, 0) + runtimeApprovals.length
 
   return (
     <WidgetCard
@@ -113,6 +115,13 @@ function ApprovalsWidget() {
                 Review
               </Button>
             </div>
+          )}
+          {runtimeApprovals.length > 0 && (
+            <button type="button" className={cn(rowButton, 'mt-1')} onClick={() => openApp('operations', { section: 'approvals' })}>
+              <ClipboardCheck aria-hidden className="size-4 text-warning-ink" />
+              <span className="min-w-0 flex-1 truncate">Running executions</span>
+              <span className="text-xs text-muted-foreground tabular-nums">{runtimeApprovals.length} awaiting</span>
+            </button>
           )}
           {generated.map((g) => (
             <button key={g.app.id} type="button" className={cn(rowButton, 'mt-1')} onClick={() => openApp(g.app.id)}>
@@ -256,30 +265,40 @@ function ApplicationActivityWidget() {
 
 function ActiveExecutionsWidget() {
   const { openApp } = useOs()
-  const running = executions.filter((e) => e.state === 'running')
-  const failed = executions.filter((e) => e.state === 'failed').length
+  const runtime = useRuntime()
+  const active = runtime.executions.filter((e) => e.status === 'running' || e.status === 'queued' || e.status === 'paused' || e.status === 'waiting-approval')
+  const failed = runtime.executions.filter((e) => e.status === 'failed').length
   return (
     <WidgetCard
       icon={Workflow}
       title="Simulated executions"
-      openLabel="Simulated executions — open System Explorer executions"
-      onOpen={() => openApp('system-explorer', { section: 'workflows' })}
+      openLabel="Simulated executions — open Operations executions"
+      onOpen={() => openApp('operations', { section: 'executions' })}
       aside={failed > 0 ? <StatusBadge tone="danger">{failed} failed</StatusBadge> : undefined}
     >
-      <ul className="space-y-3">
-        {running.map((e) => (
-          <li key={e.id}>
-            <div className="flex items-center justify-between gap-2 text-sm">
-              <span className="truncate">{e.subject}</span>
-              <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                {e.stepIndex}/{e.stepCount}
-              </span>
-            </div>
-            <p className="truncate text-xs text-muted-foreground">{e.step}</p>
-            <Progress value={(e.stepIndex / e.stepCount) * 100} className="mt-1.5" aria-label={`${e.subject} progress`} />
-          </li>
-        ))}
-      </ul>
+      {active.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nothing running. Submit a transaction from a published application.</p>
+      ) : (
+        <ul className="space-y-3">
+          {active.slice(0, 3).map((e) => {
+            const done = e.steps.filter((s) => s.status === 'completed' || s.status === 'skipped').length
+            return (
+              <li key={e.id}>
+                <div className="flex items-center justify-between gap-2 text-sm">
+                  <span className="truncate">{e.transaction.id}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                    {done}/{e.steps.length}
+                  </span>
+                </div>
+                <p className="truncate text-xs text-muted-foreground">
+                  {e.status === 'waiting-approval' ? 'Waiting for approval' : e.status === 'paused' ? 'Paused' : e.steps[e.current]?.name} · {e.appName}
+                </p>
+                <Progress value={(done / e.steps.length) * 100} className="mt-1.5" aria-label={`${e.transaction.id} progress`} />
+              </li>
+            )
+          })}
+        </ul>
+      )}
     </WidgetCard>
   )
 }
@@ -290,7 +309,7 @@ function WorkerActivityWidget() {
   const workers = platformResources.filter((r) => r.kind === 'worker')
   const busy = workers.filter((w) => w.runtime?.state === 'busy')
   const validating = workers.filter((w) => w.runtime?.state === 'validating').length
-  const failed = executions.filter((e) => e.state === 'failed').length
+  const failed = useRuntime().executions.filter((e) => e.status === 'failed').length
   const composed = state.projects.flatMap((p) => (p.composition?.createdWorkers ?? []).map((w) => ({ project: p.name, worker: w.resource })))
 
   return (
@@ -326,7 +345,7 @@ function WorkerActivityWidget() {
       {(composed.length > 0 || failed > 0) && (
         <p className="mt-2 text-xs text-muted-foreground">
           {composed.length > 0 && `Composed for your apps: ${composed.map((c) => c.worker.name).join(', ')}. `}
-          {failed > 0 && `${failed} recent execution failed.`}
+          {failed > 0 && `${failed} execution${failed === 1 ? '' : 's'} failed — see Operations.`}
         </p>
       )}
     </WidgetCard>

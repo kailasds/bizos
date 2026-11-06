@@ -2,7 +2,6 @@ import { useState, type ReactNode } from 'react'
 import { Activity, AppWindow, Bot, Cpu, History, Library, Plug, Server, Workflow } from 'lucide-react'
 import type { ResourceKind } from '@/app/blueprint/types'
 import { useOs } from '@/app/os/use-os'
-import { getApp } from '@/app/registry/applicationRegistry'
 import type { AppProps } from '@/app/registry/types'
 import { ResourceDetailSheet } from '@/app/resources/ResourceDetailSheet'
 import { formatActivityTime, platformActivity } from '@/app/services/mock/activity-service'
@@ -14,7 +13,11 @@ import { SidebarNav } from '@/components/os/SidebarNav'
 import { StatusBadge, type StatusTone } from '@/components/os/StatusBadge'
 import { Button } from '@/components/ui/button'
 import type { ActivityCategory } from '@/data/activity.mock'
-import { executions, platformServices, type Execution } from '@/data/platform.mock'
+import { platformServices } from '@/data/platform.mock'
+import { ExecutionList } from '@/app/runtime/components/ExecutionList'
+import { useOperationsLinks } from '@/app/runtime/components/links'
+import { RuntimeLinksContext } from '@/app/runtime/components/meta'
+import { useRuntime } from '@/app/runtime/store'
 import { availabilityLabel, type PlatformResource, type ResourceAvailability } from '@/data/resources.mock'
 import { ApplicationDetail } from './ApplicationDetail'
 import { ApplicationRegistry } from './ApplicationRegistry'
@@ -35,8 +38,6 @@ const sections: { id: Section; label: string; icon: typeof Activity }[] = [
 
 const isSection = (v: string | undefined): v is Section => sections.some((s) => s.id === v)
 
-const executionTone: Record<Execution['state'], StatusTone> = { running: 'info', 'waiting-approval': 'warning', failed: 'danger', completed: 'success' }
-const executionLabel: Record<Execution['state'], string> = { running: 'Running', 'waiting-approval': 'Waiting for approval', failed: 'Failed', completed: 'Completed' }
 const availabilityTone: Record<ResourceAvailability, StatusTone> = { available: 'success', restricted: 'warning', validating: 'info', planned: 'neutral' }
 
 function SectionHeader({ title, source, children }: { title: string; source?: string; children?: ReactNode }) {
@@ -125,54 +126,19 @@ function Resources({ section }: { section: Section }) {
 }
 
 function Executions() {
+  const runtime = useRuntime()
+  const links = useOperationsLinks()
   const { openApp } = useOs()
   return (
-    <>
-      <SectionHeader title="Workflow executions" source="Workflow runs across published applications. Simulated — no workflow engine runs in this prototype.">
+    <RuntimeLinksContext.Provider value={links}>
+      <SectionHeader title="Workflow executions" source="Executions of published applications, from the shared simulated runtime. Investigate one in Operations.">
         <MockBadge label="Simulated" />
       </SectionHeader>
-      <div className="overflow-x-auto rounded-lg border">
-        <table className="w-full text-sm">
-          <thead className="bg-chrome text-left text-xs text-muted-foreground">
-            <tr className="border-b">
-              {['Execution', 'Workflow', 'Subject', 'Step', 'Status', ''].map((h) => (
-                <th key={h} className="px-3 py-2 font-medium whitespace-nowrap">
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="[&>tr]:border-b [&>tr:last-child]:border-0 [&_td]:px-3 [&_td]:py-2">
-            {executions.map((e) => (
-              <tr key={e.id}>
-                <td className="tabular-nums">
-                  <p className="font-medium">{e.id}</p>
-                  <p className="text-xs text-muted-foreground">Started {e.startedAt}</p>
-                </td>
-                <td className="text-muted-foreground">{e.workflow}</td>
-                <td className="tabular-nums">{e.subject}</td>
-                <td className="text-muted-foreground">
-                  {e.step}{' '}
-                  <span className="tabular-nums">
-                    ({e.stepIndex}/{e.stepCount})
-                  </span>
-                </td>
-                <td>
-                  <StatusBadge tone={executionTone[e.state]} pulse={e.state === 'running'}>
-                    {executionLabel[e.state]}
-                  </StatusBadge>
-                </td>
-                <td className="text-right">
-                  <Button size="xs" variant="outline" onClick={() => openApp(e.appId)}>
-                    Open {getApp(e.appId).name}
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </>
+      <ExecutionList executions={runtime.executions} state={runtime} onOpen={links.openExecution} showApplication label="Workflow executions" />
+      <Button size="sm" variant="outline" className="mt-3" onClick={() => openApp('operations', { section: 'executions' })}>
+        Open Operations
+      </Button>
+    </RuntimeLinksContext.Provider>
   )
 }
 

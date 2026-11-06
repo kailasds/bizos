@@ -146,10 +146,20 @@ function slug(value: string) {
 export type BlueprintPatch =
   | { kind: 'assign-role'; nodeId: string; role: string }
   | { kind: 'add-field'; entityId: string; field: DataField }
+  /** Added by an accepted improvement proposal (Milestone 4). Workflows are linear, so edges are rebuilt in order. */
+  | { kind: 'insert-step'; afterNodeId: string; node: WorkflowNode; description: string }
 
 /** Applies a user edit to the blueprint and returns the next patch version. */
 export function applyPatch(blueprint: ApplicationBlueprint, patch: BlueprintPatch): ApplicationBlueprint {
   const version = bumpVersion(blueprint.version, 'patch')
+  if (patch.kind === 'insert-step') {
+    if (blueprint.workflow.nodes.some((n) => n.id === patch.node.id)) return { ...blueprint, version, status: 'draft' }
+    const at = blueprint.workflow.nodes.findIndex((n) => n.id === patch.afterNodeId)
+    const nodes = [...blueprint.workflow.nodes]
+    nodes.splice(at < 0 ? nodes.length : at + 1, 0, patch.node)
+    const edges = nodes.slice(1).map((node, i) => ({ id: `edge-${nodes[i].id}-${node.id}`, from: nodes[i].id, to: node.id }))
+    return { ...blueprint, version, status: 'draft', workflow: { ...blueprint.workflow, nodes, edges } }
+  }
   if (patch.kind === 'assign-role') {
     const nodes = blueprint.workflow.nodes.map((n) => (n.id === patch.nodeId ? { ...n, role: patch.role } : n))
     return {
@@ -186,6 +196,10 @@ export function describePatch(blueprint: ApplicationBlueprint, patch: BlueprintP
     const node = blueprint.workflow.nodes.find((n) => n.id === patch.nodeId)
     const role = blueprint.security.roles.find((r) => r.id === patch.role)
     return `Assigned ${role?.name ?? patch.role} to “${node?.name ?? patch.nodeId}”`
+  }
+  if (patch.kind === 'insert-step') {
+    const after = blueprint.workflow.nodes.find((n) => n.id === patch.afterNodeId)
+    return `Added workflow step “${patch.node.name}”${after ? ` after “${after.name}”` : ''}`
   }
   return `Added “${patch.field.label}” to the data model`
 }

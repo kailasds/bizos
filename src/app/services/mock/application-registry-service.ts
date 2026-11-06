@@ -10,6 +10,7 @@ import { lifecycleMeta, lifecycleOf } from '@/app/studio/lifecycle'
 import type { Lifecycle, StudioProject } from '@/app/studio/types'
 import type { StatusTone } from '@/components/os/StatusBadge'
 import { appProfileFor } from '@/data/applications.mock'
+import { getRuntimeState } from '@/app/runtime/store'
 
 export type RegistryLifecycle = Lifecycle | 'preview'
 
@@ -39,6 +40,8 @@ export function listRegistryEntries(apps: AppDefinition[], projects: StudioProje
     .filter((a) => a.kind === 'application' && !a.generated)
     .map((a): RegistryEntry => {
       const profile = appProfileFor(a.id)
+      // Built-ins with a runtime blueprint (Claims Intelligence) show its published version and any pending draft.
+      const runtime = getRuntimeState().builtin[a.id]
       return {
         id: a.id,
         source: 'built-in',
@@ -46,9 +49,9 @@ export function listRegistryEntries(apps: AppDefinition[], projects: StudioProje
         name: a.name,
         description: profile?.purpose ?? a.description,
         domains: a.domains,
-        version: a.version,
-        lifecycle: a.lifecycle === 'preview' ? 'preview' : 'published',
-        updatedAt: profile?.updatedAt ?? '2026-11-01T00:00:00Z',
+        version: runtime?.published.version ?? a.version,
+        lifecycle: a.lifecycle === 'preview' ? 'preview' : runtime?.draft ? 'changes-pending' : 'published',
+        updatedAt: runtime?.draft?.createdAt ?? (runtime && runtime.published.version !== a.version ? runtime.published.publishedAt : undefined) ?? profile?.updatedAt ?? '2026-11-01T00:00:00Z',
         owner: a.owner,
         resourceIds: profile?.resources ?? [],
       }

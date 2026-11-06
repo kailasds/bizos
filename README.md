@@ -4,8 +4,9 @@ An AI-native enterprise operating environment: describe a business problem, get 
 enterprise application. See [`context.md`](context.md) for the full product and architecture
 context.
 
-**Current state: Milestone 3 — Intelligence experience**, on top of the Milestone 1 desktop
-foundation and the Milestone 2 Application Creation Workspace.
+**Current state: Milestone 4 — Runtime, execution, governance, observability and learning**, on
+top of the Milestone 1 desktop foundation, the Milestone 2 Application Creation Workspace and the
+Milestone 3 intelligence experience.
 
 Application Studio lets a business user describe a problem and walk it through seven
 revisitable stages — Discover, Define, Architect, Compose, Generate, Validate, Publish — to a
@@ -36,6 +37,15 @@ src/
     shell/         DesktopShell, TopBar, DesktopCanvas, Dock, ApplicationLauncher,
                    NotificationCenter, AssistantPanel
     widgets/       Desktop widgets + shared WidgetCard
+    runtime/       Simulated runtime: types (one shared model), engine (deterministic state machine),
+                   scripts (per-capability step processing), workflow-config (approval rules,
+                   outcomes, governance), store (persisted, seeded by the engine), runtime-apps
+                   (which blueprint each app runs), observability (derived counts), components/
+                   (transaction form, execution timeline/detail, approvals, audit, outcomes,
+                   event stream, resources, application operations)
+    operations/    Operations workspace (overview, applications, executions, approvals, activity,
+                   audit, resources)
+    learning/      Learning workspace (observations by theme, proposals, blueprint change loop)
     services/      MockServicesProvider (Claims Intelligence backend stand-in, persisted),
                    app-records-store (records in published apps), demo-data (reset)
       mock/        Typed MOCK services: intent, architecture (+ AI Architect), capability analysis,
@@ -105,8 +115,32 @@ Everything below is simulated in the browser; there is no backend, model or plat
 | Registry, activity, approvals | `application-registry-service.ts`, `activity-service.ts`, `attention-service.ts` | Derived from the registry store and Studio drafts; seed events are labelled simulated |
 
 Persisted in `localStorage` (prefix `enterprise-ai-os:`): drafts with version snapshots,
-published apps, records inside published apps, Claims Intelligence decisions, recently opened
+published apps, runtime records (executions, approvals, audit, outcomes, signals, proposals, built-in drafts), records inside published apps, Claims Intelligence decisions, recently opened
 apps, widget preferences. Settings → Demo data → Reset clears them.
+
+## Operational runtime (Milestone 4)
+
+Everything is simulated in the browser — no workflow engine, agents, workers or connectors run.
+
+```
+Published app ─▶ Transaction ─▶ Execution (queued → running → waiting for approval → completed | failed | cancelled)
+  steps from the app's blueprint workflow · each step run by its pinned resource (simulated script)
+  approval rules (workflow-config) pause the execution ─▶ Approvals queue ─▶ approve / reject / request info
+  every transition writes an audit event (the activity stream is the same records)
+  completion writes a business outcome · failures, rejections, info requests and manual workarounds write learning signals
+  ≥ 2 matching signals ─▶ improvement proposal ─▶ accept ─▶ new draft blueprint version ─▶ validate ─▶ publish ─▶ future executions
+```
+
+- **Claims Intelligence** (built-in) runs a blueprint compiled once by the Studio generator (AI-Driven
+  Claims Automation, v0.4.0). Accepted improvements create draft versions in the runtime store; the
+  published version changes only when you publish.
+- **Studio-published apps** run their pinned published blueprint (window → *Transactions*). Accepted
+  improvements become a new draft version in their Studio project, validated and published in Studio.
+- Deterministic samples per domain exercise approvals, automatic decisions and failures (unreadable
+  document → retry; lapsed policy → no retry; connector timeout; missing statements; restricted KYC).
+- Seeded history (four Claims Intelligence executions) is produced by running the same engine at
+  fixed times. *Operations → Restart demo scenario* restores it; *Settings → Reset* clears everything.
+- Counts only — no rates, savings, accuracy or confidence figures are shown.
 
 ## Tests
 
@@ -119,6 +153,7 @@ node e2e/studio-journey.cjs   # Milestone 2 journey (Insurance), publish, reload
 node e2e/studio-domains.cjs   # Healthcare and Banking through validation
 node e2e/intelligence.cjs     # Milestone 3 intelligence, resources, versions, registry, reset
 node e2e/evolution.cjs        # Architect why-required, catalogue versions, highlighted diffs, status sort, 1440–390px
+node e2e/operations.cjs       # Milestone 4: insurance journey end to end, controls, failures, approvals, learning, persistence
 ```
 
 ## Stack
