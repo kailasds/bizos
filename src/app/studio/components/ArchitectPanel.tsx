@@ -25,7 +25,7 @@ export function ArchitectPanel({
 }) {
   const { project, dispatch } = useStudio()
   const [draft, setDraft] = useState('')
-  const [showGuidance, setShowGuidance] = useState(true)
+  const [showGuidance, setShowGuidance] = useState(false)
   const [localLog, setLocalLog] = useState<ArchitectMessage[]>([])
   const listRef = useRef<HTMLDivElement>(null)
   const guidance = stageGuidance(project, stage)
@@ -87,7 +87,7 @@ export function ArchitectPanel({
           What the OS is doing
           <ChevronDown aria-hidden className={cn('size-4', showGuidance && 'rotate-180')} />
         </button>
-        {showGuidance && (
+        {showGuidance ? (
           <dl className="space-y-2 px-4 pb-3 text-sm">
             {(
               [
@@ -103,6 +103,12 @@ export function ArchitectPanel({
               </div>
             ))}
           </dl>
+        ) : (
+          // Collapsed: only the decision the user owes, so the conversation keeps its room.
+          <p className="px-4 pb-2.5 text-sm">
+            <span className="text-xs text-muted-foreground">Needs from you · </span>
+            <span className="font-medium">{guidance.needs}</span>
+          </p>
         )}
       </div>
 

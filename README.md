@@ -98,10 +98,10 @@ Everything below is simulated in the browser; there is no backend, model or plat
 | Intent understanding | `services/mock/intent-service.ts` | Keyword match against three scripted scenarios; evidence quotes from your own words; unmatched descriptions get an honest fallback, never a pretend understanding |
 | Clarifying questions, suggestions | `studio-scenarios.mock.ts` | Deterministic per scenario; answers flow into requirements (e.g. approver role) |
 | Solution approaches | `architecture-service.ts` | Three operating models per scenario; facts (people on N of M steps, new resources) are counted, never scored |
-| AI Architect | `architecture-service.ts` | Scripted replies built from project state, with "based on" sources and navigation actions; unscripted questions get an honest list of what it can answer |
+| AI Architect | `architecture-service.ts` | Scripted replies built from project state (why an approach is recommended, why a capability is required, reducing human intervention, unavailable workers, approvals), with "based on" sources and navigation actions; unscripted questions get an honest list of what it can answer |
 | Capability coverage, worker composition | `capability-analysis-service.ts`, `resources.mock.ts` | Selected / Available / Requires configuration / Missing; composition is simulated (Healthcare fails once by design, then succeeds on retry) |
 | Validation, readiness | `blueprint/validate.ts`, `blueprint-service.ts` | Eight deterministic checks; Ready / Needs attention / Blocked / Accepted with known gaps |
-| Version history, rollback | `studioReducer.ts`, `VersionHistory.tsx` | Snapshot per version, compare by section, rollback creates a new draft version; no runtime changes |
+| Version history, rollback | `studioReducer.ts`, `VersionHistory.tsx`, `blueprint-service.ts` | Snapshot per version; compare by section with field-level Added / Removed / Changed highlighting; rollback creates a new draft version and only changes local prototype state |
 | Registry, activity, approvals | `application-registry-service.ts`, `activity-service.ts`, `attention-service.ts` | Derived from the registry store and Studio drafts; seed events are labelled simulated |
 
 Persisted in `localStorage` (prefix `enterprise-ai-os:`): drafts with version snapshots,
@@ -118,6 +118,7 @@ node e2e/desktop.cjs          # Milestone 1 desktop
 node e2e/studio-journey.cjs   # Milestone 2 journey (Insurance), publish, reload, invalidation
 node e2e/studio-domains.cjs   # Healthcare and Banking through validation
 node e2e/intelligence.cjs     # Milestone 3 intelligence, resources, versions, registry, reset
+node e2e/evolution.cjs        # Architect why-required, catalogue versions, highlighted diffs, status sort, 1440–390px
 ```
 
 ## Stack

@@ -74,6 +74,7 @@ export function ApplicationRegistry({ onSelect }: { onSelect: (id: string) => vo
           <NativeSelectOption value="updated">Last updated</NativeSelectOption>
           <NativeSelectOption value="name">Name</NativeSelectOption>
           <NativeSelectOption value="domain">Domain</NativeSelectOption>
+          <NativeSelectOption value="status">Status</NativeSelectOption>
         </NativeSelect>
         <span className="ml-auto text-xs text-muted-foreground tabular-nums">
           {shown.length} of {entries.length}

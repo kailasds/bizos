@@ -87,7 +87,7 @@ export function DesktopCanvas() {
 
       <div className="hidden flex-1 md:block" />
 
-      <div className="md:no-scrollbar md:w-80 md:shrink-0 md:overflow-y-auto md:pb-2">
+      <div className="md:no-scrollbar md:w-80 md:shrink-0 md:overflow-y-auto md:pb-12 md:[mask-image:linear-gradient(to_bottom,black_calc(100%-3rem),transparent)]">
         <DesktopWidgets />
       </div>
     </div>

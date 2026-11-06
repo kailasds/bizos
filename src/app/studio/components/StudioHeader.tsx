@@ -41,13 +41,15 @@ export function StudioHeader({
 
   return (
     <header className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b bg-chrome px-4 py-2.5">
-      <div className="flex items-center gap-2 text-sm font-semibold">
-        <Blocks aria-hidden className="size-4 text-muted-foreground" />
-        Application Studio
-      </div>
+      {/* The window title already names the Studio; inside a project the header leads with the project. */}
+      {!project && (
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          <Blocks aria-hidden className="size-4 text-muted-foreground" />
+          Application Studio
+        </div>
+      )}
       {project && (
         <>
-          <span aria-hidden className="h-4 w-px bg-border" />
           {editing ? (
             <form
               onSubmit={(e) => {

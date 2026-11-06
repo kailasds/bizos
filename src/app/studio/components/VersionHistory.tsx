@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { GitCompare, History, RotateCcw } from 'lucide-react'
+import { GitCompare, History, Minus, PenLine, Plus, RotateCcw, type LucideIcon } from 'lucide-react'
 import type { ApplicationBlueprint } from '@/app/blueprint/types'
-import { diffBlueprints, sectionLabel } from '@/app/services/mock/blueprint-service'
+import { changeKind, diffBlueprints, sectionLabel, type ChangeKind } from '@/app/services/mock/blueprint-service'
 import { StatusBadge } from '@/components/os/StatusBadge'
 import {
   AlertDialog,
@@ -19,6 +19,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { bumpVersion } from '@/app/blueprint/generate'
 import type { BlueprintRevision, BlueprintSection } from '../types'
 import { BlueprintSummary } from './BlueprintSummary'
+import { cn } from '@/lib/utils'
 
 const kindLabel: Record<NonNullable<BlueprintRevision['kind']>, string> = {
   generated: 'Generated',
@@ -71,10 +72,16 @@ function Compare({ revisions }: { revisions: BlueprintRevision[] }) {
           {diff.map((d) => (
             <li key={d.section}>
               <h4 className="text-sm font-medium">{sectionLabel[d.section]}</h4>
-              <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-muted-foreground">
-                {d.changes.map((c) => (
-                  <li key={c}>{c}</li>
-                ))}
+              <ul className="mt-1.5 space-y-1 text-sm">
+                {d.changes.map((c) => {
+                  const kind = changeKind(c)
+                  return (
+                    <li key={c} data-change={kind} className={cn('flex items-start gap-2 rounded-md border-l-2 px-2 py-1', changeStyle[kind].row)}>
+                      <ChangeIcon kind={kind} />
+                      <span className="min-w-0">{c}</span>
+                    </li>
+                  )
+                })}
               </ul>
             </li>
           ))}
@@ -83,6 +90,18 @@ function Compare({ revisions }: { revisions: BlueprintRevision[] }) {
       {diff.length > 0 && <p className="text-xs text-muted-foreground">Unchanged: {unchanged.map((s) => sectionLabel[s]).join(', ')}.</p>}
     </section>
   )
+}
+
+const changeStyle: Record<ChangeKind, { icon: LucideIcon; row: string; ink: string }> = {
+  added: { icon: Plus, row: 'border-success bg-success-soft/60', ink: 'text-success-ink' },
+  removed: { icon: Minus, row: 'border-danger bg-danger-soft/60', ink: 'text-danger-ink' },
+  changed: { icon: PenLine, row: 'border-info bg-info-soft/60', ink: 'text-info-ink' },
+}
+
+/** The change sentence already starts with Added / Removed / Changed, so the icon is decorative. */
+function ChangeIcon({ kind }: { kind: ChangeKind }) {
+  const Icon = changeStyle[kind].icon
+  return <Icon aria-hidden className={cn('mt-0.5 size-3.5 shrink-0', changeStyle[kind].ink)} />
 }
 
 /**
@@ -191,7 +210,7 @@ export function VersionHistory({
             <AlertDialogTitle>Restore v{restore?.version}?</AlertDialogTitle>
             <AlertDialogDescription>
               Its content becomes a new draft version{currentVersion ? ` v${bumpVersion(currentVersion, 'patch')}` : ''}. Nothing is deleted — v{currentVersion} stays in the history.
-              {live ? ` The published application (v${live}) does not change until you publish again.` : ''} Validation will need to run again. This is a prototype rollback: no runtime is changed.
+              {live ? ` The published application (v${live}) does not change until you publish again.` : ''} Validation will need to run again. Rollback only changes this prototype’s local state in your browser — no runtime is changed, and no platform or published version is touched.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

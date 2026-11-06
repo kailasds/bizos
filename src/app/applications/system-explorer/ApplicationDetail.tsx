@@ -92,7 +92,7 @@ export function ApplicationDetail({ id, onBack }: { id: string; onBack: () => vo
         <div className="min-w-0 flex-1">
           <h3 className="text-lg font-semibold">{entry.name}</h3>
           <p className="text-sm text-muted-foreground">
-            {entry.domains.length ? entry.domains.map((d) => folders.find((f) => f.id === d)?.name).join(', ') : 'Cross-domain'} · v{entry.version} · {entry.owner}
+            {entry.domains.length ? entry.domains.map((d) => folders.find((f) => f.id === d)?.name).join(', ') : 'Cross-domain'} · v{entry.version} · Owner: {entry.owner}
           </p>
         </div>
         <StatusBadge tone={registryLifecycleMeta[entry.lifecycle].tone}>{registryLifecycleMeta[entry.lifecycle].label}</StatusBadge>

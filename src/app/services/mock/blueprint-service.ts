@@ -20,6 +20,13 @@ export const sectionLabel: Record<BlueprintSection, string> = {
   deployment: 'Deployment',
 }
 
+export type ChangeKind = 'added' | 'removed' | 'changed'
+
+/** Every diff line starts with Added / Removed / Changed; the UI highlights by kind. */
+export function changeKind(line: string): ChangeKind {
+  return line.startsWith('Added') ? 'added' : line.startsWith('Removed') ? 'removed' : 'changed'
+}
+
 export interface SectionDiff {
   section: BlueprintSection
   changes: string[]
@@ -40,17 +47,17 @@ export function diffBlueprints(a: ApplicationBlueprint, b: ApplicationBlueprint)
   const push = (section: BlueprintSection, changes: string[]) => changes.length && out.push({ section, changes })
 
   push('overview', [
-    ...(a.name !== b.name ? [`Renamed from “${a.name}” to “${b.name}”`] : []),
-    ...(a.description !== b.description ? ['Description changed'] : []),
+    ...(a.name !== b.name ? [`Changed name: “${a.name}” → “${b.name}”`] : []),
+    ...(a.description !== b.description ? ['Changed description'] : []),
   ])
   push('requirements', [
     ...setDiff(a.requirements.capabilities, b.requirements.capabilities, (c) => c.id, (c) => c.label, 'capability'),
     ...setDiff(a.requirements.users, b.requirements.users, (c) => c.id, (c) => c.label, 'user group'),
     ...setDiff(a.requirements.constraints, b.requirements.constraints, (c) => c.id, (c) => c.label, 'constraint'),
     ...setDiff(a.requirements.outputs, b.requirements.outputs, (c) => c.id, (c) => c.label, 'output'),
-    ...(a.requirements.objective !== b.requirements.objective ? ['Business objective changed'] : []),
+    ...(a.requirements.objective !== b.requirements.objective ? ['Changed business objective'] : []),
   ])
-  push('solution', a.solutionArchitecture.optionId !== b.solutionArchitecture.optionId ? [`Approach changed from “${a.solutionArchitecture.name}” to “${b.solutionArchitecture.name}”`] : [])
+  push('solution', a.solutionArchitecture.optionId !== b.solutionArchitecture.optionId ? [`Changed approach: “${a.solutionArchitecture.name}” → “${b.solutionArchitecture.name}”`] : [])
   const roleName = (bp: ApplicationBlueprint, id: string | null) => (id ? (bp.security.roles.find((r) => r.id === id)?.name ?? id) : 'nobody')
   push('workflow', [
     ...setDiff(a.workflow.nodes, b.workflow.nodes, (n) => n.id, (n) => n.name, 'step'),
@@ -59,24 +66,50 @@ export function diffBlueprints(a: ApplicationBlueprint, b: ApplicationBlueprint)
         const before = a.workflow.nodes.find((x) => x.id === n.id)
         return before && before.role !== n.role
       })
-      .map((n) => `“${n.name}” is now decided by ${roleName(b, n.role)} (was ${roleName(a, a.workflow.nodes.find((x) => x.id === n.id)!.role)})`),
+      .map((n) => `Changed “${n.name}”: now decided by ${roleName(b, n.role)} (was ${roleName(a, a.workflow.nodes.find((x) => x.id === n.id)!.role)})`),
+    ...b.workflow.nodes
+      .filter((n) => {
+        const before = a.workflow.nodes.find((x) => x.id === n.id)
+        return before && (before.name !== n.name || before.actor !== n.actor)
+      })
+      .map((n) => {
+        const before = a.workflow.nodes.find((x) => x.id === n.id)!
+        return before.name !== n.name ? `Changed step “${before.name}”: renamed to “${n.name}”` : `Changed step “${n.name}”: ${before.actor} → ${n.actor}`
+      }),
   ])
   const ra = Object.values(a.resources).flat()
   const rb = Object.values(b.resources).flat()
   push('resources', [
     ...setDiff(ra, rb, (r) => r.id, (r) => `${r.name} ${r.version}`, 'resource'),
-    ...rb.filter((r) => ra.some((x) => x.id === r.id && x.version !== r.version)).map((r) => `${r.name} pinned at ${r.version}`),
+    ...rb.filter((r) => ra.some((x) => x.id === r.id && x.version !== r.version)).map((r) => `Changed resource “${r.name}”: pinned at ${r.version}`),
   ])
   push(
     'data',
     b.dataModel.entities.flatMap((e) => {
       const before = a.dataModel.entities.find((x) => x.id === e.id)
-      return setDiff(before?.fields ?? [], e.fields, (f) => f.id, (f) => f.label, `${e.name} field`)
+      const changed = e.fields.flatMap((f) => {
+        const prev = before?.fields.find((x) => x.id === f.id)
+        if (!prev) return []
+        return [
+          ...(prev.label !== f.label ? [`Changed ${e.name} field “${prev.label}”: renamed to “${f.label}”`] : []),
+          ...(prev.type !== f.type ? [`Changed ${e.name} field “${f.label}”: type ${prev.type} → ${f.type}`] : []),
+          ...((prev.options?.length ?? 0) !== (f.options?.length ?? 0) ? [`Changed ${e.name} field “${f.label}”: ${prev.options?.length ?? 0} → ${f.options?.length ?? 0} options`] : []),
+        ]
+      })
+      return [...setDiff(before?.fields ?? [], e.fields, (f) => f.id, (f) => f.label, `${e.name} field`), ...changed]
     }),
   )
-  push('experience', setDiff(a.experience.pages, b.experience.pages, (p) => p.id, (p) => p.title, 'screen'))
+  push('experience', [
+    ...setDiff(a.experience.pages, b.experience.pages, (p) => p.id, (p) => p.title, 'screen'),
+    ...b.experience.pages
+      .filter((p) => {
+        const before = a.experience.pages.find((x) => x.id === p.id)
+        return before && before.title !== p.title
+      })
+      .map((p) => `Changed screen “${a.experience.pages.find((x) => x.id === p.id)!.title}”: renamed to “${p.title}”`),
+  ])
   push('security', setDiff(a.security.roles, b.security.roles, (r) => r.id, (r) => r.name, 'role'))
-  push('deployment', a.deployment.folder !== b.deployment.folder ? [`Folder changed to ${b.deployment.folder}`] : [])
+  push('deployment', a.deployment.folder !== b.deployment.folder ? [`Changed folder: ${a.deployment.folder} → ${b.deployment.folder}`] : [])
   return out
 }
 

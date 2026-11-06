@@ -330,11 +330,12 @@ function CatalogueBrowser({ mappings, onDetails }: { mappings: CapabilityMapping
                   <Icon aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-medium">
-                      {r.name} <span className="font-normal text-muted-foreground">· {resourceKindLabel[r.kind]}</span>
+                      {r.name} <span className="font-normal text-muted-foreground">· {resourceKindLabel[r.kind]} · v{r.version}</span>
                     </span>
                     <span className="block text-sm text-muted-foreground">{r.purpose}</span>
                     <span className={cn('mt-1 block text-xs', m ? 'text-foreground' : 'text-muted-foreground')}>
                       {m ? `Used here for ${m.need} · ${mappingStatusMeta[m.status].label}` : 'Not used in this application'}
+                      <span className="text-muted-foreground"> · {r.owner}</span>
                     </span>
                   </span>
                   {r.availability !== 'available' && <StatusBadge tone="warning">{availabilityLabel[r.availability]}</StatusBadge>}

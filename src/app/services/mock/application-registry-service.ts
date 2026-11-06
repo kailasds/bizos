@@ -91,7 +91,10 @@ export function listRegistryEntries(apps: AppDefinition[], projects: StudioProje
   return [...builtIn, ...generated, ...drafts]
 }
 
-export type RegistrySort = 'updated' | 'name' | 'domain'
+export type RegistrySort = 'updated' | 'name' | 'domain' | 'status'
+
+/** Lifecycle order for sorting: what needs attention first, then live, then drafts. */
+const statusOrder: RegistryLifecycle[] = ['changes-pending', 'ready', 'validating', 'designing', 'draft', 'published', 'preview']
 
 export function filterEntries(
   entries: RegistryEntry[],
@@ -107,6 +110,8 @@ export function filterEntries(
         ? a.name.localeCompare(b.name)
         : sort === 'domain'
           ? (a.domains[0] ?? 'zz').localeCompare(b.domains[0] ?? 'zz') || a.name.localeCompare(b.name)
+          : sort === 'status'
+            ? statusOrder.indexOf(a.lifecycle) - statusOrder.indexOf(b.lifecycle) || a.name.localeCompare(b.name)
           : b.updatedAt.localeCompare(a.updatedAt),
     )
 }

@@ -164,7 +164,7 @@ export function suggestedQuestions(project: StudioProject | null, stage: StageId
     case 'architect':
       return ['Why is this approach recommended?', 'Can we reduce human intervention?', 'Explain the approval workflow']
     case 'compose':
-      return [gap ? `What happens if ${gap.need} is unavailable?` : 'Why reuse existing resources?', 'Explain the approval workflow']
+      return [gap ? `Why is ${gap.need} required?` : 'Why reuse existing resources?', gap ? `What happens if ${gap.need} is unavailable?` : 'What happens if a worker is unavailable?', 'Explain the approval workflow']
     case 'generate':
       return ['What will be created?', 'Explain the approval workflow']
     case 'validate':
@@ -276,6 +276,55 @@ export function architectReply(project: StudioProject | null, stage: StageId, qu
     }
   }
 
+  // Why is a capability / worker required?
+  if (/why/.test(q) && /(required|needed|need|necessary|include|part of)/.test(q) && scenario) {
+    const candidates = [
+      ...new Set([
+        ...options.flatMap((o) => [...o.steps.map((st) => needOf(st)), ...o.supportingCapabilities]),
+        ...Object.keys(scenario.capabilityLabels),
+      ]),
+    ]
+    const named = candidates
+      .map((id) => ({ id, label: capabilityLabel(scenario, id) }))
+      .filter(({ id, label }) => q.includes(label.toLowerCase()) || (proposalFor(id) && q.includes(proposalFor(id)!.name.toLowerCase().replace(/ worker$/, ''))))
+      .sort((a, b) => b.label.length - a.label.length)[0]
+    if (named) {
+      const label = capabilityLabel(scenario, named.id)
+      const steps = current?.steps.filter((st) => needOf(st) === named.id).map((st) => st.name) ?? []
+      const fromSpec = spec?.capabilities.find((c) => c.capabilityId === named.id)
+      const mapping = project.composition?.mappings.find((m) => m.capabilityId === named.id)
+      const proposal = proposalFor(named.id)
+      const resource = findResource(named.id, scenario.domain)
+      const usedBy = current && !steps.length && !current.supportingCapabilities.includes(named.id)
+      if (usedBy) {
+        const other = options.find((o) => o.steps.some((st) => needOf(st) === named.id))
+        return {
+          text: `“${current.name}” does not use ${label}.${other ? ` It appears in “${other.name}”, where ${list(other.steps.filter((st) => needOf(st) === named.id).map((st) => `“${st.name}”`))} depend${other.steps.filter((st) => needOf(st) === named.id).length === 1 ? 's' : ''} on it.` : ''}`,
+          sources: sources(approachSource),
+          actions: other ? [{ label: `Look at ${other.name}`, kind: 'focus-option', optionId: other.id }] : undefined,
+        }
+      }
+      const why = fromSpec
+        ? `your requirement “${fromSpec.label}” asks for it`
+        : steps.length
+          ? `the approach includes ${list(steps.map((st) => `“${st}”`))}`
+          : 'the approach relies on it throughout'
+      const provided = mapping?.resource ?? (mapping ? null : resource)
+      const provider = mapping?.created
+        ? ` ${mapping.resource?.name ?? proposal?.name ?? 'A new worker'} was composed for this application (simulated — nothing was created on the AI Workers Platform).`
+        : mapping?.status === 'missing' || (!provided && proposal)
+          ? ` No existing resource provides it, so I suggest composing ${proposal?.name ?? 'a new worker'} (simulated). ${proposal?.whyNeeded ?? ''}`
+          : provided
+            ? ` It is provided by ${provided.name}.`
+            : ''
+      return {
+        text: `${label} is required because ${why}${steps.length && fromSpec ? `, carried out in ${list(steps.map((st) => `“${st}”`))}` : ''}.${provider}${proposal && !mapping?.created ? ` If you would rather not add it: ${proposal.ifRejected}` : ''}`,
+        sources: sources(fromSpec ? specSource : '', approachSource, 'Resource catalogue (mock)'),
+        actions: stage !== 'compose' && project.progress.architect === 'complete' ? [{ label: 'Review in Compose', kind: 'go-stage', stage: 'compose' }] : undefined,
+      }
+    }
+  }
+
   // Why recommended
   if (/why|recommend/.test(q) && options.length) {
     if (!recommended) return { text: 'No approach stands out; choose the one whose trade-offs suit your teams.', sources: sources(specSource) }
@@ -347,7 +396,7 @@ export function architectReply(project: StudioProject | null, stage: StageId, qu
 
   const g = stageGuidance(project, stage)
   return {
-    text: `${g.doing} ${g.needs} I have scripted answers about why an approach is recommended, reducing human intervention, what happens if a capability is unavailable, and the approval workflow.`,
+    text: `${g.doing} ${g.needs} I have scripted answers about why an approach is recommended, why a capability is required, reducing human intervention, what happens if a worker or capability is unavailable, and the approval workflow.`,
     sources: [],
   }
 }
