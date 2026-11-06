@@ -207,7 +207,7 @@ export function architectReply(project: StudioProject | null, stage: StageId, qu
     const caps = u.items.filter((i) => i.kind === 'capability').map((i) => i.text.replace(/\.$/, '').toLowerCase())
     return {
       text: `${u.summary} In practice: ${list(caps)}.${u.matchedPhrases.length ? ` I based this on your words “${u.matchedPhrases.slice(0, 2).join('”, “')}” and the ${scenario?.domain ?? ''} domain pack.` : ''}`,
-      sources: sources('Your description', scenario ? `${scenario.label} scenario (scripted)` : ''),
+      sources: sources('Your description', scenario ? `${scenario.label} scenario` : ''),
     }
   }
 
@@ -232,7 +232,7 @@ export function architectReply(project: StudioProject | null, stage: StageId, qu
     const altNew = approachInsights(scenario, alternative).newResources
     return {
       text: `In “${current.name}”, people do ${humans.length} of ${current.steps.length} steps: ${list(humans.map((s) => s.name))}. “${alternative.name}” has people on ${altHumans.length} of ${alternative.steps.length}: ${list(altHumans.map((s) => s.name))}.${altNew.length ? ` It needs ${list(altNew)}, which no existing resource provides.` : ''}${floor}`,
-      sources: sources(specSource, approachSource, 'Resource catalogue (mock)'),
+      sources: sources(specSource, approachSource, 'Resource catalogue'),
       actions: [{ label: `Look at ${alternative.name}`, kind: 'focus-option', optionId: alternative.id }],
     }
   }
@@ -244,21 +244,21 @@ export function architectReply(project: StudioProject | null, stage: StageId, qu
     const named = needs.find((n) => q.includes(capabilityLabel(scenario, n).toLowerCase()))
     const gap = project.composition?.mappings.find((m) => m.status === 'missing')?.capabilityId
     const target = named ?? gap ?? needs.find((n) => proposalFor(n))
-    if (!target) return { text: `Every need in “${current.name}” has an existing resource. If one became unavailable, validation would block publishing until another is mapped.`, sources: sources(approachSource, 'Resource catalogue (mock)') }
+    if (!target) return { text: `Every need in “${current.name}” has an existing resource. If one became unavailable, validation would block publishing until another is mapped.`, sources: sources(approachSource, 'Resource catalogue') }
     const steps = current.steps.filter((s) => needOf(s) === target).map((s) => s.name)
     const proposal = proposalFor(target)
     if (proposal) {
       const alternative = options.find((o) => o.id !== current.id && !o.steps.some((s) => needOf(s) === target))
       return {
         text: `Without ${capabilityLabel(scenario, target)}, ${steps.length ? `“${list(steps)}” would have nothing to run it` : 'the approach would be incomplete'}. ${proposal.ifRejected}`,
-        sources: sources(approachSource, 'Resource catalogue (mock)'),
+        sources: sources(approachSource, 'Resource catalogue'),
         actions: alternative ? [{ label: `Look at ${alternative.name}`, kind: 'focus-option', optionId: alternative.id }] : undefined,
       }
     }
     const resource = findResource(target, scenario.domain)
     return {
       text: `${capabilityLabel(scenario, target)} is provided by ${resource?.name ?? 'an existing resource'}. If it became unavailable, ${steps.length ? `“${list(steps)}”` : 'this need'} would have no resource and validation would block publishing until another resource is mapped. The published version keeps its pinned resource version.`,
-      sources: sources(approachSource, 'Resource catalogue (mock)'),
+      sources: sources(approachSource, 'Resource catalogue'),
     }
   }
 
@@ -319,7 +319,7 @@ export function architectReply(project: StudioProject | null, stage: StageId, qu
             : ''
       return {
         text: `${label} is required because ${why}${steps.length && fromSpec ? `, carried out in ${list(steps.map((st) => `“${st}”`))}` : ''}.${provider}${proposal && !mapping?.created ? ` If you would rather not add it: ${proposal.ifRejected}` : ''}`,
-        sources: sources(fromSpec ? specSource : '', approachSource, 'Resource catalogue (mock)'),
+        sources: sources(fromSpec ? specSource : '', approachSource, 'Resource catalogue'),
         actions: stage !== 'compose' && project.progress.architect === 'complete' ? [{ label: 'Review in Compose', kind: 'go-stage', stage: 'compose' }] : undefined,
       }
     }
@@ -331,7 +331,7 @@ export function architectReply(project: StudioProject | null, stage: StageId, qu
     const chose = selected && selected.id !== recommended.id ? ` You selected “${selected.name}”: ${selected.tradeOffs[0].toLowerCase()}, compared with “${recommended.name}”: ${recommended.tradeOffs[0].toLowerCase()}.` : ''
     return {
       text: `I recommend “${recommended.name}” because ${recommended.recommended!.reason.charAt(0).toLowerCase()}${recommended.recommended!.reason.slice(1)} ${recommended.operatingModel ?? ''} The main trade-off: ${recommended.tradeOffs[0].toLowerCase()}.${chose}`,
-      sources: sources(specSource, `${scenario?.label ?? ''} approaches (scripted)`),
+      sources: sources(specSource, `${scenario?.label ?? ''} approaches`),
       actions: selected?.id === recommended.id ? undefined : [{ label: `Look at ${recommended.name}`, kind: 'focus-option', optionId: recommended.id }],
     }
   }
@@ -345,7 +345,7 @@ export function architectReply(project: StudioProject | null, stage: StageId, qu
           return `“${o.name}”: ${o.operatingModel ?? o.tagline} People do ${i.humanSteps.length} of ${o.steps.length} steps${i.newResources.length ? `; needs ${list(i.newResources)}` : '; no new resources'}.`
         })
         .join(' '),
-      sources: sources(specSource, 'Resource catalogue (mock)'),
+      sources: sources(specSource, 'Resource catalogue'),
     }
   }
 
@@ -353,7 +353,7 @@ export function architectReply(project: StudioProject | null, stage: StageId, qu
   if (/missing|gap|forgot|else/.test(q)) {
     if (stage === 'compose' || stage === 'validate') {
       const gaps = project.composition?.mappings.filter((m) => m.status === 'missing') ?? []
-      if (gaps.length) return { text: `${list(gaps.map((g) => g.need))} ${gaps.length === 1 ? 'has' : 'have'} no existing resource. ${proposalFor(gaps[0].capabilityId)?.whyNeeded ?? ''}`, sources: sources(approachSource, 'Resource catalogue (mock)') }
+      if (gaps.length) return { text: `${list(gaps.map((g) => g.need))} ${gaps.length === 1 ? 'has' : 'have'} no existing resource. ${proposalFor(gaps[0].capabilityId)?.whyNeeded ?? ''}`, sources: sources(approachSource, 'Resource catalogue') }
     }
     const pending = project.discover.understanding?.suggestions.filter((s) => s.status === 'pending') ?? []
     return pending.length

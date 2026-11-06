@@ -203,7 +203,7 @@ function projectReducer(project: StudioProject, action: StudioAction): StudioPro
         p = invalidateAfter(p, 'define', 'Requirements changed.')
       }
       if (!project.requirements) {
-        p = say(p, 'define', `I organised the understanding into a requirement specification, using the ${scenario.domain} domain pack. Edit anything that is wrong, then confirm it.`, ['Confirmed understanding', `${scenario.label} scenario (scripted)`])
+        p = say(p, 'define', `I organised the understanding into a requirement specification, using the ${scenario.domain} domain pack. Edit anything that is wrong, then confirm it.`, ['Confirmed understanding', `${scenario.label} scenario`])
       }
       return p
     }
@@ -228,7 +228,7 @@ function projectReducer(project: StudioProject, action: StudioAction): StudioPro
           p,
           'architect',
           `I designed ${options.length} approaches, each a different way of working.${recommended ? ` I recommend “${recommended.name}”: ${recommended.recommended!.reason}` : ''}`,
-          [`Requirement specification v${requirements.version}`, `${scenario.label} approaches (scripted)`],
+          [`Requirement specification v${requirements.version}`, `${scenario.label} approaches`],
         )
       }
       return p
@@ -456,7 +456,7 @@ export function studioReducer(state: StudioState, action: StudioAction): StudioS
       }
       project = say(project, 'discover', `${action.understanding.summary} Check each group below — edit or remove anything that is wrong, and answer the questions if you can.`, [
         'Your description',
-        `${getScenario(action.scenarioId)?.label ?? ''} scenario (scripted)`,
+        `${getScenario(action.scenarioId)?.label ?? ''} scenario`,
       ])
       return { projects: [project, ...state.projects], activeProjectId: id }
     }

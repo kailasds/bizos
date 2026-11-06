@@ -9,7 +9,7 @@ top of the Milestone 1 desktop foundation, the Milestone 2 Application Creation 
 Milestone 3 intelligence experience.
 
 Application Studio lets a business user describe a problem and walk it through seven
-revisitable stages — Discover, Define, Architect, Compose, Generate, Validate, Publish — to a
+revisitable stages — Discover, Define, Architect, Compose, Generate, Preview, Publish — to a
 published application that opens in its own OS window. All "intelligence" is deterministic
 mock logic over fixtures; there are no backend, LLM, agent or worker integrations.
 
@@ -125,8 +125,14 @@ apps, widget preferences. Settings → Demo data → Reset clears them.
   divider and every open application in opening order. Tiles magnify near the pointer, names show
   on hover, and the active item expands to show its name. *Ask AI*, notifications and settings sit
   on the right.
-- Desktop: domain folders are groups sized by the apps they hold (icon + name); standalone apps
-  are cards with a one-line tagline. Teal-to-warm-horizon wallpaper.
+- Desktop: a Create application banner; domain groups with large tinted app tiles (three shown,
+  “Show all” animates the group open); platform features as cards; a “+” menu beside the dock
+  (new application, new transaction, add widget, find an application). No clock in the top bar.
+- Studio: stage title and primary actions in a fixed bar at the top; details collapsed by default;
+  a Build layers panel (Intent → Requirements → Architecture → Capability → Blueprint compiler →
+  Preview & readiness → Runtime) with live summaries; the AI Architect opens from its labelled
+  header button. Validate became **Preview**: the application preview with readiness checks that
+  run automatically, showing only items that need a decision.
 - Windows scale and fade in on open, shrink into their dock tab on minimize, return from it on
   restore, and fade out on close. Focus changes are not animated; `prefers-reduced-motion` disables
   the motion.

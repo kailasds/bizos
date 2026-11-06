@@ -289,6 +289,8 @@ anti-slop gradient and glass defaults inside Studio.
   `InfoTip` or an expander.
 - **Motion:** states only — thinking links lighting up, the active level sliding, flow edges running
   once a step's resource is connected, the missing node pulsing. All off under reduced motion.
+- **Desktop domains**: app tiles carry the app tint behind both icon and label; three per group until
+  expanded. **Studio**: actions live in the fixed stage header; sections use `Expander` (collapsed).
 
 ## 9. What the reference doesn't cover
 

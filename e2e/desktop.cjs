@@ -50,7 +50,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await page.getByRole('button', { name: 'Claims Intelligence · Minimized' }).click();
 
   // maximize/restore
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(600); // let the restore animation finish before measuring
   const box0 = await page.locator('section[aria-label="Claims Intelligence"]').boundingBox();
   await page.getByRole('button', { name: 'Maximize Claims Intelligence' }).click();
   await page.waitForTimeout(300);

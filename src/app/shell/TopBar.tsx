@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { Bell, Hexagon, Settings } from 'lucide-react'
 import { useOs } from '@/app/os/use-os'
 import { getApp } from '@/app/registry/applicationRegistry'
@@ -6,24 +6,8 @@ import { Popover, PopoverTrigger } from '@/components/ui/popover'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { Dock } from './Dock'
+import { QuickCreate } from './QuickCreate'
 import { NotificationCenter } from './NotificationCenter'
-
-const clockFormat = new Intl.DateTimeFormat('en-GB', {
-  weekday: 'short',
-  day: 'numeric',
-  month: 'short',
-  hour: '2-digit',
-  minute: '2-digit',
-})
-
-function Clock() {
-  const [now, setNow] = useState(() => new Date())
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), 15_000)
-    return () => window.clearInterval(id)
-  }, [])
-  return <time className="tabular-nums">{clockFormat.format(now)}</time>
-}
 
 const barButton =
   'relative flex size-9 shrink-0 items-center justify-center rounded-full text-glass-dark-foreground/90 outline-none hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white/70 aria-expanded:bg-white/20 aria-pressed:bg-white/20'
@@ -62,8 +46,9 @@ export function TopBar() {
         </span>
       </div>
 
-      <div className="flex min-w-0 flex-1 justify-center md:max-w-[min(56rem,60vw)]">
+      <div className="flex min-w-0 flex-1 items-center justify-center gap-2 md:max-w-[min(60rem,64vw)]">
         <Dock />
+        <QuickCreate />
       </div>
 
       <div className="flex shrink-0 items-center justify-end gap-1 text-glass-dark-foreground md:gap-1.5">
@@ -92,9 +77,6 @@ export function TopBar() {
             <Settings className="size-4" />
           </button>
         </BarTooltip>
-        <span className="ml-1 hidden whitespace-nowrap lg:inline">
-          <Clock />
-        </span>
       </div>
     </header>
   )
