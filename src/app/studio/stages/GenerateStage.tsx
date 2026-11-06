@@ -120,7 +120,7 @@ function Overview({ project, onOpen }: { project: StudioProject; onOpen: (t: Gen
   return (
     <div className="space-y-5">
       <SectionHeader tab="overview" project={project} />
-      <ul className="divide-y rounded-lg border bg-card" aria-label="Blueprint sections">
+      <ul className="divide-y rounded-2xl border bg-card" aria-label="Blueprint sections">
         {nav
           .filter((n) => !['overview', 'json'].includes(n.id))
           .map((n) => {
@@ -429,9 +429,6 @@ function Experience({ project }: { project: StudioProject }) {
         ))}
       </ul>
       <Block title="Preview">
-        <p className="text-sm text-muted-foreground">
-          Built from the blueprint’s screens with the trusted component catalogue — the same renderer the published application uses. Sample records are mock data.
-        </p>
         <div className="h-[34rem] overflow-hidden rounded-xl border bg-card shadow-widget">
           <ExperienceRenderer key={bp.version} blueprint={bp} initialRecords={scenario?.sampleRecords ?? []} />
         </div>
@@ -658,13 +655,13 @@ export function GenerateStage({ tab, onTabChange }: { tab: GenerateTab; onTabCha
       }
       footer={
         <Button onClick={() => dispatch({ type: 'generate/confirm' })}>
-          Continue to validation
+          Continue to preview
           <ArrowRight />
         </Button>
       }
     >
       <div className="flex flex-col gap-6 @4xl:flex-row">
-        <div className="@4xl:w-56 @4xl:shrink-0 [&>nav]:rounded-lg [&>nav]:border @4xl:[&>nav]:w-full">
+        <div className="@4xl:w-56 @4xl:shrink-0 [&>nav]:rounded-2xl [&>nav]:border [&>nav]:bg-card @4xl:[&>nav]:w-full">
           <SidebarNav label="Blueprint sections" items={nav} value={tab} onChange={onTabChange} />
         </div>
         <div className="min-w-0 flex-1">{content()}</div>

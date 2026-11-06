@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowRight, Blocks, Check, CloudOff, FolderOpen, Minus, Pencil, Sparkles } from 'lucide-react'
+import { ArrowRight, Blocks, Check, CloudOff, FolderOpen, Layers, Minus, Pencil, Sparkles } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useOs } from '@/app/os/use-os'
 import { StatusBadge } from '@/components/os/StatusBadge'
@@ -40,13 +40,15 @@ function IconAction({ label, onClick, pressed, children }: { label: string; onCl
 
 export function StudioHeader({
   windowId,
-  panelOpen,
-  onTogglePanel,
+  panel,
+  onToggleLayers,
+  onToggleArchitect,
   onAllProjects,
 }: {
   windowId: string
-  panelOpen: boolean
-  onTogglePanel: () => void
+  panel: 'layers' | 'ai' | null
+  onToggleLayers: () => void
+  onToggleArchitect: () => void
   onAllProjects: () => void
 }) {
   const { project, dispatch, saveStatus, savedAt } = useStudio()
@@ -153,9 +155,20 @@ export function StudioHeader({
             <FolderOpen />
           </IconAction>
         )}
-        <IconAction label="AI Architect" onClick={onTogglePanel} pressed={panelOpen}>
+        <Button size="sm" variant={panel === 'layers' ? 'secondary' : 'ghost'} aria-pressed={panel === 'layers'} onClick={onToggleLayers}>
+          <Layers />
+          <span className="hidden @3xl:inline">Layers</span>
+        </Button>
+        <Button
+          size="sm"
+          aria-pressed={panel === 'ai'}
+          aria-label="AI Architect"
+          onClick={onToggleArchitect}
+          className={cn(panel === 'ai' ? '' : 'bg-accent text-accent-foreground hover:bg-accent/80')}
+        >
           <Sparkles />
-        </IconAction>
+          <span className="hidden @3xl:inline">AI Architect</span>
+        </Button>
         <IconAction label="Back to desktop" onClick={() => minimizeWindow(windowId)}>
           <Minus />
         </IconAction>

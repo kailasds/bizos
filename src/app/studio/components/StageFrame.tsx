@@ -24,18 +24,26 @@ export function StageFrame({
   const StageIcon = stageMeta[stage].icon
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-5xl px-6 py-8">
-          <header className="mb-6 flex flex-wrap items-center gap-3">
-            <span aria-hidden className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-              <StageIcon className="size-5" />
-            </span>
-            <div className="flex min-w-0 flex-1 items-center gap-1.5">
-              <h2 className="text-xl font-semibold tracking-tight">{stageMeta[stage].title}</h2>
-              <InfoTip label={`About ${stageMeta[stage].label}`}>{stageMeta[stage].description}</InfoTip>
+      {/* Title and the actions that move the work forward stay fixed at the top — no scrolling to find them. */}
+      <div className="shrink-0 border-b bg-card/90 backdrop-blur">
+        <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-3 px-6 py-3">
+          <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+            <StageIcon className="size-[18px]" />
+          </span>
+          <div className="flex min-w-0 items-center gap-1.5">
+            <h2 className="truncate text-lg font-semibold tracking-tight">{stageMeta[stage].title}</h2>
+            <InfoTip label={`About ${stageMeta[stage].label}`}>{stageMeta[stage].description}</InfoTip>
+          </div>
+          {aside}
+          {footer && (
+            <div role="group" aria-label="Stage actions" className="ml-auto flex flex-wrap items-center justify-end gap-2 [&_[data-slot=button]]:h-9 [&_[data-slot=button]]:px-4">
+              {footer}
             </div>
-            {aside}
-          </header>
+          )}
+        </div>
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto w-full max-w-5xl px-6 py-6">
           {reason && (
             <div role="status" className="mb-6 flex gap-2 rounded-lg border border-warning/40 bg-warning-soft/60 px-3 py-2 text-sm">
               <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0 text-warning-ink" />
@@ -48,11 +56,6 @@ export function StageFrame({
           {children}
         </div>
       </div>
-      {footer && (
-        <footer className="shrink-0 border-t bg-card/90 backdrop-blur">
-          <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-end gap-2 px-6 py-3">{footer}</div>
-        </footer>
-      )}
     </div>
   )
 }

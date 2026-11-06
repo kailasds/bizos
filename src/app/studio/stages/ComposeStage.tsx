@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { ArrowRight, BookOpen, Bot, Cpu, Info, Plug, Search, SearchX, Server, type LucideIcon } from 'lucide-react'
+import { ArrowRight, BookOpen, Bot, CheckCheck, Cpu, Plug, Puzzle, Search, SearchX, Server, UserCheck, FileSearch, type LucideIcon } from 'lucide-react'
+import { Expander } from '@/components/os/Expander'
 import type { ResourceKind, SolutionOption } from '@/app/blueprint/types'
 import { ResourceDetailSheet } from '@/app/resources/ResourceDetailSheet'
 import { composedWorker, compositionPlan, coverageCounts, proposalFor } from '@/app/services/mock/capability-analysis-service'
@@ -12,7 +13,7 @@ import { Input } from '@/components/ui/input'
 import { availabilityLabel, resourceKindLabel, type PlatformResource } from '@/data/resources.mock'
 import { cn } from '@/lib/utils'
 import { StageFrame, StagePrerequisite } from '../components/StageFrame'
-import { StepList } from '../components/StepList'
+import { StepList, StepProgress } from '../components/StepList'
 import { useSimulation } from '../hooks/use-simulation'
 import type { CapabilityMapping, MappingStatus } from '../types'
 import { useStudio } from '../use-studio'
@@ -178,24 +179,42 @@ function GapResolver({ mapping, option, alternatives, onLookAt }: { mapping: Cap
         </div>
       ) : proposal ? (
         <div className="space-y-4 px-4 py-4">
-          <div>
-            <h4 className="text-xs font-medium text-muted-foreground">Checked for reuse first</h4>
-            <ul className="mt-1 space-y-1 text-sm">
-              {proposal.reuseChecked.map((r) => (
-                <li key={r.resource}>
-                  <span className="font-medium">{r.resource}</span> — {r.reason}
-                </li>
-              ))}
-            </ul>
-          </div>
-
+          {sim.running || failure ? (
+            <div aria-busy={sim.running}>
+              <p className="mb-2 text-sm font-medium">{failure ? `Composition of ${proposal.name} failed` : `Composing ${proposal.name}…`}</p>
+              <StepList label="Worker composition" steps={compositionPlan(mapping.capabilityId, 0).steps} current={sim.step} failedAt={failure?.at ?? null} />
+              {failure && !sim.running && (
+                <div role="alert" className="mt-3 rounded-lg border border-danger/30 bg-danger-soft/60 p-3 text-sm">
+                  <p className="text-danger-ink">{failure.message}</p>
+                  <div className="mt-2 flex gap-2">
+                    <Button size="sm" onClick={approve}>
+                      {proposal.firstAttemptFailure?.retryLabel ?? 'Retry'}
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setFailure(null)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button onClick={approve}>Approve and compose worker</Button>
+              <Button variant="ghost" onClick={() => dispatch({ type: 'compose/rejectWorker', capabilityId: mapping.capabilityId, now: now() })}>
+                Reject
+              </Button>
+              <InfoTip label="About worker composition">Your approval is required before the OS asks the AI Workers Platform for a new worker.</InfoTip>
+            </div>
+          )}
           <div className="rounded-lg border border-dashed border-foreground/25 bg-muted/40 p-4">
             <div className="flex flex-wrap items-center gap-2">
               <h4 className="text-sm font-semibold">{proposal.name}</h4>
               <span className="rounded-full border border-dashed border-foreground/30 px-2 text-xs leading-5 text-muted-foreground">Proposed — not created</span>
             </div>
             <p className="mt-1 text-sm">{proposal.purpose}</p>
-            <dl className="mt-3 grid gap-3 text-sm @3xl:grid-cols-2">
+          </div>
+          <Expander title="Proposal details" icon={FileSearch} meta="Responsibilities, access and reuse checks">
+            <dl className="grid gap-3 text-sm @3xl:grid-cols-2">
               <div>
                 <dt className="text-xs font-medium text-muted-foreground">Responsibilities</dt>
                 <dd>
@@ -221,35 +240,18 @@ function GapResolver({ mapping, option, alternatives, onLookAt }: { mapping: Cap
                 </div>
               </div>
             </dl>
+          <div>
+            <h4 className="text-xs font-medium text-muted-foreground">Checked for reuse first</h4>
+            <ul className="mt-1 space-y-1 text-sm">
+              {proposal.reuseChecked.map((r) => (
+                <li key={r.resource}>
+                  <span className="font-medium">{r.resource}</span> — {r.reason}
+                </li>
+              ))}
+            </ul>
           </div>
 
-          {sim.running || failure ? (
-            <div aria-busy={sim.running}>
-              <p className="mb-2 text-sm font-medium">{failure ? `Composition of ${proposal.name} failed` : `Composing ${proposal.name} (simulated)…`}</p>
-              <StepList label="Worker composition" steps={compositionPlan(mapping.capabilityId, 0).steps} current={sim.step} failedAt={failure?.at ?? null} />
-              {failure && !sim.running && (
-                <div role="alert" className="mt-3 rounded-lg border border-danger/30 bg-danger-soft/60 p-3 text-sm">
-                  <p className="text-danger-ink">{failure.message}</p>
-                  <div className="mt-2 flex gap-2">
-                    <Button size="sm" onClick={approve}>
-                      {proposal.firstAttemptFailure?.retryLabel ?? 'Retry'}
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setFailure(null)}>
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex flex-wrap items-center gap-2">
-              <Button onClick={approve}>Approve and compose worker</Button>
-              <Button variant="ghost" onClick={() => dispatch({ type: 'compose/rejectWorker', capabilityId: mapping.capabilityId, now: now() })}>
-                Reject
-              </Button>
-              <InfoTip label="About worker composition">Your approval is required before the OS asks the AI Workers Platform for a new worker.</InfoTip>
-            </div>
-          )}
+          </Expander>
         </div>
       ) : (
         <div className="flex gap-2 px-4 py-3">
@@ -373,6 +375,7 @@ export function ComposeStage({ onFocusOption }: { onFocusOption: (id: string) =>
   const counts = coverageCounts(mappings)
   const missing = mappings.filter((m) => m.status === 'missing')
   const available = mappings.filter((m) => m.status === 'available')
+  const configuring = mappings.filter((m) => m.status === 'requires-configuration')
   const remaining = mappings.length - counts.selected
   const detailMapping = detail ? mappings.find((m) => m.resource?.id === detail.id) : undefined
   const now = () => new Date().toISOString()
@@ -402,9 +405,7 @@ export function ComposeStage({ onFocusOption }: { onFocusOption: (id: string) =>
       }
       footer={
         sim.running ? (
-          <div className="mr-auto">
-            <StepList label="Generating blueprint" steps={compileSteps} current={sim.step} />
-          </div>
+          <StepProgress label="Generating blueprint" steps={compileSteps} current={sim.step} />
         ) : (
           <>
             {remaining > 0 && <span className="mr-auto text-sm text-muted-foreground">To continue, {blockers.join(', ')}.</span>}
@@ -420,8 +421,49 @@ export function ComposeStage({ onFocusOption }: { onFocusOption: (id: string) =>
         <CatalogueBrowser mappings={mappings} onDetails={setDetail} />
       ) : (
         <div className="space-y-6">
+          {(missing.length > 0 || configuring.length > 0 || available.length > 0) && (
+            <section aria-label="Needs your decision" className="space-y-3">
+              <h3 className="flex items-center gap-2 text-sm font-semibold">
+                <UserCheck aria-hidden className="size-4 text-primary" />
+                Needs your decision
+              </h3>
+              {available.length > 0 && (
+                <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-primary/30 bg-accent/50 px-4 py-3">
+                  <CheckCheck aria-hidden className="size-5 text-primary" />
+                  <span className="min-w-0 flex-1 text-sm">
+                    <span className="font-semibold tabular-nums">{available.length}</span> existing resources are ready to use
+                  </span>
+                  <Button onClick={() => dispatch({ type: 'compose/select', capabilityIds: available.map((m) => m.capabilityId), now: now() })}>
+                    Select all available ({available.length})
+                  </Button>
+                </div>
+              )}
+              {configuring.length > 0 && (
+                <ul className="divide-y rounded-2xl border bg-card" aria-label="Configuration to confirm">
+                  {configuring.map((m) => (
+                    <CoverageRow key={m.id} mapping={m} option={option} onDetails={setDetail} />
+                  ))}
+                </ul>
+              )}
+              {missing.map((m) => (
+                <GapResolver key={m.id} mapping={m} option={option} alternatives={alternatives} onLookAt={lookAt} />
+              ))}
+            </section>
+          )}
+
+          {project.composition.createdWorkers.length > 0 && (
+            <ul aria-label="Composed workers" className="space-y-2">
+              {project.composition.createdWorkers.map((w) => (
+                <li key={w.capabilityId} className="flex items-center gap-2 rounded-2xl border border-success/30 bg-success-soft/50 px-4 py-2.5 text-sm">
+                  <CheckCheck aria-hidden className="size-4 text-success-ink" />
+                  <span className="font-medium">{w.resource.name}</span>
+                  <span className="text-muted-foreground">· composed for this application</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="mr-1 text-sm font-semibold">Capability coverage{option ? ` for ${option.name}` : ''}</h3>
             {(Object.keys(mappingStatusMeta) as MappingStatus[]).map((s) =>
               counts[s] ? (
                 <StatusBadge key={s} tone={mappingStatusMeta[s].tone}>
@@ -429,24 +471,16 @@ export function ComposeStage({ onFocusOption }: { onFocusOption: (id: string) =>
                 </StatusBadge>
               ) : null,
             )}
-            {available.length > 0 && (
-              <Button size="sm" variant="outline" className="ml-auto" onClick={() => dispatch({ type: 'compose/select', capabilityIds: available.map((m) => m.capabilityId), now: now() })}>
-                Select all available ({available.length})
-              </Button>
-            )}
+            <InfoTip label="About resource selection">Existing resources are preferred over new ones. Selecting a resource pins its current version into the blueprint; the owning platform keeps managing it.</InfoTip>
           </div>
-          <p className="flex gap-2 text-xs text-muted-foreground">
-            <Info aria-hidden className="mt-0.5 size-3.5 shrink-0" />
-            Existing resources are preferred over new ones. Selecting a resource pins its current version into the blueprint; the owning platform keeps managing it.
-          </p>
-          <ul className="divide-y rounded-lg border bg-card" aria-label="Capability coverage">
-            {mappings.map((m) => (
-              <CoverageRow key={m.id} mapping={m} option={option} onDetails={setDetail} />
-            ))}
-          </ul>
-          {missing.map((m) => (
-            <GapResolver key={m.id} mapping={m} option={option} alternatives={alternatives} onLookAt={lookAt} />
-          ))}
+
+          <Expander title="Capability coverage" icon={Puzzle} meta={`${mappings.length} needs${option ? ` · ${option.name}` : ''}`}>
+            <ul className="-mx-4 -my-4 divide-y" aria-label="Capability coverage">
+              {mappings.map((m) => (
+                <CoverageRow key={m.id} mapping={m} option={option} onDetails={setDetail} />
+              ))}
+            </ul>
+          </Expander>
         </div>
       )}
       <ResourceDetailSheet

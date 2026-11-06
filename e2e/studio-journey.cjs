@@ -45,6 +45,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await studio.getByRole('button', { name: 'Start discovery' }).click();
   check('thinking state shown', await studio.getByText('Understanding your request…').isVisible());
   await studio.getByRole('region', { name: 'Summary of understanding' }).waitFor({ timeout: T });
+  await studio.getByRole('button', { name: /^Required capabilities/ }).click(); // groups start collapsed
   const interp = await studio.innerText();
   check('interpretation has fraud + routing', interp.includes('Identify potential fraud indicators and investigate flagged claims.') && interp.includes('Route complex cases to human reviewers.'))
 
@@ -73,6 +74,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   check('no percentages in approaches', !/\d+\s?%/.test(await studio.innerText()));
   await studio.getByRole('tab', { name: /AI-Driven Claims Automation/ }).click();
   await studio.getByRole('button', { name: 'Select this approach' }).click();
+  await studio.getByRole('button', { name: /^Approach details/ }).click(); // details start collapsed
   check('flow visualization shown', await studio.getByRole('figure', { name: /AI-Driven Claims Automation workflow/ }).isVisible());
   await shot('04-architect');
   await studio.getByRole('button', { name: /Use AI-Driven Claims Automation/ }).click();
@@ -105,11 +107,12 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await shot('08-generate-preview');
   await studio.getByRole('navigation', { name: 'Blueprint sections' }).getByRole('button', { name: 'Technical view (JSON)' }).click();
   check('json view', (await studio.locator('pre').innerText()).includes('"applicationId": "app-claims-processing-hub-001"'));
-  await studio.getByRole('button', { name: 'Continue to validation' }).click();
+  await studio.getByRole('button', { name: 'Continue to preview' }).click();
 
-  // 10-11. Validate
-  await studio.getByRole('button', { name: 'Run validation' }).click();
+  // 10-11. Preview (readiness checks run automatically)
+  await studio.getByRole('list', { name: 'Validation checks' }).waitFor({ timeout: T });
   check('validation progress shown', await studio.getByRole('list', { name: 'Validation checks' }).isVisible());
+  check('application preview shown', await studio.getByRole('region', { name: 'Application preview' }).isVisible());
   await studio.getByText(/of 8 checks passed/).waitFor({ timeout: T });
   const vtext = await studio.innerText();
   check('blocked approver found', vtext.includes('Nobody is assigned to approve'));
@@ -118,9 +121,11 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   check('publish blocked', await studio.getByRole('button', { name: /Continue to publish/ }).isDisabled());
   await shot('09-validate-issues');
   await studio.getByLabel('Choose the approver role').selectOption('claims-manager');
-  check('stale banner after fix', await studio.getByText(/since this run/).isVisible());
+  await page.waitForTimeout(300);
+  await studio.getByRole('list', { name: 'Validation checks' }).waitFor({ state: 'hidden', timeout: T }).catch(() => {}); // checks run automatically
   await studio.getByRole('button', { name: /Add “Investigation Notes” field/ }).click();
-  await studio.getByRole('button', { name: 'Re-run validation' }).first().click();
+  await page.waitForTimeout(300);
+  await studio.getByRole('list', { name: 'Validation checks' }).waitFor({ state: 'hidden', timeout: T }).catch(() => {}); // checks run automatically
   await studio.getByText(/of 8 checks passed/).waitFor({ timeout: T });
   await page.waitForTimeout(200);
   const v2 = await studio.innerText();

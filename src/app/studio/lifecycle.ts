@@ -55,8 +55,8 @@ export function nextAction(p: StudioProject): NextAction | null {
     const readiness = readinessOf(p)
     const blocked = p.validation?.findings.filter((f) => f.status === 'blocked').length ?? 0
     if (readiness === 'blocked') return { label: `Resolve ${blocked} blocking issue${blocked === 1 ? '' : 's'}`, stage: 'validate' }
-    if (readiness === 'needs-attention') return { label: 'Review validation findings', stage: 'validate' }
-    return { label: 'Run validation', stage: 'validate' }
+    if (readiness === 'needs-attention') return { label: 'Review readiness items', stage: 'validate' }
+    return { label: 'Preview the application', stage: 'validate' }
   }
   if (lifecycle === 'ready') return { label: `Publish v${p.blueprint?.version}`, stage: 'publish' }
   if (lifecycle === 'changes-pending') {

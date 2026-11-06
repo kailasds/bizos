@@ -1,5 +1,8 @@
-import { useState } from 'react'
-import { ArrowRight, CheckCircle2, ChevronDown, RefreshCw, ShieldCheck, UserCheck } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { ArrowRight, CheckCircle2, ChevronDown, MonitorPlay, RefreshCw, UserCheck } from 'lucide-react'
+import { ExperienceRenderer } from '@/app/experience/ExperienceRenderer'
+import { Spinner } from '@/components/ui/spinner'
+import { getScenario } from '@/data/studio-scenarios.mock'
 import { validateBlueprint, validationCategories } from '@/app/blueprint/validate'
 import { readinessMeta, readinessOf } from '@/app/services/mock/blueprint-service'
 import { StatusBadge, type StatusTone } from '@/components/os/StatusBadge'
@@ -13,9 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { InfoTip } from '@/components/os/InfoTip'
 import { Button } from '@/components/ui/button'
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { cn } from '@/lib/utils'
 import { StageFrame, StagePrerequisite } from '../components/StageFrame'
@@ -40,7 +41,7 @@ function IssueCard({
   onAccept: (f: ValidationFinding) => void
 }) {
   const { dispatch } = useStudio()
-  const [open, setOpen] = useState(finding.status === 'blocked' && !accepted)
+  const [open, setOpen] = useState(false)
   const now = () => new Date().toISOString()
   const tone: StatusTone = accepted ? 'info' : finding.status === 'blocked' ? 'danger' : 'warning'
   const label = accepted ? 'Accepted as known gap' : finding.status === 'blocked' ? 'Blocked' : 'Needs attention'
@@ -147,9 +148,20 @@ export function ValidateStage({ goTo }: { goTo: (stage: StageId, tab?: GenerateT
   const sim = useSimulation(450)
   const [showPassed, setShowPassed] = useState(false)
   const [accepting, setAccepting] = useState<ValidationFinding | null>(null)
+  const bpVersion = project?.blueprint?.version
+  const checkedVersion = project?.validation?.blueprintVersion
+
+  // Readiness checks run automatically whenever this version has not been checked yet.
+  useEffect(() => {
+    if (!project?.blueprint || !project.composition || sim.running || checkedVersion === bpVersion) return
+    const blueprint = project.blueprint
+    const mappings = project.composition.mappings
+    sim.run(validationCategories.length, () => dispatch({ type: 'validate/result', findings: validateBlueprint(blueprint, mappings), now: new Date().toISOString() }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bpVersion, checkedVersion])
 
   if (!project?.blueprint || !project.composition) {
-    return <StagePrerequisite stage="validate" requires="generate" message="Generate the Application Blueprint first. Validation checks the blueprint." />
+    return <StagePrerequisite stage="validate" requires="generate" message="Generate the Application Blueprint first to preview the application." />
   }
 
   const bp = project.blueprint
@@ -168,19 +180,34 @@ export function ValidateStage({ goTo }: { goTo: (stage: StageId, tab?: GenerateT
   const passed = findings.filter((f) => f.status === 'passed')
   const passedCategories = validationCategories.filter((c) => findings.filter((f) => f.category === c.id).every((f) => f.status === 'passed' || isAck(f))).length
 
+  const scenario = getScenario(project.scenarioId)
+  const open = issues.filter((f) => !isAck(f))
+  const accepted = issues.filter((f) => isAck(f))
+
   return (
     <StageFrame
       stage="validate"
-      aside={validation && <span className="text-xs text-muted-foreground tabular-nums">Checked blueprint v{validation.blueprintVersion}</span>}
+      aside={
+        validation && !sim.running ? (
+          <section aria-label="Readiness" className="flex items-center gap-2">
+            <StatusBadge tone={readinessMeta[readiness].tone}>{readinessMeta[readiness].label}</StatusBadge>
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {passedCategories} of {validationCategories.length} checks passed
+            </span>
+          </section>
+        ) : undefined
+      }
       footer={
-        sim.running ? null : (
+        sim.running ? (
+          <span className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Spinner className="size-4" /> Checking v{bp.version}…
+          </span>
+        ) : (
           <>
-            {validation && (
-              <Button variant="outline" onClick={run}>
-                <RefreshCw />
-                Re-run validation
-              </Button>
-            )}
+            <Button variant="outline" onClick={run}>
+              <RefreshCw />
+              Re-run checks
+            </Button>
             <Button disabled={project.progress.validate !== 'complete'} onClick={() => dispatch({ type: 'stage/go', stage: 'publish' })}>
               Continue to publish
               <ArrowRight />
@@ -189,55 +216,39 @@ export function ValidateStage({ goTo }: { goTo: (stage: StageId, tab?: GenerateT
         )
       }
     >
-      {sim.running ? (
-        <div className="rounded-xl border bg-card p-6" aria-busy>
-          <p className="mb-4 text-sm font-medium">Validating blueprint v{bp.version}…</p>
-          <StepList label="Validation checks" steps={validationCategories.map((c) => c.label)} current={sim.step} />
-        </div>
-      ) : !validation ? (
-        <Empty className="rounded-xl border border-dashed">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <ShieldCheck />
-            </EmptyMedia>
-            <EmptyTitle>Validation has not run yet</EmptyTitle>
-            <EmptyDescription>
-              Eight deterministic checks compare the blueprint’s requirements, resources, workflow, data, permissions, screens and approvals. Publishing is
-              blocked until they pass or you accept a known gap.
-            </EmptyDescription>
-          </EmptyHeader>
-          <Button onClick={run}>Run validation</Button>
-        </Empty>
-      ) : (
-        <div className="space-y-5">
-          <section aria-label="Readiness" className="rounded-xl border bg-card p-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <StatusBadge tone={readinessMeta[readiness].tone}>{readinessMeta[readiness].label}</StatusBadge>
-              <span className="text-sm font-medium tabular-nums">
-                {passedCategories} of {validationCategories.length} checks passed
-              </span>
-              {readiness !== 'outdated' && <InfoTip label="About readiness">{readinessMeta[readiness].description}</InfoTip>}
-              {readiness === 'outdated' && (
-                <Button size="sm" className="ml-auto" onClick={run}>
-                  Re-run validation
-                </Button>
-              )}
-            </div>
-            {readiness === 'outdated' && <p className="mt-2 text-sm text-muted-foreground">Blueprint changed to v{bp.version} since this run.</p>}
+      <div className="space-y-6">
+        {sim.running && (
+          <div className="rounded-2xl border bg-card p-4" aria-busy>
+            <StepList label="Validation checks" steps={validationCategories.map((c) => c.label)} current={sim.step} />
+          </div>
+        )}
+
+        {!sim.running && validation && open.length > 0 && (
+          <section aria-label="Issues" className="space-y-2">
+            <h3 className="flex items-center gap-2 text-sm font-semibold">
+              <UserCheck aria-hidden className="size-4 text-primary" />
+              Needs your decision · {open.length}
+            </h3>
+            <ul aria-label="Validation issues" className="space-y-3">
+              {open.map((f) => (
+                <IssueCard key={f.id} finding={f} accepted={false} goTo={goTo} onAccept={setAccepting} />
+              ))}
+            </ul>
           </section>
+        )}
 
-          {issues.length > 0 && (
-            <section aria-label="Issues" className="space-y-2">
-              <h3 className="text-sm font-semibold">Issues</h3>
-              <ul aria-label="Validation issues" className="space-y-3">
-                {issues.map((f) => (
-                  <IssueCard key={f.id} finding={f} accepted={isAck(f)} goTo={goTo} onAccept={setAccepting} />
-                ))}
-              </ul>
-            </section>
-          )}
+        <section aria-label="Application preview" className="space-y-2">
+          <h3 className="flex items-center gap-2 text-sm font-semibold">
+            <MonitorPlay aria-hidden className="size-4 text-primary" />
+            {bp.name} · v{bp.version}
+          </h3>
+          <div className="h-[36rem] overflow-hidden rounded-2xl border bg-card shadow-widget">
+            <ExperienceRenderer key={bp.version} blueprint={bp} initialRecords={scenario?.sampleRecords ?? []} />
+          </div>
+        </section>
 
-          <section aria-label="Passed checks" className="rounded-lg border bg-card">
+        {!sim.running && validation && (
+          <section aria-label="Passed checks" className="rounded-2xl border bg-card">
             <button
               type="button"
               aria-expanded={showPassed}
@@ -246,12 +257,15 @@ export function ValidateStage({ goTo }: { goTo: (stage: StageId, tab?: GenerateT
             >
               <CheckCircle2 aria-hidden className="size-4 text-success" />
               <span className="flex-1 font-medium">
-                {passed.length} check{passed.length === 1 ? '' : 's'} passed
+                {passed.length} check{passed.length === 1 ? '' : 's'} passed{accepted.length ? ` · ${accepted.length} accepted as known gap${accepted.length === 1 ? '' : 's'}` : ''}
               </span>
               <ChevronDown aria-hidden className={cn('size-4 text-muted-foreground', showPassed && 'rotate-180')} />
             </button>
             {showPassed && (
               <ul className="divide-y border-t">
+                {accepted.map((f) => (
+                  <IssueCard key={f.id} finding={f} accepted goTo={goTo} onAccept={setAccepting} />
+                ))}
                 {passed.map((f) => (
                   <li key={f.id} className="px-4 py-2.5 text-sm">
                     <p className="font-medium">{f.title}</p>
@@ -261,8 +275,8 @@ export function ValidateStage({ goTo }: { goTo: (stage: StageId, tab?: GenerateT
               </ul>
             )}
           </section>
-        </div>
-      )}
+        )}
+      </div>
 
       <AlertDialog open={Boolean(accepting)} onOpenChange={(o) => !o && setAccepting(null)}>
         <AlertDialogContent>

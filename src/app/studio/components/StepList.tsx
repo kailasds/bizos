@@ -1,4 +1,4 @@
-import { CheckCircle2, Circle, XCircle } from 'lucide-react'
+import { CheckCircle2, Circle, Loader2, XCircle } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 import { cn } from '@/lib/utils'
 
@@ -38,5 +38,18 @@ export function StepList({
         )
       })}
     </ol>
+  )
+}
+
+/** Compact inline progress for the stage header: the current step and its position. */
+export function StepProgress({ label, steps, current }: { label: string; steps: string[]; current: number }) {
+  return (
+    <span role="status" aria-label={label} className="flex items-center gap-2 text-sm">
+      <Loader2 aria-hidden className="size-4 animate-spin text-primary motion-reduce:animate-none" />
+      <span className="font-medium">{steps[Math.min(current, steps.length - 1)]}</span>
+      <span className="text-xs text-muted-foreground tabular-nums">
+        {Math.min(current + 1, steps.length)}/{steps.length}
+      </span>
+    </span>
   )
 }

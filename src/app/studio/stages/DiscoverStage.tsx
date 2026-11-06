@@ -440,43 +440,6 @@ function UnderstandingView({ understanding, scenario, domainLabel, onEditPrompt 
 
   return (
     <div className="space-y-6">
-      <section aria-label="Summary of understanding" className="rounded-2xl border bg-card p-5 shadow-sm">
-        <div className="flex items-start gap-3">
-          <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Sparkles className="size-4" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-sm font-semibold">What I understood</h3>
-              <span className="rounded-full bg-accent px-2 text-[11px] leading-5 font-medium text-accent-foreground">{scenario.label}</span>
-            </div>
-            <p className="mt-1.5 text-[15px] leading-relaxed">{understanding.summary}</p>
-            <div className="mt-3 flex flex-wrap items-center gap-1">
-              {understanding.matchedPhrases.length > 0 && (
-                <Button size="xs" variant="ghost" aria-expanded={showEvidence} onClick={() => setShowEvidence(!showEvidence)}>
-                  <Quote />
-                  Evidence
-                </Button>
-              )}
-              <Button size="xs" variant="ghost" aria-expanded={showPrompt} onClick={() => setShowPrompt(!showPrompt)}>
-                <FileText />
-                Your description
-              </Button>
-              <Button size="xs" variant="ghost" onClick={onEditPrompt}>
-                <Pencil />
-                Edit description
-              </Button>
-            </div>
-            {showEvidence && (
-              <p className="mt-2 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
-                Based on your words {understanding.matchedPhrases.map((p) => `“${p}”`).join(', ')} and the {domainLabel} domain pack.
-              </p>
-            )}
-            {showPrompt && <p className="mt-2 rounded-lg bg-muted px-3 py-2 text-sm">“{project?.discover.prompt}”</p>}
-          </div>
-        </div>
-      </section>
-
       {understanding.questions.length > 0 && (
         <section aria-label="Clarifying questions">
           <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
@@ -524,7 +487,81 @@ function UnderstandingView({ understanding, scenario, domainLabel, onEditPrompt 
         </section>
       )}
 
-      <Accordion type="multiple" defaultValue={['objective', 'capabilities']} className="rounded-2xl border bg-card shadow-sm">
+      {understanding.suggestions.length > 0 && (
+        <section aria-label="Possibly missing">
+          <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
+            <Lightbulb aria-hidden className="size-4 text-muted-foreground" />
+            Possibly missing
+          </h3>
+          <ul className="divide-y rounded-lg border bg-card">
+            {understanding.suggestions.map((s) => (
+              <li key={s.id} className={cn('flex flex-wrap items-start gap-2 px-4 py-3', s.status !== 'pending' && 'bg-muted/40')}>
+                <div className="flex min-w-0 flex-1 items-center gap-1">
+                  <p className={cn('text-sm font-medium', s.status === 'rejected' && 'text-muted-foreground line-through')}>{s.text}</p>
+                  <InfoTip label={`Why suggested: ${s.text}`}>{s.reason}</InfoTip>
+                </div>
+                {s.status === 'pending' ? (
+                  <div className="flex gap-1">
+                    <Button size="xs" variant="outline" aria-label={`Accept: ${s.text}`} onClick={() => update(decideSuggestion(understanding, s.id, 'accepted'))}>
+                      <Plus />
+                      Accept
+                    </Button>
+                    <Button size="xs" variant="ghost" aria-label={`Reject: ${s.text}`} onClick={() => update(decideSuggestion(understanding, s.id, 'rejected'))}>
+                      Reject
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    {s.status === 'accepted' ? 'Added' : 'Rejected'}
+                    <Button size="xs" variant="ghost" aria-label={`Undo: ${s.text}`} onClick={() => update(decideSuggestion(understanding, s.id, 'pending'))}>
+                      <Undo2 />
+                      Undo
+                    </Button>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      <section aria-label="Summary of understanding" className="rounded-2xl border bg-card p-5 shadow-sm">
+        <div className="flex items-start gap-3">
+          <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <Sparkles className="size-4" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-sm font-semibold">What I understood</h3>
+              <span className="rounded-full bg-accent px-2 text-[11px] leading-5 font-medium text-accent-foreground">{scenario.label}</span>
+            </div>
+            <p className="mt-1.5 text-[15px] leading-relaxed">{understanding.summary}</p>
+            <div className="mt-3 flex flex-wrap items-center gap-1">
+              {understanding.matchedPhrases.length > 0 && (
+                <Button size="xs" variant="ghost" aria-expanded={showEvidence} onClick={() => setShowEvidence(!showEvidence)}>
+                  <Quote />
+                  Evidence
+                </Button>
+              )}
+              <Button size="xs" variant="ghost" aria-expanded={showPrompt} onClick={() => setShowPrompt(!showPrompt)}>
+                <FileText />
+                Your description
+              </Button>
+              <Button size="xs" variant="ghost" onClick={onEditPrompt}>
+                <Pencil />
+                Edit description
+              </Button>
+            </div>
+            {showEvidence && (
+              <p className="mt-2 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+                Based on your words {understanding.matchedPhrases.map((p) => `“${p}”`).join(', ')} and the {domainLabel} domain pack.
+              </p>
+            )}
+            {showPrompt && <p className="mt-2 rounded-lg bg-muted px-3 py-2 text-sm">“{project?.discover.prompt}”</p>}
+          </div>
+        </div>
+      </section>
+
+      <Accordion type="multiple" defaultValue={[]} className="rounded-2xl border bg-card shadow-sm">
         {GROUPS.map((group) => {
           const items = understanding.items.filter((i) => group.kinds.some((k) => k.kind === i.kind))
           return (
@@ -584,43 +621,6 @@ function UnderstandingView({ understanding, scenario, domainLabel, onEditPrompt 
         })}
       </Accordion>
 
-      {understanding.suggestions.length > 0 && (
-        <section aria-label="Possibly missing">
-          <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
-            <Lightbulb aria-hidden className="size-4 text-muted-foreground" />
-            Possibly missing
-          </h3>
-          <ul className="divide-y rounded-lg border bg-card">
-            {understanding.suggestions.map((s) => (
-              <li key={s.id} className={cn('flex flex-wrap items-start gap-2 px-4 py-3', s.status !== 'pending' && 'bg-muted/40')}>
-                <div className="flex min-w-0 flex-1 items-center gap-1">
-                  <p className={cn('text-sm font-medium', s.status === 'rejected' && 'text-muted-foreground line-through')}>{s.text}</p>
-                  <InfoTip label={`Why suggested: ${s.text}`}>{s.reason}</InfoTip>
-                </div>
-                {s.status === 'pending' ? (
-                  <div className="flex gap-1">
-                    <Button size="xs" variant="outline" aria-label={`Accept: ${s.text}`} onClick={() => update(decideSuggestion(understanding, s.id, 'accepted'))}>
-                      <Plus />
-                      Accept
-                    </Button>
-                    <Button size="xs" variant="ghost" aria-label={`Reject: ${s.text}`} onClick={() => update(decideSuggestion(understanding, s.id, 'rejected'))}>
-                      Reject
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    {s.status === 'accepted' ? 'Added' : 'Rejected'}
-                    <Button size="xs" variant="ghost" aria-label={`Undo: ${s.text}`} onClick={() => update(decideSuggestion(understanding, s.id, 'pending'))}>
-                      <Undo2 />
-                      Undo
-                    </Button>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
     </div>
   )
 }

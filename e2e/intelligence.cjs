@@ -28,6 +28,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await page.goto(process.env.BASE_URL || 'http://localhost:4173');
   await page.getByRole('button', { name: 'Create Application, opens Application Studio' }).click();
   await studio.waitFor({ timeout: T });
+  await studio.getByRole('button', { name: 'AI Architect' }).click(); // the AI Architect starts collapsed
 
   // ── Honest fallback for an unmatched description
   await studio.getByLabel('What should the application help your teams achieve?').fill('We need a tool to plan staff holidays. It should show who is on leave across teams.');
@@ -42,6 +43,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await studio.getByLabel('What should the application help your teams achieve?').fill('I want to automate insurance claims processing and reduce manual intervention.');
   await studio.getByRole('button', { name: 'Start discovery' }).click();
   await studio.getByRole('region', { name: 'Summary of understanding' }).waitFor({ timeout: T });
+  await studio.getByRole('button', { name: /^Required capabilities/ }).click(); // groups start collapsed
   check('summary sentence', (await text()).includes('You want an application that takes insurance claims'));
   await studio.getByRole('button', { name: 'Evidence' }).click(); // reasoning is shown on request
   check('evidence cue from description', (await text()).includes('Based on your words'));
@@ -72,6 +74,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   check('compare table lists new resources', compare.includes('New resources needed') && compare.includes('Fraud investigation'));
   await shot('03-compare');
   await studio.getByRole('button', { name: 'Explore' }).click();
+  await studio.getByRole('button', { name: /^Approach details/ }).click(); // details start collapsed
   await studio.getByRole('button', { name: /^Step \d+: Prepare investigation$/ }).click();
   check('inspector shows a missing worker', (await studio.getByRole('region', { name: 'Step details: Prepare investigation' }).innerText()).includes('a new worker would be needed'));
   await studio.getByRole('button', { name: /^Step \d+: Validate coverage$/ }).click();
@@ -104,6 +107,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await studio.getByRole('button', { name: /Use AI-Driven Claims Automation/ }).click();
 
   // ── Compose: catalogue, detail, reject → reconsider → approve
+  await studio.getByRole('button', { name: /^Capability coverage/ }).click(); // full coverage list starts collapsed
   await studio.getByRole('list', { name: 'Capability coverage' }).waitFor({ timeout: T });
   check('coverage uses explicit labels', /available/i.test(await text()) && (await text()).includes('Missing') && !/\d+\s?%/.test(await text()));
   await studio.getByRole('button', { name: 'Resource catalogue' }).click();
@@ -157,8 +161,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await studio.getByLabel('Base version').selectOption('0.1.1');
   await studio.getByLabel('Target version').selectOption('0.1.2');
   check('compare after rollback', (await studio.getByRole('region', { name: 'Compare versions' }).innerText()).includes('Removed Claim field “Investigation notes”'));
-  await studio.getByRole('button', { name: 'Continue to validation' }).click();
-  await studio.getByRole('button', { name: 'Run validation' }).click();
+  await studio.getByRole('button', { name: 'Continue to preview' }).click(); // readiness checks run automatically
   await studio.getByText(/of 8 checks passed/).waitFor({ timeout: T });
   check('no approver issue when answered', !(await text()).includes('Nobody is assigned to approve'));
   check('rolled-back field issue detected', (await text()).includes('shows a field the data model does not have'));

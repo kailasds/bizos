@@ -1,12 +1,12 @@
-import { ArrowRight, Lightbulb } from 'lucide-react'
+import { ArrowRight, Lightbulb, Briefcase } from 'lucide-react'
 import type { RequirementSpec, SpecItem } from '@/app/blueprint/types'
 import { explainRequirement } from '@/app/services/mock/architecture-service'
-import { InfoTip } from '@/components/os/InfoTip'
+import { Expander } from '@/components/os/Expander'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { EditableList } from '../components/EditableList'
 import { StageFrame, StagePrerequisite } from '../components/StageFrame'
-import { StepList } from '../components/StepList'
+import { StepProgress } from '../components/StepList'
 import { useSimulation } from '../hooks/use-simulation'
 import type { SpecListKey } from '../types'
 import { useStudio } from '../use-studio'
@@ -57,9 +57,7 @@ export function DefineStage({ openArchitect }: { openArchitect: () => void }) {
       aside={<span className="text-xs text-muted-foreground tabular-nums">Specification v{spec.version}</span>}
       footer={
         sim.running ? (
-          <div className="mr-auto">
-            <StepList label="Designing approaches" steps={designSteps} current={sim.step} />
-          </div>
+          <StepProgress label="Designing approaches" steps={designSteps} current={sim.step} />
         ) : (
           <Button onClick={confirm} disabled={spec.capabilities.length === 0}>
             {project.progress.define === 'complete' ? 'Confirmed — view approaches' : 'Confirm requirements'}
@@ -130,11 +128,7 @@ export function DefineStage({ openArchitect }: { openArchitect: () => void }) {
           ))}
         </div>
 
-        <section aria-label="Business context" className="space-y-4 border-t pt-6">
-          <div className="flex items-center gap-1">
-            <h3 className="text-sm font-semibold">Business context</h3>
-            <InfoTip label="About business context">Captured in Discover. Used to explain the application, not to generate steps.</InfoTip>
-          </div>
+        <Expander title="Business context" icon={Briefcase} meta="Problem, processes, challenges and integrations">
           <div className="grid gap-8 @4xl:grid-cols-3">
             {contextSections.map((c) => (
               <EditableList
@@ -148,7 +142,7 @@ export function DefineStage({ openArchitect }: { openArchitect: () => void }) {
               />
             ))}
           </div>
-        </section>
+        </Expander>
       </div>
     </StageFrame>
   )

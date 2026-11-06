@@ -44,8 +44,7 @@ const { chromium } = require('playwright');
     }
     await studio.getByRole('button', { name: 'Generate blueprint' }).click({ timeout: T });
     await page.waitForTimeout(200);
-    await studio.getByRole('button', { name: 'Continue to validation' }).click({ timeout: T });
-    await studio.getByRole('button', { name: 'Run validation' }).click();
+    await studio.getByRole('button', { name: 'Continue to preview' }).click({ timeout: T }); // readiness checks run automatically
     await studio.getByText(/of 8 checks passed/).waitFor({ timeout: T });
     const t = await studio.innerText();
     check(label + ': conditional resource flagged', t.includes(expectIssue));

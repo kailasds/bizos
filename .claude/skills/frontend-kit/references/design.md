@@ -268,6 +268,9 @@ Spacing is airy:
 - **Application Studio** uses the scoped `.theme-studio` palette (indigo primary/accent, violet-grey
   canvas), a centred icon stepper, and keeps reasoning behind info icons and expanders.
 
+- **Desktop domains**: app tiles carry the app tint behind both icon and label; three per group until
+  expanded. **Studio**: actions live in the fixed stage header; sections use `Expander` (collapsed).
+
 ## 9. What the reference doesn't cover
 
 - **Dark mode.** Not shown. The `.dark` block is invented.

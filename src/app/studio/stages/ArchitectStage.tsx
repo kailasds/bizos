@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
-import { ArrowRight, Check, Info, Star } from 'lucide-react'
+import { ArrowRight, Check, Info, Star, Workflow } from 'lucide-react'
+import { Expander } from '@/components/os/Expander'
 import type { AutomationLevel, SolutionOption } from '@/app/blueprint/types'
 import { ResourceDetailSheet } from '@/app/resources/ResourceDetailSheet'
 import { approachInsights, type StepInsight } from '@/app/services/mock/architecture-service'
@@ -10,7 +11,7 @@ import { getScenario } from '@/data/studio-scenarios.mock'
 import { resourceKindLabel, type PlatformResource } from '@/data/resources.mock'
 import { cn } from '@/lib/utils'
 import { StageFrame, StagePrerequisite } from '../components/StageFrame'
-import { StepList } from '../components/StepList'
+import { StepProgress } from '../components/StepList'
 import { WorkflowLanes } from '../components/WorkflowLanes'
 import { useSimulation } from '../hooks/use-simulation'
 import type { StudioScenario } from '../types'
@@ -218,9 +219,7 @@ export function ArchitectStage({ focusId, onFocus }: { focusId: string | null; o
       }
       footer={
         sim.running ? (
-          <div className="mr-auto">
-            <StepList label="Discovering resources" steps={discoverySteps} current={sim.step} />
-          </div>
+          <StepProgress label="Discovering resources" steps={discoverySteps} current={sim.step} />
         ) : (
           <>
             {!selected && <span className="mr-auto text-sm text-muted-foreground">Select an approach to continue.</span>}
@@ -311,6 +310,7 @@ export function ArchitectStage({ focusId, onFocus }: { focusId: string | null; o
             )}
           </div>
 
+          <Expander title="Approach details" icon={Workflow} meta={`${focused.steps.length} steps · people on ${focused.steps.filter((x) => x.actor === 'human').length}`}>
           <div className="space-y-3">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h4 className="text-sm font-semibold">Main workflow</h4>
@@ -347,6 +347,7 @@ export function ArchitectStage({ focusId, onFocus }: { focusId: string | null; o
               })}
             </ul>
           </div>
+          </Expander>
         </section>
       )}
       <ResourceDetailSheet resource={resource} onOpenChange={(open) => !open && setResource(null)} />

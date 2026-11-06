@@ -3,6 +3,7 @@ import type { AppProps } from '@/app/registry/types'
 import { useParamsChange } from '@/app/windows/use-params-change'
 import { cn } from '@/lib/utils'
 import { ArchitectPanel } from './components/ArchitectPanel'
+import { BuildLayers } from './components/BuildLayers'
 import { StageNav } from './components/StageNav'
 import { StudioHeader } from './components/StudioHeader'
 import { StudioHome } from './components/StudioHome'
@@ -23,8 +24,9 @@ import { useStudio } from './use-studio'
 export function ApplicationStudioApp({ windowId, params }: AppProps) {
   const { state, project, dispatch } = useStudio()
   const [mode, setMode] = useState<'home' | 'new'>(params.new ? 'new' : 'home')
-  // Open beside the content on wide screens; on smaller screens it would cover the work.
-  const [panelOpen, setPanelOpen] = useState(() => window.innerWidth >= 1280)
+  // Side panel: build layers beside the work on wide screens; the AI Architect opens on request.
+  const [panel, setPanel] = useState<'layers' | 'ai' | null>(() => (window.innerWidth >= 1280 ? 'layers' : null))
+  const toggle = (which: 'layers' | 'ai') => setPanel((p) => (p === which ? null : which))
   const [generateTab, setGenerateTab] = useState<GenerateTab>('overview')
   // The approach shown in Architect (not the selection) — the AI Architect can point at one.
   const [focusOptionId, setFocusOptionId] = useState<string | null>(null)
@@ -51,7 +53,7 @@ export function ApplicationStudioApp({ windowId, params }: AppProps) {
       case 'discover':
         return <DiscoverStage />
       case 'define':
-        return <DefineStage openArchitect={() => setPanelOpen(true)} />
+        return <DefineStage openArchitect={() => setPanel('ai')} />
       case 'architect':
         return <ArchitectStage focusId={focusOptionId} onFocus={setFocusOptionId} />
       case 'compose':
@@ -69,8 +71,9 @@ export function ApplicationStudioApp({ windowId, params }: AppProps) {
     <div className="theme-studio @container flex h-full min-h-0 flex-col bg-background text-foreground">
       <StudioHeader
         windowId={windowId}
-        panelOpen={panelOpen}
-        onTogglePanel={() => setPanelOpen((v) => !v)}
+        panel={panel}
+        onToggleLayers={() => toggle('layers')}
+        onToggleArchitect={() => toggle('ai')}
         onAllProjects={() => {
           setMode('home')
           dispatch({ type: 'project/close' })
@@ -88,13 +91,13 @@ export function ApplicationStudioApp({ windowId, params }: AppProps) {
           <StageNav project={project} active={stage} onSelect={(s) => project && goTo(s)} />
           <div className="relative flex min-h-0 flex-1">
             <main className="min-w-0 flex-1 bg-background">{content()}</main>
-            {panelOpen && (
-              <div
-                className={cn(
-                  'absolute inset-y-0 right-0 z-10 w-80 shadow-overlay @5xl:static @5xl:z-auto @5xl:shrink-0 @5xl:shadow-none',
+            {panel && (
+              <div className={cn('absolute inset-y-0 right-0 z-10 w-80 shadow-overlay @5xl:static @5xl:z-auto @5xl:shrink-0 @5xl:shadow-none')}>
+                {panel === 'ai' ? (
+                  <ArchitectPanel stage={stage} onClose={() => setPanel(null)} onFocusOption={setFocusOptionId} />
+                ) : (
+                  <BuildLayers active={stage} onClose={() => setPanel(null)} />
                 )}
-              >
-                <ArchitectPanel stage={stage} onClose={() => setPanelOpen(false)} onFocusOption={setFocusOptionId} />
               </div>
             )}
           </div>

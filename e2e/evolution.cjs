@@ -34,6 +34,7 @@ const BASE = process.env.BASE_URL || 'http://localhost:4173';
   await page.goto(BASE);
   await page.getByRole('button', { name: 'Create Application, opens Application Studio' }).click();
   await studio.waitFor({ timeout: T });
+  await studio.getByRole('button', { name: 'AI Architect' }).click(); // the AI Architect starts collapsed
 
   // ── Discover → Define → Architect
   await studio.getByLabel('What should the application help your teams achieve?').fill('I want to automate insurance claims processing, screen for fraud and reduce manual intervention.');
@@ -64,6 +65,7 @@ const BASE = process.env.BASE_URL || 'http://localhost:4173';
   await studio.getByRole('button', { name: /Use AI-Driven Claims Automation/ }).click();
 
   // ── Compose: suggested questions, catalogue version, composition
+  await studio.getByRole('button', { name: /^Capability coverage/ }).click(); // full coverage list starts collapsed
   await studio.getByRole('list', { name: 'Capability coverage' }).waitFor({ timeout: T });
   check('compose suggests the why-required question', await panel.getByRole('button', { name: 'Why is Fraud investigation required?' }).isVisible());
   await panel.getByRole('button', { name: 'Why is Fraud investigation required?' }).click();

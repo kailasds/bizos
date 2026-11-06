@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { CheckCircle2, ExternalLink, Minus, Rocket } from 'lucide-react'
+import { CheckCircle2, ExternalLink, Minus, Rocket, FileText } from 'lucide-react'
+import { Expander } from '@/components/os/Expander'
 import { useOs } from '@/app/os/use-os'
 import { getFolder, registerGeneratedApp } from '@/app/registry/applicationRegistry'
 import type { GeneratedAppId } from '@/app/registry/types'
@@ -100,9 +101,9 @@ export function PublishStage({ windowId }: { windowId: string }) {
           <>
             {!ready && (
               <span className="mr-auto text-sm text-muted-foreground">
-                Validation must pass first.{' '}
+                Readiness checks must pass first.{' '}
                 <button type="button" className="font-medium text-primary underline-offset-4 hover:underline" onClick={() => dispatch({ type: 'stage/go', stage: 'validate' })}>
-                  Go to Validate
+                  Go to Preview
                 </button>
               </span>
             )}
@@ -143,7 +144,8 @@ export function PublishStage({ windowId }: { windowId: string }) {
             </div>
           )}
 
-          <dl className="rounded-xl border bg-card">
+          <Expander title="Release summary" icon={FileText} meta={`v${bp.version} · ${resources.length} resources · ${bp.workflow.nodes.length} steps`}>
+          <dl className="-mx-4 -my-4">
             <Fact label="Application">
               <span className="font-medium">{project.name}</span> <span className="text-muted-foreground tabular-nums">· {bp.applicationId}</span>
             </Fact>
@@ -164,7 +166,7 @@ export function PublishStage({ windowId }: { windowId: string }) {
                 <span className="text-muted-foreground"> · previously published: {project.publications.map((p) => `v${p.version}`).join(', ')}</span>
               )}
             </Fact>
-            <Fact label="Validation">
+            <Fact label="Readiness">
               {project.validation ? (
                 <span className="flex flex-wrap items-center gap-2">
                   <StatusBadge tone={readinessMeta[readinessOf(project)].tone}>{readinessMeta[readinessOf(project)].label}</StatusBadge>
@@ -180,6 +182,7 @@ export function PublishStage({ windowId }: { windowId: string }) {
               Enterprise AI OS desktop · {folder?.name} folder
             </Fact>
           </dl>
+          </Expander>
         </div>
       )}
     </StageFrame>
