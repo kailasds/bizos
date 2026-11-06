@@ -22,7 +22,7 @@ export function WidgetCard({ icon: Icon, title, openLabel, onOpen, aside, childr
   return (
     <section
       className={cn(
-        'group/widget relative glass-strong rounded-xl p-4 shadow-widget transition-colors hover:bg-white/90 has-[>header>button:focus-visible]:ring-3 has-[>header>button:focus-visible]:ring-ring/50',
+        'group/widget widget-glass relative rounded-[22px] p-3.5 has-[>header>button:focus-visible]:ring-3 has-[>header>button:focus-visible]:ring-ring/50',
         className,
       )}
     >
@@ -32,7 +32,7 @@ export function WidgetCard({ icon: Icon, title, openLabel, onOpen, aside, childr
           type="button"
           onClick={onOpen}
           aria-label={openLabel}
-          className="text-sm font-medium outline-none after:absolute after:inset-0 after:rounded-xl"
+          className="text-sm font-medium outline-none after:absolute after:inset-0 after:rounded-[22px]"
         >
           {title}
         </button>
@@ -41,7 +41,7 @@ export function WidgetCard({ icon: Icon, title, openLabel, onOpen, aside, childr
           <ChevronRight aria-hidden className="size-4 text-muted-foreground/60 group-hover/widget:text-foreground" />
         </div>
       </header>
-      <div className="mt-3">{children}</div>
+      <div className="mt-2">{children}</div>
     </section>
   )
 }

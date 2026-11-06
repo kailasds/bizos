@@ -367,10 +367,10 @@ function projectReducer(project: StudioProject, action: StudioAction): StudioPro
     }
     case 'generate/confirm': {
       if (!project.blueprint) return project
-      return mark({ ...project, activeStage: 'validate' }, 'generate', 'complete')
+      return mark({ ...project, activeStage: 'publish' }, 'generate', 'complete')
     }
 
-    // ── Validate ──────────────────────────────────────────────────────
+    // ── Automatic checks (run when Publish opens) ──────────────────────────────────────────────────────
     case 'validate/result': {
       if (!project.blueprint) return project
       const previouslyAcknowledged = project.validation?.acknowledged ?? []
@@ -386,23 +386,13 @@ function projectReducer(project: StudioProject, action: StudioAction): StudioPro
         },
         validationRuns: [...project.validationRuns, { ranAt: action.now, version: project.blueprint.version, blocked, review }],
       }
-      p = mark(p, 'validate', validationClear(p) ? 'complete' : 'not-started')
-      p = { ...p, blueprint: { ...p.blueprint!, status: p.progress.validate === 'complete' ? 'validated' : 'draft' } }
-      return say(
-        p,
-        'validate',
-        blocked || review
-          ? `Validation found ${blocked} blocking issue${blocked === 1 ? '' : 's'} and ${review} to review. Each one says why it matters and where to fix it.`
-          : 'Every check passed. The application is ready to publish.',
-        [`Blueprint v${project.blueprint.version}`],
-      )
+      return { ...p, blueprint: { ...p.blueprint!, status: validationClear(p) ? 'validated' : 'draft' } }
     }
     case 'validate/acknowledge': {
       if (!project.validation) return project
       const finding = project.validation.findings.find((f) => f.id === action.findingId)
       let p: StudioProject = { ...project, validation: { ...project.validation, acknowledged: [...project.validation.acknowledged, action.findingId] } }
-      p = mark(p, 'validate', validationClear(p) ? 'complete' : 'not-started')
-      if (p.progress.validate === 'complete') p = { ...p, blueprint: { ...p.blueprint!, status: 'validated' } }
+      if (validationClear(p)) p = { ...p, blueprint: { ...p.blueprint!, status: 'validated' } }
       return decide(p, 'gap-accepted', `Accepted a known gap for v${project.validation.blueprintVersion}: ${finding?.title ?? action.findingId}`, action.now)
     }
 

@@ -185,7 +185,7 @@ export function ApproachFlow({
           panOnScroll={false}
           preventScrolling={false}
         >
-          <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="oklch(0.5 0.03 285 / 0.18)" />
+          <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="oklch(0.5 0.03 235 / 0.18)" />
           <Refit signature={signature} />
         </ReactFlow>
       </ReactFlowProvider>

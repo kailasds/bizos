@@ -21,7 +21,7 @@ export function StudioHome({ onNew }: { onNew: () => void }) {
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex-1">
             <p className="text-lg font-semibold tracking-tight text-muted-foreground/70">Pick up where you left off,</p>
-            <h2 className="headline-gradient w-fit text-2xl font-bold tracking-tight">or describe a new problem.</h2>
+            <h2 className="w-fit text-primary text-2xl font-bold tracking-tight">or describe a new problem.</h2>
           </div>
           <Button className={ctaClass} onClick={onNew}>
             <FilePlus2 />

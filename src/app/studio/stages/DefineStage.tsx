@@ -79,8 +79,8 @@ export function DefineStage({ openArchitect }: { openArchitect: () => void }) {
       }
     >
       <div className="grid gap-3 @4xl:grid-cols-6">
-        <section aria-label="Business objective" className="rounded-[24px] bg-studio-ink p-4 text-white @4xl:col-span-4">
-          <label htmlFor="spec-objective" className="mb-1.5 flex items-center gap-2 text-xs font-medium text-white/70">
+        <section aria-label="Business objective" className="rounded-[24px] border border-primary/15 bg-accent/70 p-4 @4xl:col-span-4">
+          <label htmlFor="spec-objective" className="mb-1.5 flex items-center gap-2 text-xs font-medium text-accent-foreground">
             <Target aria-hidden className="size-3.5" />
             Business objective
           </label>
@@ -89,7 +89,7 @@ export function DefineStage({ openArchitect }: { openArchitect: () => void }) {
             defaultValue={spec.objective}
             key={`obj-${spec.version}`}
             onBlur={(e) => e.target.value.trim() !== spec.objective && update({ ...spec, objective: e.target.value.trim() })}
-            className="min-h-[5.25rem] resize-none border-0 bg-transparent p-0 text-lg leading-snug font-semibold text-white shadow-none focus-visible:ring-0 md:text-lg dark:bg-transparent"
+            className="min-h-[5.25rem] resize-none border-0 bg-transparent p-0 text-lg leading-snug font-semibold text-foreground shadow-none focus-visible:ring-0 md:text-lg dark:bg-transparent"
           />
         </section>
         <section aria-label="Problem statement" className="studio-card rounded-[24px] p-4 @4xl:col-span-2">

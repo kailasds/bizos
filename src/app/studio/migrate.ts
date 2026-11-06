@@ -26,6 +26,17 @@ export function migrateProject(raw: Loose): StudioProject {
     revisions: p.revisions ?? [],
   }
 
+  // Validate is no longer a stage: its checks run automatically on Publish.
+  if ((project.activeStage as string) === 'validate') project.activeStage = 'publish'
+  if ('validate' in project.progress) {
+    const { validate: _progress, ...progress } = project.progress as Record<string, unknown>
+    project.progress = progress as StudioProject['progress']
+  }
+  if ('validate' in project.staleReasons) {
+    const { validate: _reason, ...staleReasons } = project.staleReasons as Record<string, string>
+    project.staleReasons = staleReasons
+  }
+
   if (!project.discover.understanding) {
     const scenario = getScenario(project.scenarioId)
     const old = (project.discover.interpretation ?? []) as InterpretationItem[]

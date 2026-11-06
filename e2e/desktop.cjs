@@ -20,7 +20,9 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await page.screenshot({ path: dir + '/01-desktop.png' });
 
   // open claims from desktop icon
-  await page.getByRole('button', { name: 'Claims Intelligence, application' }).click();
+  await page.getByRole('button', { name: /^Insurance, folder/ }).click();
+  check('domain panel opens', await page.getByRole('dialog').getByRole('button', { name: 'Document AI, application' }).isVisible());
+  await page.getByRole('dialog').getByRole('button', { name: 'Claims Intelligence, application' }).click();
   await page.waitForTimeout(300);
   check('claims window open', await page.locator('section[aria-label="Claims Intelligence"]').isVisible());
   // open document ai (closed apps are not in the dock; it lists open apps)
@@ -100,6 +102,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
     if (await page.locator(`section[aria-label="${n}"]`).isVisible()) { await page.getByRole('button', { name: 'Minimize ' + n }).click(); await page.locator(`section[aria-label="${n}"]`).waitFor({ state: 'hidden' }); }
   }
   await page.getByRole('button', { name: /^Insurance, folder/ }).click();
+  await page.getByRole('button', { name: 'Open Insurance in Folders' }).click();
   await page.waitForTimeout(300);
   check('folder browser open', await page.locator('section[aria-label="Folders"]').isVisible());
   check('dock shows folders', await page.getByRole('navigation', { name: 'Dock' }).getByRole('button', { name: /Folders/ }).count() === 1);
@@ -114,9 +117,12 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   }
   await page.waitForFunction(() => document.querySelectorAll('main section[aria-label][data-focused]').length === 0, null, { timeout: 3000 }).catch(() => {}); // close animation
   check('all closed', await page.locator('main section[aria-label][data-focused]').count() === 0);
-  await page.getByRole('button', { name: /Worker activity — open/ }).click();
+  check('desktop has exactly three widgets', await page.getByRole('complementary', { name: 'System overview' }).locator('section').count() === 3);
+  check('no create button on the desktop', await page.getByRole('button', { name: /Create Application/i }).count() === 0);
+  check('desktop widgets fit without scrolling', await page.evaluate(() => { const a = document.querySelector('aside[aria-label="System overview"]'); const b = a.parentElement; return b.scrollHeight <= b.clientHeight + 1; }));
+  await page.getByRole('button', { name: /Platform health — open/ }).click();
   await page.waitForTimeout(300);
-  check('widget opened explorer workers', (await page.locator('section[aria-label="System Explorer"]').innerText()).includes('Claims Investigation Worker'));
+  check('widget opened explorer', await page.locator('section[aria-label="System Explorer"]').isVisible());
   await page.screenshot({ path: dir + '/05-explorer.png' });
   await page.getByRole('button', { name: 'Close System Explorer' }).click();
 

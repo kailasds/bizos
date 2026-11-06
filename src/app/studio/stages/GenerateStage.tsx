@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import type { ApplicationBlueprint, DataField, FieldType, ResourceRef } from '@/app/blueprint/types'
 import { ExperienceRenderer } from '@/app/experience/ExperienceRenderer'
 import { ResourceDetailSheet } from '@/app/resources/ResourceDetailSheet'
-import { readinessMeta, readinessOf, sectionStatus } from '@/app/services/mock/blueprint-service'
+import { sectionStatus } from '@/app/services/mock/blueprint-service'
 import { getResource } from '@/app/services/mock/resource-discovery-service'
 import { StatusBadge, type StatusTone } from '@/components/os/StatusBadge'
 import { Button } from '@/components/ui/button'
@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { getScenario } from '@/data/studio-scenarios.mock'
 import type { PlatformResource } from '@/data/resources.mock'
-import { Blocks, ChevronDown, FileJson, FileText, GitBranch, History, LayoutDashboard, ListChecks, Monitor, Network, Rocket, Shield, ShieldCheck, Table2, Waypoints } from 'lucide-react'
+import { Blocks, ChevronDown, FileJson, FileText, GitBranch, History, LayoutDashboard, ListChecks, Monitor, Network, Rocket, Shield, Table2, Waypoints } from 'lucide-react'
 import { ApproachFlow } from '../components/ApproachFlow'
 import { kindIcon } from '../components/compose/flow-meta'
 import { ActorBar, ctaClass, IconTile } from '../components/StudioParts'
@@ -24,7 +24,7 @@ import { VersionHistory } from '../components/VersionHistory'
 import type { BlueprintSection, StudioProject } from '../types'
 import { useStudio } from '../use-studio'
 
-export type GenerateTab = BlueprintSection | 'validation' | 'history' | 'json'
+export type GenerateTab = BlueprintSection | 'history' | 'json'
 
 const nav: { id: GenerateTab; label: string; icon: typeof FileText }[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -35,7 +35,6 @@ const nav: { id: GenerateTab; label: string; icon: typeof FileText }[] = [
   { id: 'data', label: 'Data model', icon: Table2 },
   { id: 'experience', label: 'Experience and screens', icon: Monitor },
   { id: 'security', label: 'Security and governance', icon: Shield },
-  { id: 'validation', label: 'Validation', icon: ShieldCheck },
   { id: 'deployment', label: 'Deployment', icon: Rocket },
   { id: 'history', label: 'Version history', icon: History },
   { id: 'json', label: 'Technical view (JSON)', icon: FileJson },
@@ -64,8 +63,6 @@ function summaryOf(tab: GenerateTab, bp: ApplicationBlueprint, project: StudioPr
       return `${bp.experience.pages.length} screens: ${bp.experience.pages.map((p) => p.title).join(', ')}.`
     case 'security':
       return `${bp.security.roles.length} roles and ${bp.security.approvals.length} approval rule${bp.security.approvals.length === 1 ? '' : 's'}; decision log ${bp.security.audit.decisionLog ? 'on' : 'off'}.`
-    case 'validation':
-      return readinessMeta[readinessOf(project)].description
     case 'deployment':
       return project.publication ? `Published v${project.publication.version} to the ${bp.deployment.folder} folder.` : `Not published yet. Target: desktop, ${bp.deployment.folder} folder.`
     default:
@@ -75,11 +72,8 @@ function summaryOf(tab: GenerateTab, bp: ApplicationBlueprint, project: StudioPr
 
 function statusOf(tab: GenerateTab, project: StudioProject): { label: string; tone: StatusTone } | null {
   if (tab === 'history' || tab === 'json') return null
-  if (tab === 'validation') {
-    const r = readinessOf(project)
-    return { label: readinessMeta[r].label, tone: readinessMeta[r].tone }
-  }
-  return sectionStatus(tab, project)
+  const status = sectionStatus(tab, project)
+  return status.label === 'Not checked' ? null : status
 }
 
 function SectionHeader({ tab, project, children }: { tab: GenerateTab; project: StudioProject; children?: ReactNode }) {
@@ -169,7 +163,7 @@ function SectionGlyph({ tab, project }: { tab: GenerateTab; project: StudioProje
           {resources.slice(0, 7).map((r) => {
             const Icon = kindIcon[r.kind]
             return (
-              <span key={r.id} className={cn('flex size-7 items-center justify-center rounded-full text-white ring-2 ring-white', r.origin === 'created' ? 'bg-actor-ai' : 'bg-studio-ink')}>
+              <span key={r.id} className={cn('flex size-7 items-center justify-center rounded-full text-white ring-2 ring-white', r.origin === 'created' ? 'bg-tint-teal' : 'bg-actor-ai')}>
                 <Icon className="size-3" />
               </span>
             )
@@ -199,7 +193,7 @@ function SectionGlyph({ tab, project }: { tab: GenerateTab; project: StudioProje
       return (
         <span aria-hidden className="flex -space-x-1.5">
           {bp.security.roles.slice(0, 5).map((r) => (
-            <span key={r.id} className="flex size-6 items-center justify-center rounded-full bg-actor-person-soft text-[9px] font-bold text-[oklch(0.5_0.12_60)] ring-2 ring-white">
+            <span key={r.id} className="flex size-6 items-center justify-center rounded-full bg-actor-person-soft text-[9px] font-bold text-warning-ink ring-2 ring-white">
               {r.name[0]}
             </span>
           ))}
@@ -208,16 +202,6 @@ function SectionGlyph({ tab, project }: { tab: GenerateTab; project: StudioProje
     case 'solution': {
       const count = (a: string) => bp.workflow.nodes.filter((n) => n.actor === a).length
       return <ActorBar className="w-28" people={count('human')} ai={count('automated')} system={count('system')} />
-    }
-    case 'validation': {
-      const findings = project.validation?.findings ?? []
-      return (
-        <span aria-hidden className="flex gap-0.5">
-          {(findings.length ? findings : Array.from({ length: 8 }, () => null)).slice(0, 12).map((f, i) => (
-            <span key={i} className={cn('h-4 w-1.5 rounded-sm', !f ? 'bg-studio-ink/10' : f.status === 'passed' ? 'bg-success' : f.status === 'blocked' ? 'bg-danger' : 'bg-warning')} />
-          ))}
-        </span>
-      )
     }
     case 'history':
       return (
@@ -255,14 +239,12 @@ function statOf(tab: GenerateTab, project: StudioProject): string {
       return project.publication ? `Live v${project.publication.version}` : `${bp.deployment.folder[0].toUpperCase()}${bp.deployment.folder.slice(1)} folder`
     case 'history':
       return `${project.revisions.length} ${project.revisions.length === 1 ? 'version' : 'versions'} · v${bp.version}`
-    case 'validation':
-      return readinessMeta[readinessOf(project)].label
     default:
       return ''
   }
 }
 
-const wideTiles: GenerateTab[] = ['workflow', 'experience']
+const wideTiles: GenerateTab[] = ['workflow', 'experience', 'history']
 
 function Overview({ project, onOpen }: { project: StudioProject; onOpen: (t: GenerateTab) => void }) {
   const tiles = nav.filter((n) => !['overview', 'json'].includes(n.id))
@@ -270,7 +252,7 @@ function Overview({ project, onOpen }: { project: StudioProject; onOpen: (t: Gen
     <ul className="grid grid-cols-2 gap-2.5 @3xl:grid-cols-4" aria-label="Blueprint sections">
       {tiles.map((n, i) => {
         const status = statusOf(n.id, project)
-        const showStatus = status && status.label !== 'Not validated' && n.id !== 'validation'
+        const showStatus = Boolean(status)
         return (
           <motion.li key={n.id} className={cn(wideTiles.includes(n.id) && 'col-span-2')} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: i * 0.025 }}>
             <button
@@ -280,7 +262,7 @@ function Overview({ project, onOpen }: { project: StudioProject; onOpen: (t: Gen
             >
               <span className="flex items-center justify-between gap-2">
                 <IconTile icon={n.icon} size="sm" />
-                {showStatus && <StatusBadge tone={status.tone}>{status.label}</StatusBadge>}
+                {showStatus && status && <StatusBadge tone={status.tone}>{status.label}</StatusBadge>}
               </span>
               <SectionGlyph tab={n.id} project={project} />
               <span>
@@ -647,38 +629,6 @@ function Security({ project }: { project: StudioProject }) {
   )
 }
 
-function Validation({ project }: { project: StudioProject }) {
-  const { dispatch } = useStudio()
-  const findings = project.validation?.findings ?? []
-  const readiness = readinessOf(project)
-  return (
-    <div className="space-y-5">
-      <SectionHeader tab="validation" project={project}>
-        <Button size="sm" variant="outline" onClick={() => dispatch({ type: 'stage/go', stage: 'validate' })}>
-          Open Validate
-        </Button>
-      </SectionHeader>
-      {readiness === 'not-validated' || readiness === 'outdated' ? (
-        <p className="text-sm text-muted-foreground">{readinessMeta[readiness].description}</p>
-      ) : (
-        <ul className="divide-y studio-card rounded-[20px]">
-          {findings
-            .filter((f) => f.status !== 'passed')
-            .map((f) => (
-              <li key={f.id} className="flex items-center gap-2 px-3 py-2 text-sm">
-                <span className="flex-1">{f.title}</span>
-                <StatusBadge tone={project.validation!.acknowledged.includes(f.id) ? 'info' : f.status === 'blocked' ? 'danger' : 'warning'}>
-                  {project.validation!.acknowledged.includes(f.id) ? 'Accepted' : f.status === 'blocked' ? 'Blocked' : 'Needs attention'}
-                </StatusBadge>
-              </li>
-            ))}
-          <li className="px-3 py-2 text-sm text-muted-foreground">{findings.filter((f) => f.status === 'passed').length} checks passed.</li>
-        </ul>
-      )}
-    </div>
-  )
-}
-
 function Deployment({ project }: { project: StudioProject }) {
   const bp = project.blueprint!
   return (
@@ -772,8 +722,6 @@ export function GenerateStage({ tab, onTabChange }: { tab: GenerateTab; onTabCha
         return <Experience project={project} />
       case 'security':
         return <Security project={project} />
-      case 'validation':
-        return <Validation project={project} />
       case 'deployment':
         return <Deployment project={project} />
       case 'history':
@@ -788,7 +736,7 @@ export function GenerateStage({ tab, onTabChange }: { tab: GenerateTab; onTabCha
               currentVersion={bp.version}
               onRollback={(version) => {
                 dispatch({ type: 'generate/rollback', version, now: new Date().toISOString() })
-                toast.success(`Restored v${version} as a new draft version`, { description: 'Validate and publish again to make it live.' })
+                toast.success(`Restored v${version} as a new draft version`, { description: 'Publish again to make it live.' })
               }}
             />
           </div>
@@ -809,7 +757,7 @@ export function GenerateStage({ tab, onTabChange }: { tab: GenerateTab; onTabCha
       }
       footer={
         <Button className={ctaClass} onClick={() => dispatch({ type: 'generate/confirm' })}>
-          Continue to validation
+          Continue to publish
           <ArrowRight />
         </Button>
       }

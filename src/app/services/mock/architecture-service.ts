@@ -125,20 +125,13 @@ export function stageGuidance(project: StudioProject | null, stage: StageId): St
         doing: 'Showing the blueprint section by section.',
         why: 'The blueprint is the single source of truth for what gets published.',
         needs: 'Check that the workflow, screens and approvals make sense for your teams.',
-        next: 'I validate the blueprint before anything can be published.',
-      }
-    case 'validate':
-      return {
-        doing: project.validation ? 'Reporting validation results.' : 'Ready to run validation checks.',
-        why: 'Nothing is published until schemas, permissions, approvals and screens agree.',
-        needs: blocked ? `Resolve ${blocked} blocking issue${blocked === 1 ? '' : 's'}.` : project.validation ? 'Review or accept the remaining findings.' : 'Run validation.',
-        next: 'You review the application and publish it to the desktop.',
+        next: 'You publish it. Checks run automatically and only ask you about what needs a decision.',
       }
     case 'publish':
       return {
         doing: project.publication ? 'The application is published.' : 'Preparing the final review.',
         why: 'Publishing registers the application so it opens like any other on this OS.',
-        needs: project.publication ? 'Open it from the desktop, or keep improving this draft.' : 'Review the summary and publish.',
+        needs: project.publication ? 'Open it from the desktop, or keep improving this draft.' : blocked ? `Resolve ${blocked} required decision${blocked === 1 ? '' : 's'}.` : 'Review the summary and publish.',
         next: project.publication ? 'Changes you make here stay in the draft until you publish again.' : 'The application appears on the desktop and in its domain folder.',
       }
   }
@@ -167,10 +160,8 @@ export function suggestedQuestions(project: StudioProject | null, stage: StageId
       return [gap ? `Why is ${gap.need} required?` : 'Why reuse existing resources?', gap ? `What happens if ${gap.need} is unavailable?` : 'What happens if a worker is unavailable?', 'Explain the approval workflow']
     case 'generate':
       return ['What will be created?', 'Explain the approval workflow']
-    case 'validate':
-      return ['What blocks publishing?', 'Summarise progress']
     case 'publish':
-      return ['What changes when I publish?', 'Summarise progress']
+      return ['What changes when I publish?', 'What blocks publishing?']
   }
 }
 
@@ -351,7 +342,7 @@ export function architectReply(project: StudioProject | null, stage: StageId, qu
 
   // Missing / gaps
   if (/missing|gap|forgot|else/.test(q)) {
-    if (stage === 'compose' || stage === 'validate') {
+    if (stage === 'compose' || stage === 'publish') {
       const gaps = project.composition?.mappings.filter((m) => m.status === 'missing') ?? []
       if (gaps.length) return { text: `${list(gaps.map((g) => g.need))} ${gaps.length === 1 ? 'has' : 'have'} no existing resource. ${proposalFor(gaps[0].capabilityId)?.whyNeeded ?? ''}`, sources: sources(approachSource, 'Resource catalogue') }
     }
@@ -364,7 +355,7 @@ export function architectReply(project: StudioProject | null, stage: StageId, qu
   // What blocks publishing?
   if (/block|stop|prevent/.test(q)) {
     const blocked = project.validation?.findings.filter((f) => f.status === 'blocked') ?? []
-    if (!project.validation) return { text: 'Validation has not run yet, so I cannot say. Run it in Validate.', sources: [], actions: [{ label: 'Go to Validate', kind: 'go-stage', stage: 'validate' }] }
+    if (!project.validation) return { text: 'Checks run automatically when you reach Publish, so I cannot say yet.', sources: [], actions: [{ label: 'Go to Publish', kind: 'go-stage', stage: 'publish' }] }
     return blocked.length
       ? { text: `${blocked.length} issue${blocked.length === 1 ? '' : 's'} block${blocked.length === 1 ? 's' : ''} publishing: ${blocked.map((f) => f.title).join('; ')}.`, sources: sources(`Validation of v${project.validation.blueprintVersion}`) }
       : { text: 'Nothing blocks publishing. Remaining findings, if any, can be accepted as known gaps.', sources: sources(`Validation of v${project.validation.blueprintVersion}`) }

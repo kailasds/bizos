@@ -91,7 +91,7 @@ export function StageFrame({
         </>
       ) : (
         <div className="h-full overflow-y-auto">
-          <div className={cn('mx-auto flex min-h-full w-full max-w-[86rem] flex-col pt-[var(--top-offset)] pr-4 pl-[var(--rail-offset)] @3xl:pr-6', hideHeader ? 'pb-5 @3xl:pr-[4.75rem]' : 'pb-28')}>
+          <div className={cn('mx-auto flex min-h-full w-full flex-col pt-[var(--top-offset)]', hideHeader ? 'px-4' : 'max-w-[86rem] pr-4 pl-[var(--rail-offset)] @3xl:pr-6', hideHeader ? 'pb-5' : 'pb-28')}>
             {hideHeader ? (
               <h2 className="sr-only">{meta.title}</h2>
             ) : (

@@ -51,14 +51,14 @@ function ports() {
 function TerminalNode({ data }: NodeProps<Node<TerminalData>>) {
   const Icon = data.icon
   return (
-    <div style={{ width: NODE_W }} className="flex items-center gap-2.5 rounded-[18px] bg-studio-ink p-2.5 text-white shadow-studio">
+    <div style={{ width: NODE_W }} className="flex items-center gap-2.5 rounded-[18px] border border-primary/30 bg-accent p-2.5 text-foreground shadow-studio">
       {ports()}
-      <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/15">
+      <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white text-primary">
         <Icon className="size-4" />
       </span>
       <span className="min-w-0">
         <span className="block text-[13px] leading-tight font-semibold">{data.title}</span>
-        <span className="block truncate text-[11px] text-white/70">{data.subtitle}</span>
+        <span className="block truncate text-[11px] text-muted-foreground">{data.subtitle}</span>
       </span>
     </div>
   )
@@ -103,7 +103,7 @@ function ResourceNode({ data }: NodeProps<Node<ResourceData>>) {
       <Handle id="att" type="target" position={Position.Top} />
       {(status === 'missing' || composing) && <span aria-hidden className="studio-pulse absolute inset-0 -z-10 rounded-[16px] bg-danger/15" />}
       <span className="flex items-center gap-2">
-        <span aria-hidden className={cn('flex size-7 shrink-0 items-center justify-center rounded-[9px]', status === 'missing' ? 'bg-danger text-white' : status === 'selected' ? 'bg-studio-ink text-white' : 'bg-accent text-accent-foreground')}>
+        <span aria-hidden className={cn('flex size-7 shrink-0 items-center justify-center rounded-[9px]', status === 'missing' ? 'bg-danger-soft text-danger-ink' : status === 'selected' ? 'bg-primary text-primary-foreground' : 'bg-accent text-accent-foreground')}>
           <Icon className="size-3.5" />
         </span>
         <span className="min-w-0 flex-1">
@@ -331,7 +331,7 @@ function Canvas({
       multiSelectionKeyCode={null}
       aria-label="Application flow"
     >
-      <Background variant={BackgroundVariant.Dots} gap={20} size={1.2} color="oklch(0.5 0.03 285 / 0.22)" />
+      <Background variant={BackgroundVariant.Dots} gap={20} size={1.2} color="oklch(0.5 0.03 235 / 0.22)" />
       <Controls position="bottom-left" showInteractive={false} style={{ marginLeft: insets.left - 8 }} />
       <Refit signature={layoutKey} insets={insets} />
     </ReactFlow>

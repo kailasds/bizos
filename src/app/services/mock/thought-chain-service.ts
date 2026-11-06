@@ -45,7 +45,6 @@ export function thoughtChain(project: StudioProject | null, stage: StageId): Tho
   const option = arch?.options.find((o) => o.id === arch.selectedOptionId)
   const mappings = project.composition?.mappings ?? []
   const bp = project.blueprint
-  const findings = project.validation?.findings ?? []
 
   switch (stage) {
     case 'discover': {
@@ -97,21 +96,11 @@ export function thoughtChain(project: StudioProject | null, stage: StageId): Tho
         { icon: 'screens', value: String(bp.experience.pages.length), label: plural(bp.experience.pages.length, 'screen') },
         { icon: 'blueprint', value: `v${bp.version}`, label: 'blueprint' },
       ]
-    case 'validate': {
-      if (!bp) return []
-      const blocked = findings.filter((f) => f.status === 'blocked').length
-      const review = findings.filter((f) => f.status === 'needs-review').length
-      const open: ThoughtLink[] = [
-        ...(blocked ? [{ icon: 'issues', value: String(blocked), label: 'blocked', tone: 'danger' } as ThoughtLink] : []),
-        ...(review ? [{ icon: 'issues', value: String(review), label: 'to review', tone: 'warning' } as ThoughtLink] : []),
-      ]
-      return [{ icon: 'blueprint', value: `v${bp.version}`, label: 'blueprint' }, { icon: 'checks', value: String(findings.length), label: plural(findings.length, 'finding') }, ...open]
-    }
     case 'publish':
       if (!bp) return []
       return [
         { icon: 'blueprint', value: `v${bp.version}`, label: 'blueprint' },
-        { icon: 'checks', value: readinessMeta[readinessOf(project)].label, label: 'validation' },
+        { icon: 'checks', value: readinessMeta[readinessOf(project)].label, label: 'status' },
         { icon: 'desktop', value: capitalize(bp.deployment.folder), label: 'folder' },
       ]
   }
@@ -141,12 +130,6 @@ export function stageOutcome(project: StudioProject | null, stage: StageId): str
     }
     case 'generate':
       return project.blueprint ? `Blueprint v${project.blueprint.version}` : null
-    case 'validate': {
-      const f = project.validation?.findings
-      if (!f) return null
-      const open = f.filter((x) => x.status !== 'passed' && !project.validation?.acknowledged.includes(x.id)).length
-      return open ? `${open} to resolve` : 'All clear'
-    }
     case 'publish':
       return project.publication ? `Live v${project.publication.version}` : null
   }

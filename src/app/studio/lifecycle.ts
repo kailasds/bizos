@@ -8,18 +8,20 @@ export const LIFECYCLE: Lifecycle[] = ['draft', 'designing', 'validating', 'read
 export const lifecycleMeta: Record<Lifecycle, { label: string; tone: StatusTone; description: string }> = {
   draft: { label: 'Draft', tone: 'neutral', description: 'The business problem is described but not yet confirmed.' },
   designing: { label: 'Designing', tone: 'info', description: 'Requirements, approach and resources are being decided.' },
-  validating: { label: 'Validating', tone: 'info', description: 'The blueprint is generated and must pass validation.' },
-  ready: { label: 'Ready', tone: 'success', description: 'Validation passed. The application can be published.' },
+  validating: { label: 'Reviewing', tone: 'info', description: 'The blueprint is generated. Review it and publish.' },
+  ready: { label: 'Ready', tone: 'success', description: 'Nothing needs a decision. The application can be published.' },
   published: { label: 'Published', tone: 'success', description: 'Registered on the desktop. The draft matches the published version.' },
   'changes-pending': { label: 'Changes pending', tone: 'warning', description: 'Published, with draft changes not yet published.' },
 }
+
+const isClear = (p: StudioProject) => ['ready', 'accepted'].includes(readinessOf(p))
 
 /** Derived from existing project state — no separate lifecycle field to drift. */
 export function lifecycleOf(p: StudioProject): Lifecycle {
   if (p.publication) {
     return p.progress.publish === 'complete' && p.blueprint?.version === p.publication.version ? 'published' : 'changes-pending'
   }
-  if (p.progress.validate === 'complete') return 'ready'
+  if (isClear(p)) return 'ready'
   if (p.blueprint && (p.progress.generate === 'complete' || p.validation)) return 'validating'
   if (p.progress.discover === 'complete') return 'designing'
   return 'draft'
@@ -47,22 +49,21 @@ export function nextAction(p: StudioProject): NextAction | null {
     return p.discover.understanding ? { label: 'Confirm what the OS understood', stage: 'discover' } : { label: 'Describe the business problem', stage: 'discover' }
   }
   if (lifecycle === 'designing') {
-    const stage = firstOpen('define', 'generate') ?? 'validate'
+    const stage = firstOpen('define', 'generate') ?? 'publish'
     if (stage === 'compose' && p.composition?.mappings.some((m) => m.status === 'missing')) return { label: 'Resolve the missing capability', stage }
     return { label: designLabel[stage] ?? `Continue in ${stageMeta[stage].label}`, stage }
   }
   if (lifecycle === 'validating') {
     const readiness = readinessOf(p)
     const blocked = p.validation?.findings.filter((f) => f.status === 'blocked').length ?? 0
-    if (readiness === 'blocked') return { label: `Resolve ${blocked} blocking issue${blocked === 1 ? '' : 's'}`, stage: 'validate' }
-    if (readiness === 'needs-attention') return { label: 'Review validation findings', stage: 'validate' }
-    return { label: 'Run validation', stage: 'validate' }
+    if (readiness === 'blocked') return { label: `Resolve ${blocked} blocking issue${blocked === 1 ? '' : 's'}`, stage: 'publish' }
+    if (readiness === 'needs-attention') return { label: 'Review items before publishing', stage: 'publish' }
+    return { label: 'Go to Publish', stage: 'publish' }
   }
   if (lifecycle === 'ready') return { label: `Publish v${p.blueprint?.version}`, stage: 'publish' }
   if (lifecycle === 'changes-pending') {
     const stage = STAGES.find((s) => p.progress[s] === 'needs-review')
     if (stage && stage !== 'publish') return { label: `Review ${stageMeta[stage].label}`, stage }
-    if (p.progress.validate !== 'complete') return { label: 'Validate the changes', stage: 'validate' }
     return { label: `Publish update v${p.blueprint?.version}`, stage: 'publish' }
   }
   return null

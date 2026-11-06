@@ -23,7 +23,7 @@ export function ArchitectOrb({ open, onToggle }: { open: boolean; onToggle: () =
           className="liquid-glass absolute right-3 bottom-3 z-30 flex size-[3.25rem] items-center justify-center rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <span aria-hidden className="studio-orbit absolute inset-1 rounded-full border border-dashed border-primary/35" />
-          <span aria-hidden className={cn('flex size-9 items-center justify-center rounded-full text-white', open ? 'bg-primary' : 'bg-studio-ink')}>
+          <span aria-hidden className={cn('flex size-9 items-center justify-center rounded-full text-white', 'bg-primary')}>
             {open ? <X className="size-4" /> : <Sparkles className="size-4" />}
           </span>
         </button>
@@ -102,7 +102,7 @@ export function ArchitectPanel({
       className="liquid-glass absolute right-3 bottom-[4.5rem] z-30 flex max-h-[calc(100%-6rem)] min-h-[24rem] w-[23rem] max-w-[calc(100%-1.5rem)] flex-col overflow-hidden rounded-[28px] !bg-white/80"
     >
       <header className="flex items-center gap-2.5 px-4 py-3">
-        <span aria-hidden className="flex size-8 items-center justify-center rounded-full bg-studio-ink text-white">
+        <span aria-hidden className="flex size-8 items-center justify-center rounded-full bg-accent text-accent-foreground">
           <Sparkles className="size-4" />
         </span>
         <div className="min-w-0 flex-1 leading-tight">
@@ -188,7 +188,7 @@ export function ArchitectPanel({
         </div>
         <form onSubmit={onSubmit} className="flex items-center gap-1 rounded-full border border-white bg-white/90 p-1 focus-within:ring-3 focus-within:ring-ring/40">
           <Input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Ask the architect…" aria-label="Ask the AI Architect" className="border-0 bg-transparent shadow-none focus-visible:ring-0" />
-          <Button type="submit" size="icon-sm" aria-label="Send" disabled={!draft.trim()} className="rounded-full bg-studio-cta hover:bg-studio-cta-hover">
+          <Button type="submit" size="icon-sm" aria-label="Send" disabled={!draft.trim()} className="rounded-full bg-primary hover:bg-primary/90">
             <ArrowUp />
           </Button>
         </form>

@@ -68,7 +68,7 @@ export function EditableList({
     <section aria-label={title} className={cn(!bare && 'studio-card rounded-[22px] p-4', className)}>
       <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
         {Icon && (
-          <span aria-hidden className="flex size-7 items-center justify-center rounded-[9px] bg-studio-ink text-white">
+          <span aria-hidden className="flex size-7 items-center justify-center rounded-[9px] bg-accent text-accent-foreground">
             <Icon className="size-3.5" />
           </span>
         )}

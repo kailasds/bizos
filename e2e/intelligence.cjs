@@ -26,7 +26,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   const text = () => studio.innerText();
 
   await page.goto(process.env.BASE_URL || 'http://localhost:4173');
-  await page.getByRole('button', { name: 'Create Application, opens Application Studio' }).click();
+  await page.getByRole('button', { name: 'Create', exact: true }).click(); await page.getByRole('menuitem', { name: 'New application' }).click();
   await studio.waitFor({ timeout: T });
 
   // ── Honest fallback for an unmatched description
@@ -137,8 +137,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
 
   // ── Blueprint sections, version compare and rollback
   await studio.getByRole('list', { name: 'Blueprint sections' }).waitFor({ timeout: T });
-  check('overview lists ten sections', (await studio.getByRole('list', { name: 'Blueprint sections' }).getByRole('button').count()) === 10);
-  check('sections show not validated', (await text()).includes('Not validated'));
+  check('overview lists nine sections', (await studio.getByRole('list', { name: 'Blueprint sections' }).getByRole('button').count()) === 9);
   await shot('07-blueprint-overview');
   const sections = studio.getByRole('navigation', { name: 'Blueprint sections' });
   await sections.getByRole('button', { name: 'Workflow' }).click();
@@ -161,19 +160,17 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await studio.getByLabel('Base version').selectOption('0.1.1');
   await studio.getByLabel('Target version').selectOption('0.1.2');
   check('compare after rollback', (await studio.getByRole('region', { name: 'Compare versions' }).innerText()).includes('Removed Claim field “Investigation notes”'));
-  await studio.getByRole('button', { name: 'Continue to validation' }).click();
-  await studio.getByRole('button', { name: 'Run validation' }).click();
-  await studio.getByText(/of 8 checks passed/).waitFor({ timeout: T });
+  await studio.getByRole('button', { name: 'Continue to publish' }).click();
+  await studio.getByRole('list', { name: 'Decisions before publishing' }).waitFor({ timeout: T });
   check('no approver issue when answered', !(await text()).includes('Nobody is assigned to approve'));
   check('rolled-back field issue detected', (await text()).includes('shows a field the data model does not have'));
-  check('readiness: needs attention', (await studio.getByRole('region', { name: 'Readiness' }).innerText()).includes('Needs attention'));
-  await studio.getByRole('list', { name: 'Validation issues' }).getByRole('button', { name: 'Details' }).first().click(); // reasoning opens on request
+  check('readiness: needs attention', (await text()).includes('Needs attention'));
+  await studio.getByRole('list', { name: 'Decisions before publishing' }).getByRole('button', { name: 'Details' }).first().click(); // reasoning opens on request
   check('issue explains why it matters', (await text()).includes('Why it matters'));
   await shot('09-readiness');
   await studio.getByRole('button', { name: 'Accept as known gap' }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Accept known gap' }).click();
-  check('readiness: accepted with known gaps', (await studio.getByRole('region', { name: 'Readiness' }).innerText()).includes('Accepted with known gaps'));
-  await studio.getByRole('button', { name: /Continue to publish/ }).click();
+  check('readiness: accepted with known gaps', (await text()).includes('Accepted with known gaps'));
   await studio.getByRole('button', { name: 'Publish application' }).click();
   await studio.getByText(/^Published v0\.1\.2$/).waitFor({ timeout: T });
   await shot('10-published');
@@ -208,7 +205,6 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await page.getByRole('button', { name: 'Close System Explorer' }).click();
   const widgets = page.locator('aside[aria-label="System overview"]');
   check('approvals widget includes generated app', /Claims Processing Hub\s+2 awaiting/.test(await widgets.innerText()));
-  check('application activity: recently published', (await widgets.innerText()).includes('Recently published'));
   check('platform activity shows your events', (await widgets.innerText()).includes('You'));
 
   // ── Persistence after reload

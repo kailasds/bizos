@@ -85,8 +85,6 @@
     /* Application Studio surface (scoped to .theme-studio) */
     --color-studio-ink: var(--studio-ink);
     --color-studio-ink-foreground: var(--studio-ink-foreground);
-    --color-studio-cta: var(--studio-cta);
-    --color-studio-cta-hover: var(--studio-cta-hover);
     --color-actor-person: var(--actor-person);
     --color-actor-person-soft: var(--actor-person-soft);
     --color-actor-ai: var(--actor-ai);
@@ -254,52 +252,26 @@
 }
 
 /*
- * Application Studio theme: a scoped indigo accent and a soft violet-grey canvas, so the
- * create-application flow reads as its own workspace. Status colours are unchanged.
- */
-.theme-studio {
-    --primary: oklch(0.51 0.2 277);
-    --primary-foreground: oklch(1 0 0);
-    --ring: oklch(0.6 0.18 277);
-    --accent: oklch(0.95 0.03 280);
-    --accent-foreground: oklch(0.42 0.18 277);
-    --background: oklch(0.975 0.007 285);
-    --chrome: oklch(0.97 0.012 282);
-    --muted: oklch(0.965 0.007 285);
-    --secondary: oklch(0.955 0.015 282);
-    --info: oklch(0.6 0.17 277);
-    --info-soft: oklch(0.95 0.03 280);
-    --info-ink: oklch(0.45 0.18 277);
-}
-
-/*
- * Application Studio surface — see design.md §10. A soft lavender → blush → peach wash carries
- * floating liquid-glass controls; graphite tiles anchor icons and a coral action marks the one
- * step forward on each screen.
+ * Application Studio surface — see design.md §10. The OS palette (blue primary, teal, warm
+ * horizon) as a pale wash, with floating liquid-glass controls. No dark fills.
  */
 .theme-studio {
     --studio-wash:
-      radial-gradient(70% 60% at 8% 4%, oklch(0.93 0.045 285) 0%, transparent 70%),
-      radial-gradient(70% 70% at 96% 12%, oklch(0.94 0.04 350) 0%, transparent 70%),
-      radial-gradient(70% 60% at 10% 100%, oklch(0.95 0.04 65) 0%, transparent 70%),
-      radial-gradient(70% 60% at 92% 100%, oklch(0.93 0.05 315) 0%, transparent 70%),
-      oklch(0.975 0.012 330);
-    --studio-ink: oklch(0.3 0.012 285);
-    --studio-ink-foreground: oklch(0.99 0 0);
-    --studio-cta: oklch(0.56 0.17 33);
-    --studio-cta-hover: oklch(0.51 0.17 33);
-    --studio-headline: linear-gradient(95deg, oklch(0.3 0.09 275) 0%, oklch(0.46 0.17 310) 48%, oklch(0.62 0.17 45) 100%);
+      radial-gradient(70% 60% at 8% 4%, oklch(0.93 0.03 225) 0%, transparent 70%),
+      radial-gradient(70% 70% at 96% 12%, oklch(0.95 0.022 245) 0%, transparent 70%),
+      radial-gradient(70% 60% at 10% 100%, oklch(0.96 0.025 65) 0%, transparent 70%),
+      radial-gradient(70% 60% at 92% 100%, oklch(0.94 0.022 205) 0%, transparent 70%),
+      oklch(0.975 0.006 225);
+    --studio-ink: var(--primary);
+    --studio-ink-foreground: var(--primary-foreground);
     --studio-card: oklch(1 0 0 / 0.78);
-    --studio-line: oklch(0.3 0.03 285 / 0.1);
-    --studio-shadow: 0 1px 2px oklch(0.35 0.05 290 / 0.06), 0 14px 34px -20px oklch(0.35 0.08 290 / 0.32);
-    --actor-person: oklch(0.72 0.15 65);
-    --actor-person-soft: oklch(0.96 0.04 75);
-    --actor-ai: oklch(0.55 0.19 277);
-    --actor-ai-soft: oklch(0.95 0.03 280);
-    --actor-system: oklch(0.55 0.08 215);
-    --actor-system-soft: oklch(0.95 0.02 215);
-    --muted-foreground: oklch(0.47 0.015 285);
-    --border: var(--studio-line);
+    --studio-shadow: 0 1px 2px oklch(0.35 0.04 240 / 0.06), 0 14px 34px -20px oklch(0.35 0.06 240 / 0.32);
+    --actor-person: var(--tint-amber);
+    --actor-person-soft: oklch(0.96 0.04 80);
+    --actor-ai: var(--tint-blue);
+    --actor-ai-soft: var(--info-soft);
+    --actor-system: var(--tint-teal);
+    --actor-system-soft: oklch(0.95 0.02 209);
 }
 
 @utility no-scrollbar {
@@ -311,13 +283,6 @@
   background-color: var(--studio-card);
   border: 1px solid oklch(1 0 0 / 0.75);
   box-shadow: var(--studio-shadow);
-}
-
-@utility headline-gradient {
-  background-image: var(--studio-headline);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
 }
 
 /* Floating liquid glass: specular rim, inner glow, soft lift. Text sits on a higher-opacity floor. */
@@ -332,8 +297,8 @@
     inset 1px 0 0 oklch(1 0 0 / 0.45),
     inset 0 -1px 1px oklch(1 0 0 / 0.35),
     inset 0 0 22px oklch(1 0 0 / 0.28),
-    0 2px 6px oklch(0.35 0.06 290 / 0.08),
-    0 24px 56px -22px oklch(0.34 0.09 290 / 0.45);
+    0 2px 6px oklch(0.35 0.05 240 / 0.08),
+    0 24px 56px -22px oklch(0.34 0.07 240 / 0.45);
 }
 
 /* Slowly drifting colour behind the glass, so the material has something to refract. */
@@ -367,11 +332,11 @@
 /* React Flow on the Studio canvas: tokens only. */
 .theme-studio .react-flow {
   --xy-background-color: transparent;
-  --xy-edge-stroke-default: oklch(0.55 0.05 285 / 0.55);
+  --xy-edge-stroke-default: oklch(0.55 0.05 235 / 0.55);
   --xy-edge-stroke-width-default: 1.75;
   --xy-attribution-background-color-default: transparent;
   --xy-controls-button-background-color-default: oklch(1 0 0 / 0.7);
-  --xy-controls-button-border-color-default: var(--studio-line);
+  --xy-controls-button-border-color-default: var(--border);
   font-family: var(--font-sans);
 }
 .theme-studio .react-flow__controls { border-radius: 14px; overflow: hidden; box-shadow: var(--studio-shadow); }
@@ -379,6 +344,28 @@
 .theme-studio .react-flow__handle { opacity: 0; pointer-events: none; }
 .theme-studio .react-flow__node:focus-visible { outline: none; }
 .theme-studio .react-flow__node:focus-visible > * { outline: 3px solid var(--ring); outline-offset: 2px; }
+
+/*
+ * Desktop widget glass (macOS-style): clearly translucent, with a specular rim. The opacity floor
+ * and a darker secondary text keep it readable over the whole wallpaper.
+ */
+.widget-glass {
+  --muted-foreground: oklch(0.36 0.012 225);
+  background: linear-gradient(150deg, oklch(1 0 0 / 0.7) 0%, oklch(1 0 0 / 0.54) 100%);
+  border: 1px solid oklch(1 0 0 / 0.55);
+  -webkit-backdrop-filter: blur(30px) saturate(1.8);
+  backdrop-filter: blur(30px) saturate(1.8);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.85),
+    inset 0 0 18px oklch(1 0 0 / 0.18),
+    0 16px 36px -16px oklch(0.25 0.04 225 / 0.42);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .widget-glass { background: oklch(0.98 0.004 220 / 0.94); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .widget-glass { background: oklch(0.98 0.004 220); }
+}
 
 /* Liquid glass material. Glass frames content; text-dense surfaces use .glass-strong. */
 @utility glass {

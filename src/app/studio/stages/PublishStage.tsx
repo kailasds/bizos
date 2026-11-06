@@ -1,21 +1,35 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { Blocks, CheckCircle2, ChevronDown, ExternalLink, FolderOpen, LayoutPanelTop, Minus, Network, Rocket, ShieldCheck, Workflow, type LucideIcon } from 'lucide-react'
+import { Blocks, CheckCircle2, ChevronDown, ExternalLink, FolderOpen, LayoutPanelTop, Minus, Network, Rocket, Users, Workflow, type LucideIcon } from 'lucide-react'
+import { validateBlueprint } from '@/app/blueprint/validate'
 import { useOs } from '@/app/os/use-os'
 import { getFolder, registerGeneratedApp } from '@/app/registry/applicationRegistry'
 import type { GeneratedAppId } from '@/app/registry/types'
 import { readinessMeta, readinessOf } from '@/app/services/mock/blueprint-service'
 import { InfoTip } from '@/components/os/InfoTip'
 import { StatusBadge } from '@/components/os/StatusBadge'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { getScenario } from '@/data/studio-scenarios.mock'
 import { cn } from '@/lib/utils'
+import { DecisionCard } from '../components/DecisionCard'
 import { LifecycleTrack } from '../components/LifecycleTrack'
 import { StageFrame, StagePrerequisite } from '../components/StageFrame'
 import { ctaClass, IconTile } from '../components/StudioParts'
 import { useSimulation } from '../hooks/use-simulation'
 import { lifecycleMeta, lifecycleOf } from '../lifecycle'
+import type { StageId, ValidationFinding } from '../types'
 import { useStudio } from '../use-studio'
+import type { GenerateTab } from './GenerateStage'
 
 const timeFormat = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 
@@ -51,23 +65,33 @@ function DesktopPreview({ name, folder, version, live }: { name: string; folder:
   )
 }
 
-export function PublishStage({ windowId }: { windowId: string }) {
+export function PublishStage({ windowId, goTo }: { windowId: string; goTo: (stage: StageId, tab?: GenerateTab) => void }) {
   const { project, dispatch } = useStudio()
   const { openApp, minimizeWindow, pushNotification } = useOs()
   const sim = useSimulation(700)
   const [showAll, setShowAll] = useState(false)
+  const [accepting, setAccepting] = useState<ValidationFinding | null>(null)
+  const blueprint = project?.blueprint
+  const mappings = project?.composition?.mappings
+  const checkedVersion = project?.validation?.blueprintVersion
+
+  // The checks are automatic: whenever this version has not been checked, check it.
+  useEffect(() => {
+    if (!blueprint || !mappings || checkedVersion === blueprint.version) return
+    dispatch({ type: 'validate/result', findings: validateBlueprint(blueprint, mappings), now: new Date().toISOString() })
+  }, [blueprint, mappings, checkedVersion, dispatch])
 
   if (!project?.blueprint) {
-    return <StagePrerequisite stage="publish" requires="generate" message="Generate and validate the blueprint before publishing." />
+    return <StagePrerequisite stage="publish" requires="generate" message="Generate the blueprint before publishing." />
   }
 
   const bp = project.blueprint
   const scenario = getScenario(project.scenarioId)
   const folder = getFolder(bp.domain)
   const resources = Object.values(bp.resources).flat()
-  const findings = project.validation?.findings ?? []
-  const acknowledged = project.validation?.acknowledged.length ?? 0
-  const ready = project.progress.validate === 'complete'
+  const readiness = readinessOf(project)
+  const ready = readiness === 'ready' || readiness === 'accepted'
+  const decisions = (project.validation?.findings ?? []).filter((f) => f.status !== 'passed' && !project.validation?.acknowledged.includes(f.id)).sort((a, b) => Number(b.status === 'blocked') - Number(a.status === 'blocked'))
   const lifecycle = lifecycleOf(project)
   const appId = bp.applicationId as GeneratedAppId
 
@@ -101,7 +125,6 @@ export function PublishStage({ windowId }: { windowId: string }) {
     })
 
   const published = lifecycle === 'published'
-  const passed = findings.filter((f) => f.status === 'passed').length
   const earlier = project.publications.filter((p) => p.version !== bp.version)
 
   return (
@@ -122,12 +145,9 @@ export function PublishStage({ windowId }: { windowId: string }) {
           </>
         ) : (
           <>
-            {!ready && (
-              <span className="text-muted-foreground">
-                Validation must pass first.{' '}
-                <button type="button" className="font-medium text-primary underline-offset-4 hover:underline" onClick={() => dispatch({ type: 'stage/go', stage: 'validate' })}>
-                  Go to Validate
-                </button>
+            {decisions.length > 0 && (
+              <span className="text-muted-foreground tabular-nums">
+                {decisions.length} {decisions.length === 1 ? 'decision' : 'decisions'} first
               </span>
             )}
             <Button className={ctaClass} disabled={!ready || sim.running} onClick={publish}>
@@ -154,17 +174,25 @@ export function PublishStage({ windowId }: { windowId: string }) {
           </div>
         )}
 
+        {decisions.length > 0 && !sim.running && (
+          <ul aria-label="Decisions before publishing" className="space-y-2.5">
+            {decisions.map((f) => (
+              <DecisionCard key={f.id} finding={f} goTo={goTo} onAccept={setAccepting} />
+            ))}
+          </ul>
+        )}
+
         <div className="grid gap-3 @4xl:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
           <DesktopPreview name={project.name} folder={folder?.name ?? bp.domain} version={bp.version} live={published} />
           <div className="grid grid-cols-2 gap-2.5 @6xl:grid-cols-3">
             <FactTile icon={Network} value={resources.length} label="resources pinned" chips={resources.map((r) => r.name)} />
             <FactTile icon={Workflow} value={bp.workflow.nodes.length} label="workflow steps" chips={bp.workflow.nodes.map((n) => n.name)} />
             <FactTile icon={LayoutPanelTop} value={bp.experience.pages.length} label="screens" chips={bp.experience.pages.map((p) => p.title)} />
-            <FactTile icon={ShieldCheck} value={project.validation ? `${passed}/${findings.length}` : '—'} label={acknowledged ? `findings passed · ${acknowledged} accepted` : 'findings passed'} />
+            <FactTile icon={Users} value={bp.security.roles.length} label="roles" chips={bp.security.roles.map((r) => r.name)} />
             <FactTile icon={Blocks} value={`v${bp.version}`} label={earlier.length ? `after ${earlier.map((p) => `v${p.version}`).join(', ')}` : 'first version'} />
             <div className="studio-card flex flex-col items-start justify-center gap-1 rounded-[20px] p-3">
-              {project.validation ? <StatusBadge tone={readinessMeta[readinessOf(project)].tone}>{readinessMeta[readinessOf(project)].label}</StatusBadge> : <StatusBadge tone="neutral">Not run</StatusBadge>}
-              <p className="text-[11px] text-muted-foreground">{project.validation ? `checked v${project.validation.blueprintVersion}` : 'validation'}</p>
+              <StatusBadge tone={readinessMeta[readiness].tone}>{readinessMeta[readiness].label}</StatusBadge>
+              <p className="text-[11px] text-muted-foreground">publish status</p>
             </div>
           </div>
         </div>
@@ -195,6 +223,28 @@ export function PublishStage({ windowId }: { windowId: string }) {
           </dl>
         )}
       </div>
+
+      <AlertDialog open={Boolean(accepting)} onOpenChange={(o) => !o && setAccepting(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Accept as a known gap?</AlertDialogTitle>
+            <AlertDialogDescription>
+              “{accepting?.title}” stays unresolved in v{bp.version}. {accepting?.impact} Your acceptance is recorded in this draft’s decision log and applies to this version only.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (accepting) dispatch({ type: 'validate/acknowledge', findingId: accepting.id, now: new Date().toISOString() })
+                setAccepting(null)
+              }}
+            >
+              Accept known gap
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </StageFrame>
   )
 }

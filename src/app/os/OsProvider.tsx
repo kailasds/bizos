@@ -25,9 +25,7 @@ function loadRecents(): RecentApp[] {
 const defaultWidgetPreferences: WidgetPreferences = {
   'platform-health': true,
   'pending-approvals': true,
-  'active-applications': true,
   'active-executions': false,
-  'worker-activity': true,
   'recent-activity': true,
 }
 

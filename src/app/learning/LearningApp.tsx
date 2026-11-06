@@ -415,7 +415,7 @@ function ProposalDetail({ proposal, state, go }: { proposal: ImprovementProposal
           )}
           {!published && app?.source === 'studio' && project && (
             <div className="flex flex-wrap items-center gap-2 border-t pt-3 text-sm">
-              <span className="min-w-0 flex-1 text-muted-foreground">Validate and publish the draft in Application Studio, where the full blueprint and version history live.</span>
+              <span className="min-w-0 flex-1 text-muted-foreground">Publish the draft in Application Studio, where the full blueprint and version history live.</span>
               <Button size="sm" onClick={() => openApp('application-studio', { project: project.id })}>
                 Open in Application Studio
               </Button>

@@ -36,7 +36,7 @@ const BASE = process.env.BASE_URL || 'http://localhost:4173';
   };
 
   await page.goto(BASE);
-  await page.getByRole('button', { name: 'Create Application, opens Application Studio' }).click();
+  await page.getByRole('button', { name: 'Create', exact: true }).click(); await page.getByRole('menuitem', { name: 'New application' }).click();
   await studio.waitFor({ timeout: T });
 
   // ── Discover → Define → Architect
@@ -120,7 +120,7 @@ const BASE = process.env.BASE_URL || 'http://localhost:4173';
   await explorer.getByLabel('Sort by').selectOption('status');
   const rows = await explorer.getByRole('list', { name: 'Applications' }).getByRole('listitem').allInnerTexts();
   const firstPublished = rows.findIndex((r) => r.includes('Published'));
-  const lastDraftish = rows.map((r, i) => (/Validating|Designing|Draft|Ready/.test(r) ? i : -1)).filter((i) => i >= 0).pop();
+  const lastDraftish = rows.map((r, i) => (/Reviewing|Designing|Draft|Ready/.test(r) ? i : -1)).filter((i) => i >= 0).pop();
   check('registry sorts drafts in progress before published apps', lastDraftish !== undefined && firstPublished > lastDraftish);
   await explorer.getByRole('button', { name: 'Claims Processing Hub — details' }).click().catch(() => {});
   await page.getByRole('button', { name: 'Close System Explorer' }).click();

@@ -30,7 +30,7 @@ function CoverageDonut({ mappings }: { mappings: CapabilityMapping[] }) {
     <div className="flex items-center gap-3">
       <span className="relative flex size-[5.25rem] shrink-0 items-center justify-center" role="img" aria-label={`${counts.selected} of ${mappings.length} needs connected`}>
         <svg viewBox="0 0 80 80" className="absolute inset-0 -rotate-90" aria-hidden>
-          <circle cx="40" cy="40" r={r} fill="none" stroke="oklch(0.3 0.03 285 / 0.08)" strokeWidth="9" />
+          <circle cx="40" cy="40" r={r} fill="none" stroke="oklch(0.3 0.03 235 / 0.08)" strokeWidth="9" />
           {segments.map(
             ({ status, len, offset }) =>
               len > 0 && <circle key={status} cx="40" cy="40" r={r} fill="none" stroke={mappingStatusMeta[status].color} strokeWidth="9" strokeDasharray={`${Math.max(0, len - 2)} ${c}`} strokeDashoffset={-offset} className="transition-[stroke-dasharray,stroke-dashoffset] duration-500" />,
@@ -328,7 +328,7 @@ export function CoveragePanel({
           <div className="space-y-3">
             <CoverageDonut mappings={mappings} />
             {available.length > 0 && (
-              <Button className={cn(ctaClass, 'w-full bg-studio-ink shadow-none hover:bg-studio-ink/90')} size="sm" onClick={() => dispatch({ type: 'compose/select', capabilityIds: available.map((m) => m.capabilityId), now: now() })}>
+              <Button className={cn(ctaClass, 'w-full')} size="sm" onClick={() => dispatch({ type: 'compose/select', capabilityIds: available.map((m) => m.capabilityId), now: now() })}>
                 Select all available ({available.length})
               </Button>
             )}
@@ -360,7 +360,7 @@ export function CoveragePanel({
                       </Button>
                     )}
                     {m.status === 'missing' && (
-                      <Button size="xs" variant="destructive" onClick={() => onSelect(m.id)}>
+                      <Button size="xs" variant="outline" className="border-danger/40 bg-white text-danger-ink hover:text-danger-ink" onClick={() => onSelect(m.id)}>
                         Resolve
                       </Button>
                     )}

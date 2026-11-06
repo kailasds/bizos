@@ -28,9 +28,9 @@ import { Spinner } from '@/components/ui/spinner'
 import { cn } from '@/lib/utils'
 
 /** The single forward action on a screen. */
-export const ctaClass = 'rounded-full bg-studio-cta px-4 text-white shadow-[0_8px_18px_-8px_var(--studio-cta)] hover:bg-studio-cta-hover disabled:shadow-none'
+export const ctaClass = 'rounded-full px-4 shadow-[0_8px_18px_-8px_var(--primary)] disabled:shadow-none'
 
-/** The graphite icon tile — the Studio's recurring anchor. */
+/** The soft blue icon tile — the Studio's recurring anchor. */
 export function IconTile({
   icon: Icon,
   size = 'md',
@@ -39,7 +39,7 @@ export function IconTile({
 }: {
   icon: LucideIcon
   size?: 'sm' | 'md' | 'lg' | 'xl'
-  tone?: 'ink' | 'soft' | 'person' | 'ai' | 'system' | 'danger' | 'warning' | 'success'
+  tone?: 'ink' | 'primary' | 'soft' | 'person' | 'ai' | 'system' | 'danger' | 'warning' | 'success'
   className?: string
 }) {
   return (
@@ -51,9 +51,10 @@ export function IconTile({
         size === 'md' && 'size-9 rounded-xl [&_svg]:size-4',
         size === 'lg' && 'size-12 rounded-[15px] [&_svg]:size-5',
         size === 'xl' && 'size-16 rounded-[20px] [&_svg]:size-7',
-        tone === 'ink' && 'bg-studio-ink text-studio-ink-foreground shadow-[inset_0_1px_0_oklch(1_0_0/0.2),0_6px_14px_-6px_var(--studio-ink)]',
+        tone === 'ink' && 'bg-accent text-accent-foreground shadow-[inset_0_1px_0_oklch(1_0_0/0.7)]',
+        tone === 'primary' && 'bg-primary text-primary-foreground shadow-[inset_0_1px_0_oklch(1_0_0/0.25),0_10px_22px_-10px_var(--primary)]',
         tone === 'soft' && 'bg-accent text-accent-foreground',
-        tone === 'person' && 'bg-actor-person-soft text-[oklch(0.5_0.12_60)]',
+        tone === 'person' && 'bg-actor-person-soft text-warning-ink',
         tone === 'ai' && 'bg-actor-ai-soft text-actor-ai',
         tone === 'system' && 'bg-actor-system-soft text-actor-system',
         tone === 'danger' && 'bg-danger-soft text-danger-ink',
@@ -210,7 +211,7 @@ export function ThinkingOrb({ size = 56 }: { size?: number }) {
 /** Full-canvas scrim hosting a ThinkingChain. */
 export function ThinkingOverlay(props: ThinkingProps) {
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/25 p-4 pl-[var(--rail-offset)] backdrop-blur-[3px]">
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/25 py-4 px-[var(--center-gutter)] backdrop-blur-[3px]">
       <motion.div initial={{ opacity: 0, y: 10, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.25 }} className="liquid-glass w-full max-w-md rounded-[28px] p-6">
         <ThinkingChain {...props} />
       </motion.div>

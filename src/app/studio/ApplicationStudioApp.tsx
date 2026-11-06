@@ -12,7 +12,6 @@ import { DefineStage } from './stages/DefineStage'
 import { DiscoverStage } from './stages/DiscoverStage'
 import { GenerateStage, type GenerateTab } from './stages/GenerateStage'
 import { PublishStage } from './stages/PublishStage'
-import { ValidateStage } from './stages/ValidateStage'
 import type { StageId } from './types'
 import { useStudio } from './use-studio'
 
@@ -69,7 +68,7 @@ export function ApplicationStudioApp({ windowId, params }: AppProps) {
 
   const leftInset = railMode === 'bar' ? 16 : railMode === 'icons' ? 96 : 280
   const topInset = railMode === 'bar' ? 176 : 64
-  const insets = { '--rail-offset': `${leftInset}px`, '--top-offset': `${topInset}px`, '--header-top': railMode === 'bar' && !showHome ? '130px' : '12px' } as CSSProperties
+  const insets = { '--rail-offset': `${leftInset}px`, '--top-offset': `${topInset}px`, '--header-top': railMode === 'bar' && !showHome ? '130px' : '12px', '--center-gutter': railMode === 'bar' ? '0px' : wide ? '264px' : '84px' } as CSSProperties
 
   const content = () => {
     switch (stage) {
@@ -83,17 +82,15 @@ export function ApplicationStudioApp({ windowId, params }: AppProps) {
         return <ComposeStage onFocusOption={setFocusOptionId} leftInset={leftInset} topInset={topInset} canvasWidth={width} canvasHeight={height} />
       case 'generate':
         return <GenerateStage tab={generateTab} onTabChange={setGenerateTab} />
-      case 'validate':
-        return <ValidateStage goTo={goTo} />
       case 'publish':
-        return <PublishStage windowId={windowId} />
+        return <PublishStage windowId={windowId} goTo={goTo} />
     }
   }
 
   return (
     <div ref={ref} style={insets} className="theme-studio @container relative h-full min-h-0 overflow-hidden text-foreground [background:var(--studio-wash)]">
-      <span aria-hidden className="studio-drift top-[-15%] left-[-8%] size-[34rem] bg-[radial-gradient(closest-side,oklch(0.8_0.1_285/0.55),transparent)]" />
-      <span aria-hidden className="studio-drift right-[-6%] bottom-[-20%] size-[38rem] bg-[radial-gradient(closest-side,oklch(0.86_0.09_30/0.55),transparent)] [animation-delay:-12s]" />
+      <span aria-hidden className="studio-drift top-[-15%] left-[-8%] size-[34rem] bg-[radial-gradient(closest-side,oklch(0.82_0.06_225/0.5),transparent)]" />
+      <span aria-hidden className="studio-drift right-[-6%] bottom-[-20%] size-[38rem] bg-[radial-gradient(closest-side,oklch(0.9_0.05_60/0.55),transparent)] [animation-delay:-12s]" />
 
       <StudioHeader
         windowId={windowId}

@@ -25,7 +25,7 @@ function ProgressRing({ done, total, current }: { done: number; total: number; c
   return (
     <span className="relative flex size-11 shrink-0 items-center justify-center" role="img" aria-label={`${done} of ${total} levels complete`}>
       <svg viewBox="0 0 44 44" className="absolute inset-0 -rotate-90" aria-hidden>
-        <circle cx="22" cy="22" r={r} fill="none" stroke="oklch(0.3 0.03 285 / 0.1)" strokeWidth="4" />
+        <circle cx="22" cy="22" r={r} fill="none" stroke="oklch(0.3 0.03 235 / 0.1)" strokeWidth="4" />
         <motion.circle cx="22" cy="22" r={r} fill="none" stroke="var(--primary)" strokeWidth="4" strokeLinecap="round" strokeDasharray={c} initial={false} animate={{ strokeDashoffset: c * (1 - done / total) }} transition={{ duration: 0.6, ease: 'easeOut' }} />
       </svg>
       <span className="text-[13px] font-bold tabular-nums">{current}</span>
@@ -193,18 +193,18 @@ export function JourneyRail({
                 title={full ? undefined : stageMeta[stage].label}
                 className={cn('group relative z-10 flex w-full items-center gap-2.5 rounded-2xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50', full ? 'min-h-11 p-1.5' : 'justify-center p-1')}
               >
-                {current && <motion.span layoutId="journey-active" aria-hidden className="absolute inset-0 -z-10 rounded-2xl bg-white shadow-[0_6px_18px_-8px_oklch(0.35_0.1_285/0.5)]" transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 34 }} />}
+                {current && <motion.span layoutId="journey-active" aria-hidden className="absolute inset-0 -z-10 rounded-2xl bg-white shadow-[0_6px_18px_-8px_oklch(0.35_0.1_235/0.5)]" transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 34 }} />}
                 <span
                   aria-hidden
                   className={cn(
                     'relative flex size-8 shrink-0 items-center justify-center rounded-[11px] transition-colors [&_svg]:size-4',
-                    current && 'bg-studio-ink text-white',
-                    !current && progress === 'complete' && 'bg-primary text-primary-foreground',
+                    current && 'bg-primary text-primary-foreground',
+                    !current && progress === 'complete' && 'bg-accent text-accent-foreground',
                     !current && progress === 'needs-review' && 'bg-warning-soft text-warning-ink ring-1 ring-warning',
                     !current && progress === 'not-started' && 'bg-white/70 text-muted-foreground group-hover:bg-white group-hover:text-foreground',
                   )}
                 >
-                  {current && <span className="studio-pulse absolute inset-0 rounded-[11px] bg-studio-ink/40" />}
+                  {current && <span className="studio-pulse absolute inset-0 rounded-[11px] bg-primary/40" />}
                   <Icon className="relative" />
                   {progress === 'complete' && current && (
                     <span className="absolute -right-1 -bottom-1 flex size-3.5 items-center justify-center rounded-full bg-primary text-white ring-2 ring-white">

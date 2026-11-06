@@ -106,8 +106,9 @@ Recharts, React Flow (`@xyflow/react`), Plus Jakarta Sans. Alias `@/*` → `src/
   The global Ask AI / OS Assistant was removed at the product owner's request; the AI Architect
   inside Application Studio is the one AI surface. On the left: identity and the focused app. There is no bottom dock
   any more; it moved into the top bar.
-- **Desktop canvas:** domain **folders** (Insurance, Healthcare, Banking) are groups sized by the
-  number of apps they hold. **Standalone apps** are cards with a one-line `tagline`. The
+- **Desktop canvas:** each domain (Insurance, Healthcare, Banking) is one glass tile previewing its
+  apps; clicking opens a glass panel sized to them. **Platform tools** (Workflow Studio, System
+  Explorer, Operations, Learning) are a separate titled section. New apps start from the "+" menu. The
   wallpaper is a teal-to-warm-horizon image. It was restored after a brief "minimal wallpaper"
   experiment, at the product owner's request.
 - **Widgets** (`src/app/widgets`) are configurable in Settings, and each deep-links somewhere:
@@ -136,8 +137,8 @@ Recharts, React Flow (`@xyflow/react`), Plus Jakarta Sans. Alias `@/*` → `src/
 Generated apps have ids `app-${string}` (`GeneratedAppId`). They're registered at publish time
 and rendered by `GeneratedAppHost`.
 
-### Application Studio: 7 revisitable stages (`src/app/studio`)
-`discover → define → architect → compose → generate → validate → publish` (`STAGES` in
+### Application Studio: 6 revisitable stages (`src/app/studio`)
+`discover → define → architect → compose → generate → publish` (`STAGES` in
 `studio/types.ts`). It's a persistent project workspace, not a locked wizard.
 
 | Stage | What happens | Service |
@@ -147,10 +148,9 @@ and rendered by `GeneratedAppHost`.
 | **Architect** | 2–3 alternative **operating models** per domain (Insurance: Assisted Claims Processing / AI-Driven Claims Automation / Intelligent Claims Operations), swimlane workflow, step inspector, compare-all table. Shows facts (e.g. "people on N of M steps"), never scores. | `architecture-service.ts` (`buildOptions`, `approachInsights`) |
 | **Compose** | Capability → resource coverage map: Selected / Available / Requires configuration / Missing. Searchable catalogue, resource detail sheet. Approval-gated **simulated worker composition**: Healthcare fails on the first attempt by design, then succeeds on retry. | `capability-analysis-service.ts`, `data/resources.mock.ts` |
 | **Generate** | Versioned **Application Blueprint** with ten business-readable sections, inline edits as patch versions, revision history, an optional JSON view, and a live preview rendered by `ExperienceRenderer`. | `blueprint/generate.ts` |
-| **Validate** | Eight deterministic checks: requirements completeness, capability availability, resource compatibility, workflow consistency, data contract consistency, permission & security, UI/data alignment, human approval requirements. Each is passed / needs review / blocked, with links back to the responsible stage and quick fixes. Readiness is Ready / Needs attention / Blocked / Accepted with known gaps. | `blueprint/validate.ts`, `blueprint-service.ts` |
-| **Publish** | Simulated deployment. Registers the app in the registry, desktop, folder, launcher and window manager. | `registerGeneratedApp` in `registry/applicationRegistry.ts` |
+| **Publish** | Eight deterministic checks (`blueprint/validate.ts`) run automatically; only items needing a decision are shown and they gate publishing. Simulated deployment. Registers the app in the registry, desktop, folder, launcher and window manager. | `registerGeneratedApp` in `registry/applicationRegistry.ts` |
 
-**Studio UX (Nov 2026 redesign).** A pastel canvas with floating liquid-glass controls
+**Studio UX (Nov 2026 redesign).** A pale canvas in the OS colour theme with floating liquid-glass controls
 (`design.md` §10), pictorial and low on text:
 - **Journey navigator** (`JourneyRail`): floating glass card with the application's identity,
   a progress ring and every level with its status and outcome. Collapses to icons, then to a top
@@ -163,8 +163,7 @@ and rendered by `GeneratedAppHost`.
   decision, the guided path jumps to the next need that requires one. Steps come from the chosen
   approach; they are not added or removed on the canvas.
 - **Architect** and Generate → Workflow draw swimlanes with `ApproachFlow`. Generate is a picture
-  board of sections; Validate is a shield gauge with eight check tiles; Publish shows the app as it
-  will appear on the desktop.
+  board of sections; Publish shows the app as it will appear on the desktop.
 
 The **AI Architect** (a floating orb, opening a floating glass panel) gives scripted, context-aware replies built from project
 state. Examples: why an approach is recommended, "Why is <capability> required?", how to reduce
@@ -175,7 +174,7 @@ navigation actions. Unscripted questions get an honest list of what it can answe
 screen and folder-level Added / Removed / Changed highlighting. Rollback creates a **new draft
 version** and needs confirmation.
 
-**Lifecycle:** Draft → Designing → Validating → Ready → Published → Changes pending
+**Lifecycle:** Draft → Designing → Reviewing → Ready → Published → Changes pending
 (`studio/lifecycle.ts`). **Invalidation:** editing an earlier stage marks every later completed
 stage **Needs review**, with the reason (`invalidateAfter` in `studioReducer`).
 
@@ -312,9 +311,11 @@ applied **only** through CSS variables in `src/index.css`.
 | `4377df1` | Shell polish | Dock moved into the top bar, window open/minimize/restore/close motion, Workflow Studio canvas, Document AI confidence, less explanatory copy everywhere |
 | `b9bfd53` | Polish 2 | **All mock/prototype tags removed**, 72 px top bar with floating magnifying dock, Ask AI pill, folder groups + app cards with `tagline`, **Studio redesign** (indigo `.theme-studio`, icon stepper, InfoTips, card-based projects home), redesigned Architect and Assistant panels |
 | `3564586` | Revert | Restored the teal-to-warm-horizon wallpaper (product owner's request) |
-| (this branch) | Studio UX | Pastel Studio surface, floating journey navigator and AI Architect, visual chain of thought, Compose as a React Flow canvas, pictorial stages, global Ask AI removed |
+| `640f092` | Studio UX | Floating journey navigator and AI Architect, visual chain of thought, Compose as a React Flow canvas, pictorial stages, global Ask AI removed |
+| `1e13ea1` | Merge | Merged `claude/peaceful-hopper-xg4v6p`: new home page and "+" menu kept; its Build layers panel and Preview step not taken (product owner's decision) |
+| (latest) | Home and Studio | Domain tiles and glass panel, Platform tools section, three glass widgets, Studio back on the OS colour theme, Validate step removed (checks run on Publish), new-application body centred |
 
-Product-owner decisions to respect: no mock tags in the UI; reasoning hidden behind info tips;
+Product-owner decisions to respect: Studio stays on the OS colour theme with no dark fills; no Validate step; no mock tags in the UI; reasoning hidden behind info tips;
 the teal-horizon wallpaper; the dock in the top bar; minimal explanatory copy; counts, never
 invented rates.
 

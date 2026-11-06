@@ -270,27 +270,35 @@ Spacing is airy:
 
 ## 10. Application Studio surface (product owner, Nov 2026)
 
-Studio opens as its own application and may differ from the desktop. Scoped to `.theme-studio`.
-Taken from three pastel AI-assistant references the product owner supplied, which override the
-anti-slop gradient and glass defaults inside Studio.
+Studio keeps the OS colour theme; only the layout language (glass, canvas, tiles) is its own. Scoped
+to `.theme-studio`. **No black, dark violet or dark red fills:** they caused visual strain.
 
-- **Canvas:** `--studio-wash`, a lavender → blush → peach mesh with two slow-drifting blobs behind
-  the glass. Its purpose is to give the glass something to refract.
+- **Canvas:** `--studio-wash`, a pale sky → mist → warm-horizon wash from the wallpaper's palette, with
+  two slow-drifting blobs behind the glass. Its purpose is to give the glass something to refract.
 - **Liquid glass (`liquid-glass`):** floating controls only — journey navigator, action dock, AI
   Architect, inspector, window actions. Text-heavy glass raises its opacity floor.
-- **Cards (`studio-card`):** translucent white, radius 20–28px, soft violet shadow.
-- **Graphite tile (`IconTile`, `--studio-ink`):** the recurring icon anchor.
-- **Coral (`--studio-cta`, `ctaClass`):** exactly one forward action per screen. Selection and
-  progress stay indigo (`--primary`).
-- **Headline:** grey lead line plus a `headline-gradient` line, only on Discover and the project list.
-- **Actors:** person amber, AI indigo, system teal (`--actor-*`, `actor-meta.ts`), everywhere a step
-  is drawn.
+- **Cards (`studio-card`):** translucent white, radius 20–28px, soft blue-grey shadow.
+- **Icon tile (`IconTile`):** soft `--accent` with blue glyph; solid `--primary` only for the Discover
+  hero. Selected and current states are solid `--primary`.
+- **Primary action (`ctaClass`):** the standard primary button, pill-shaped, once per screen.
+- **Headline:** grey lead line plus a `--primary` line, only on Discover and the project list.
+- **Actors:** person amber, AI blue, system teal (the `--tint-*` colours via `--actor-*`,
+  `actor-meta.ts`), everywhere a step is drawn.
 - **Text budget:** 1–2 lines per block. Prefer a tile, count, diagram or chip; put the rest behind
   `InfoTip` or an expander.
 - **Motion:** states only — thinking links lighting up, the active level sliding, flow edges running
   once a step's resource is connected, the missing node pulsing. All off under reduced motion.
-- **Desktop domains**: app tiles carry the app tint behind both icon and label; three per group until
-  expanded. **Studio**: actions live in the fixed stage header; sections use `Expander` (collapsed).
+
+## 11. Desktop home (product owner, Nov 2026)
+
+- **Domains** are single glass tiles previewing up to four app icons (`+n` beyond that). A tile opens a
+  glass panel sized to its apps (`DomainPanel`).
+- **Platform tools** (Workflow Studio, System Explorer, Operations, Learning) sit in their own titled
+  section after a clear gap, ungrouped.
+- **`.widget-glass`:** the macOS-widget material for desktop tiles and widgets. Clearly translucent,
+  specular rim; opacity floor 0.54 and a darker `--muted-foreground` keep text readable over the
+  wallpaper, with solid fallbacks for reduced transparency.
+- Three default widgets (Platform health, Approvals, Platform activity), no scrolling at normal sizes.
 
 ## 9. What the reference doesn't cover
 

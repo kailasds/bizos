@@ -103,11 +103,12 @@ function DescribeForm({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-between gap-8 pt-2 @3xl:pt-[5vh]">
+    <div className="flex flex-1 flex-col items-stretch px-[var(--center-gutter)]">
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-between gap-8 pt-2 @3xl:pt-[5vh]">
       <motion.div initial={reduce ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="flex flex-col items-center text-center">
-        <IconTile icon={Sparkles} size="xl" className="mb-5" />
+        <IconTile icon={Sparkles} size="xl" tone="primary" className="mb-5" />
         <p className="text-2xl font-semibold tracking-tight text-muted-foreground/70 @3xl:text-3xl">Describe a business problem.</p>
-        <p className="headline-gradient text-2xl leading-tight font-bold tracking-tight @3xl:text-4xl">Get a working application.</p>
+        <p className="text-primary text-2xl leading-tight font-bold tracking-tight @3xl:text-4xl">Get a working application.</p>
       </motion.div>
 
       <div className="w-full space-y-4">
@@ -182,7 +183,7 @@ function DescribeForm({
                     onClick={() => setChosen(d.id)}
                     className={cn(
                       'flex h-8 items-center gap-1.5 rounded-full px-3 text-[13px] outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
-                      selected ? 'bg-studio-ink font-medium text-white' : 'bg-white/60 text-muted-foreground hover:bg-white hover:text-foreground',
+                      selected ? 'bg-primary font-medium text-primary-foreground' : 'bg-white/60 text-muted-foreground hover:bg-white hover:text-foreground',
                     )}
                   >
                     <Icon aria-hidden className="size-3.5" />
@@ -205,6 +206,7 @@ function DescribeForm({
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   )
@@ -333,7 +335,7 @@ function ThemeGlyph({ group, items }: { group: UnderstandingGroup; items: Unders
         <svg aria-hidden viewBox="0 0 48 24" className="h-6 w-12">
           <circle cx="12" cy="12" r="10" className={cn('fill-none', stroke)} strokeWidth="1.5" />
           <circle cx="12" cy="12" r="5.5" className={cn('fill-none', stroke)} strokeWidth="1.5" />
-          <circle cx="12" cy="12" r="2.5" className="fill-studio-cta" />
+          <circle cx="12" cy="12" r="2.5" className="fill-primary" />
           <path d="M26 12h18m-5-4 5 4-5 4" className={cn('fill-none', stroke)} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       )
@@ -350,7 +352,7 @@ function ThemeGlyph({ group, items }: { group: UnderstandingGroup; items: Unders
       return (
         <svg aria-hidden viewBox="0 0 64 24" className="h-6 w-16">
           <path d="M2 6h18M2 18h18M44 12h18" className={cn('studio-flow fill-none', stroke)} strokeWidth="1.5" />
-          <rect x="22" y="3" width="20" height="18" rx="5" className="fill-studio-ink" />
+          <rect x="22" y="3" width="20" height="18" rx="5" className="fill-primary" />
           <path d="M28 9h8M28 12h8M28 15h5" className="fill-none stroke-white/80" strokeWidth="1.3" strokeLinecap="round" />
         </svg>
       )
@@ -552,10 +554,10 @@ function UnderstandingView({ understanding, scenario, domainLabel, onEditPrompt 
           {understanding.questions.map((q) => {
             const chosen = q.options.find((o) => o.id === q.answer)
             return (
-              <div key={q.id} className={cn('rounded-[22px] p-4', q.answer ? 'border border-white/70 bg-white/40' : 'bg-studio-ink text-white')}>
+              <div key={q.id} className={cn('rounded-[22px] p-4', q.answer ? 'border border-white/70 bg-white/40' : 'border border-primary/20 bg-accent/70')}>
                 <p className="flex items-center gap-1 text-[13px] leading-snug font-medium">
                   {q.text}
-                  <InfoTip label={`Why this question: ${q.text}`} className={q.answer ? undefined : 'text-white/70 hover:bg-white/10 hover:text-white'}>
+                  <InfoTip label={`Why this question: ${q.text}`}>
                     {q.why}
                   </InfoTip>
                 </p>
@@ -579,12 +581,12 @@ function UnderstandingView({ understanding, scenario, domainLabel, onEditPrompt 
                         key={o.id}
                         type="button"
                         onClick={() => update(answerQuestion(understanding, q.id, o.id))}
-                        className="rounded-full bg-white px-3 py-1 text-[13px] font-medium text-foreground outline-none hover:bg-white/85 focus-visible:ring-3 focus-visible:ring-white/60"
+                        className="rounded-full border border-primary/15 bg-white px-3 py-1 text-[13px] font-medium text-foreground outline-none hover:border-primary/50 focus-visible:ring-3 focus-visible:ring-ring/50"
                       >
                         {o.label}
                       </button>
                     ))}
-                    <button type="button" onClick={() => update(answerQuestion(understanding, q.id, 'skipped'))} className="rounded-full px-3 py-1 text-[13px] text-white/75 outline-none hover:text-white focus-visible:ring-3 focus-visible:ring-white/60">
+                    <button type="button" onClick={() => update(answerQuestion(understanding, q.id, 'skipped'))} className="rounded-full px-3 py-1 text-[13px] text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50">
                       Skip
                     </button>
                   </div>

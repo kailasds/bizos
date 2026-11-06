@@ -1,184 +1,172 @@
-import { useState, type ReactNode } from 'react'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { ArrowRight, ChevronDown, ChevronRight, Folder, Sparkles } from 'lucide-react'
+import { useState } from 'react'
+import { FolderOpen } from 'lucide-react'
 import { useOs } from '@/app/os/use-os'
 import { appsInFolder, desktopShortcuts, folders } from '@/app/registry/applicationRegistry'
-import type { AppDefinition, AppTint } from '@/app/registry/types'
+import type { AppDefinition, FolderDefinition } from '@/app/registry/types'
 import { useApplications } from '@/app/registry/use-applications'
 import { DesktopWidgets } from '@/app/widgets/DesktopWidgets'
 import { AppIcon } from '@/components/os/AppIcon'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 
-const VISIBLE = 3
+const countLabel = (n: number) => `${n} application${n === 1 ? '' : 's'}`
 
-const tileTint: Record<AppTint, string> = {
-  blue: 'bg-tint-blue',
-  teal: 'bg-tint-teal',
-  amber: 'bg-tint-amber',
-  coral: 'bg-tint-coral',
-  graphite: 'bg-tint-graphite',
-}
+const largeIcon = 'size-14 rounded-2xl [&_svg]:size-7'
 
-/** An app inside a domain: icon and name on the app's own colour. */
-function DomainAppTile({ app, onOpen }: { app: AppDefinition; onOpen: () => void }) {
-  const Icon = app.icon
+/** A domain on the desktop: one glass tile previewing up to four of the applications inside. */
+function DomainTile({ folder, apps, onOpen }: { folder: FolderDefinition; apps: AppDefinition[]; onOpen: () => void }) {
+  const overflow = apps.length > 4 ? apps.length - 3 : 0
+  const shown = apps.slice(0, overflow ? 3 : 4)
   return (
     <button
       type="button"
       onClick={onOpen}
-      aria-label={`${app.name}, application`}
-      className={cn(
-        'flex h-28 w-32 flex-col justify-between rounded-2xl p-3 text-left text-white shadow-[inset_0_1px_0_oklch(1_0_0/0.25),0_6px_16px_-8px_oklch(0.2_0.03_220/0.5)] outline-none transition-transform hover:-translate-y-0.5 focus-visible:ring-3 focus-visible:ring-ring/60 active:translate-y-0',
-        tileTint[app.tint],
-      )}
+      aria-haspopup="dialog"
+      aria-label={`${folder.name}, folder, ${countLabel(apps.length)}`}
+      className="widget-glass flex w-40 flex-col gap-3 rounded-[26px] p-4 text-left outline-none transition-transform hover:-translate-y-0.5 focus-visible:ring-3 focus-visible:ring-ring/60 motion-reduce:transition-none"
     >
-      <span aria-hidden className="flex size-9 items-center justify-center rounded-xl bg-white/20">
-        <Icon className="size-5" />
+      <span aria-hidden className="grid grid-cols-2 gap-2">
+        {shown.map((app) => (
+          <AppIcon key={app.id} app={app} className={largeIcon} />
+        ))}
+        {overflow > 0 && <span className="flex size-14 items-center justify-center rounded-2xl bg-white/55 text-sm font-semibold tabular-nums">+{overflow}</span>}
+        {Array.from({ length: Math.max(0, 4 - shown.length - (overflow ? 1 : 0)) }, (_, i) => (
+          <span key={i} className="size-14 rounded-2xl bg-white/25 ring-1 ring-white/40 ring-inset" />
+        ))}
       </span>
-      <span className="line-clamp-2 text-sm leading-tight font-semibold">{app.name}</span>
+      <span className="min-w-0">
+        <span className="block truncate text-sm font-semibold">{folder.name}</span>
+        <span className="block text-xs text-muted-foreground tabular-nums">{countLabel(apps.length)}</span>
+      </span>
     </button>
   )
 }
 
-/**
- * A domain as a group. Shows three apps; when it holds more, expanding animates the group open
- * to reveal the rest. The title opens the folder browser.
- */
-function DomainGroup({ folder, apps, onOpenFolder, onOpenApp }: { folder: (typeof folders)[number]; apps: AppDefinition[]; onOpenFolder: () => void; onOpenApp: (app: AppDefinition) => void }) {
-  const [expanded, setExpanded] = useState(false)
-  const reduce = useReducedMotion()
-  const extra = Math.max(0, apps.length - VISIBLE)
-  const shown = expanded ? apps : apps.slice(0, VISIBLE)
-  const transition = reduce ? { duration: 0 } : { type: 'spring' as const, stiffness: 420, damping: 34 }
-
+/** The applications inside a domain, in a glass panel sized to how many there are. */
+function DomainPanel({ folder, apps, onClose, onOpenApp, onOpenFolder, onCreate }: { folder: FolderDefinition | null; apps: AppDefinition[]; onClose: () => void; onOpenApp: (app: AppDefinition) => void; onOpenFolder: () => void; onCreate: () => void }) {
+  const columns = Math.min(Math.max(apps.length, 2), 4)
   return (
-    <motion.section layout transition={transition} aria-label={`${folder.name} folder`} className="glass-strong rounded-3xl p-3 shadow-widget">
-      <motion.div layout="position" className="mb-2 flex items-center gap-1">
-        <button
-          type="button"
-          onClick={onOpenFolder}
-          aria-label={`${folder.name}, folder, ${apps.length} application${apps.length === 1 ? '' : 's'}`}
-          className="group/folder flex min-w-0 flex-1 items-center gap-2 rounded-lg px-1.5 py-1 text-left outline-none hover:bg-white/50 focus-visible:ring-3 focus-visible:ring-ring/50"
-        >
-          <Folder aria-hidden className="size-4 text-muted-foreground" />
-          <span className="text-sm font-semibold">{folder.name}</span>
-          <span className="text-xs text-muted-foreground tabular-nums">{apps.length}</span>
-          <ChevronRight aria-hidden className="size-4 text-muted-foreground/50 group-hover/folder:text-foreground" />
-        </button>
-        {extra > 0 && (
-          <button
-            type="button"
-            aria-expanded={expanded}
-            onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-primary outline-none hover:bg-white/60 focus-visible:ring-3 focus-visible:ring-ring/50"
-          >
-            {expanded ? 'Show less' : `Show all ${apps.length}`}
-            <ChevronDown aria-hidden className={cn('size-3.5 transition-transform', expanded && 'rotate-180')} />
-          </button>
-        )}
-      </motion.div>
-      {apps.length === 0 ? (
-        <p className="px-1.5 pb-1 text-xs text-muted-foreground">No applications yet</p>
-      ) : (
-        <ul className="grid gap-2" style={{ gridTemplateColumns: `repeat(${expanded ? Math.min(apps.length, 4) : Math.min(apps.length, VISIBLE)}, 8rem)` }}>
-          <AnimatePresence initial={false}>
-            {shown.map((app, i) => (
-              <motion.li
-                key={app.id}
-                layout
-                initial={reduce ? false : { opacity: 0, scale: 0.85 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.85 }}
-                transition={{ ...transition, delay: reduce || i < VISIBLE ? 0 : (i - VISIBLE) * 0.03 }}
-              >
-                <DomainAppTile app={app} onOpen={() => onOpenApp(app)} />
-              </motion.li>
+    <Dialog open={Boolean(folder)} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent aria-describedby="domain-panel-description" className="widget-glass w-fit max-w-[calc(100vw-2rem)] gap-4 rounded-[28px] p-5 sm:max-w-[calc(100vw-2rem)]">
+        <div className="flex items-center gap-1 pr-8">
+          <div className="min-w-0 flex-1">
+            <DialogTitle className="text-base font-semibold">{folder?.name}</DialogTitle>
+            <DialogDescription id="domain-panel-description" className="text-xs text-muted-foreground tabular-nums">
+              {countLabel(apps.length)}
+            </DialogDescription>
+          </div>
+          <Button variant="ghost" size="icon-sm" aria-label={`Open ${folder?.name} in Folders`} title="Open in Folders" onClick={onOpenFolder}>
+            <FolderOpen />
+          </Button>
+        </div>
+        {apps.length === 0 ? (
+          <div className="flex w-64 flex-col items-center gap-3 py-4 text-center">
+            <p className="text-sm text-muted-foreground">No applications in this domain yet.</p>
+            <Button size="sm" onClick={onCreate}>
+              Create application
+            </Button>
+          </div>
+        ) : (
+          <ul className="grid gap-1" style={{ gridTemplateColumns: `repeat(${columns}, 7rem)` }}>
+            {apps.map((app) => (
+              <li key={app.id}>
+                <button
+                  type="button"
+                  onClick={() => onOpenApp(app)}
+                  aria-label={`${app.name}, application`}
+                  className="flex h-full w-full flex-col items-center gap-2 rounded-2xl p-2 text-center outline-none hover:bg-white/50 focus-visible:ring-3 focus-visible:ring-ring/60"
+                >
+                  <AppIcon app={app} className={largeIcon} />
+                  <span className="line-clamp-2 text-xs leading-tight font-medium">{app.name}</span>
+                </button>
+              </li>
             ))}
-          </AnimatePresence>
-        </ul>
-      )}
-    </motion.section>
+          </ul>
+        )}
+      </DialogContent>
+    </Dialog>
   )
 }
 
-/** A platform feature as a card with a one-line description. */
-function FeatureCard({ icon, name, description, label, onOpen }: { icon: ReactNode; name: string; description: string; label: string; onOpen: () => void }) {
+/** A platform tool: not an application of any domain, so it stands alone. */
+function ToolCard({ app, onOpen }: { app: AppDefinition; onOpen: () => void }) {
   return (
     <li>
       <button
         type="button"
         onClick={onOpen}
-        aria-label={label}
-        className="glass-strong flex h-full w-full items-center gap-3 rounded-2xl p-3 text-left shadow-widget outline-none hover:bg-white/90 focus-visible:ring-3 focus-visible:ring-ring/50"
+        aria-label={`${app.name}, application`}
+        className="widget-glass flex h-full w-full items-center gap-3 rounded-[22px] p-3 text-left outline-none transition-transform hover:-translate-y-0.5 focus-visible:ring-3 focus-visible:ring-ring/60 motion-reduce:transition-none"
       >
-        {icon}
+        <AppIcon app={app} size="md" className="size-11 rounded-[14px]" />
         <span className="min-w-0">
-          <span className="block truncate text-sm font-semibold">{name}</span>
-          <span className="block truncate text-xs text-muted-foreground">{description}</span>
+          <span className="block truncate text-sm font-semibold">{app.name}</span>
+          <span className="line-clamp-2 text-xs leading-tight text-muted-foreground">{app.tagline ?? app.description}</span>
         </span>
       </button>
     </li>
   )
 }
 
-/** Newly published applications lead, so a fresh app is visible before the group is expanded. */
-const newestFirst = (list: AppDefinition[]) =>
-  [...list].sort((a, b) => (b.generated?.publishedAt ?? '').localeCompare(a.generated?.publishedAt ?? ''))
+/** Newly published applications lead, so a fresh app shows in the domain's preview. */
+const newestFirst = (list: AppDefinition[]) => [...list].sort((a, b) => (b.generated?.publishedAt ?? '').localeCompare(a.generated?.publishedAt ?? ''))
 
-const oneLiner = (description: string) => description.split(/(?<=\.)\s|—/)[0].replace(/\.$/, '')
+const sectionTitle = 'px-1 text-sm font-semibold text-foreground/85'
 
 export function DesktopCanvas() {
   const { openApp } = useOs()
   const apps = useApplications()
-  // Domain applications live in their domains; platform features are cards.
-  const features = desktopShortcuts(apps).filter((a) => a.domains.length === 0)
+  const [openFolderId, setOpenFolderId] = useState<FolderDefinition['id'] | null>(null)
+  const openFolder = folders.find((f) => f.id === openFolderId) ?? null
+  const appsOf = (folder: FolderDefinition) => newestFirst(appsInFolder(folder.id, apps))
+  // Application Studio is reached from the "+" menu and the dock, so it isn't repeated here.
+  const tools = desktopShortcuts(apps).filter((a) => a.domains.length === 0 && a.id !== 'application-studio')
 
   return (
     <div className="absolute inset-0 isolate flex flex-col gap-8 overflow-y-auto p-6 md:flex-row md:overflow-hidden">
-      <div className="flex min-w-0 flex-1 flex-col gap-6 md:overflow-y-auto md:pr-2 md:no-scrollbar">
-        <button
-          type="button"
-          aria-label="Create Application, opens Application Studio"
-          onClick={() => openApp('application-studio', { new: String(Date.now()) })}
-          className="group/create flex max-w-xl items-center gap-4 rounded-3xl bg-primary px-5 py-4 text-left text-primary-foreground shadow-[0_10px_30px_-12px_oklch(0.45_0.14_250/0.8)] outline-none transition-transform hover:-translate-y-0.5 focus-visible:ring-3 focus-visible:ring-white/70"
-        >
-          <span aria-hidden className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white/20">
-            <Sparkles className="size-6" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-base font-semibold">Create application</span>
-            <span className="block truncate text-sm text-primary-foreground/80">Describe a business problem — the OS designs it</span>
-          </span>
-          <span aria-hidden className="flex size-9 items-center justify-center rounded-full bg-white text-primary transition-transform group-hover/create:translate-x-0.5">
-            <ArrowRight className="size-4" />
-          </span>
-        </button>
-
-        <section aria-label="Domains" className="space-y-2">
-          <h2 className="px-1 text-xs font-semibold tracking-wide text-foreground/70">Domains</h2>
+      <div className={cn('flex min-w-0 flex-1 flex-col gap-9 md:overflow-y-auto md:pr-2 md:no-scrollbar')}>
+        <section aria-label="Domains" className="space-y-3">
+          <h2 className={sectionTitle}>Applications</h2>
           <div className="flex flex-wrap items-start gap-4">
             {folders.map((folder) => (
-              <DomainGroup
-                key={folder.id}
-                folder={folder}
-                apps={newestFirst(appsInFolder(folder.id, apps))}
-                onOpenFolder={() => openApp('folder-browser', { folder: folder.id })}
-                onOpenApp={(app) => openApp(app.id)}
-              />
+              <DomainTile key={folder.id} folder={folder} apps={appsOf(folder)} onOpen={() => setOpenFolderId(folder.id)} />
             ))}
           </div>
         </section>
 
-        <ul aria-label="Platform" className="grid max-w-4xl gap-3 [grid-template-columns:repeat(auto-fill,minmax(15rem,1fr))]">
-          {features.map((app) => (
-            <FeatureCard key={app.id} label={`${app.name}, application`} name={app.name} description={app.tagline ?? oneLiner(app.description)} icon={<AppIcon app={app} size="md" className="size-11 rounded-xl" />} onOpen={() => openApp(app.id)} />
-          ))}
-        </ul>
+        <section aria-label="Platform tools" className="space-y-3">
+          <h2 className={sectionTitle}>Platform tools</h2>
+          <ul className="grid max-w-5xl grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {tools.map((app) => (
+              <ToolCard key={app.id} app={app} onOpen={() => openApp(app.id)} />
+            ))}
+          </ul>
+        </section>
       </div>
 
-      <div className="md:no-scrollbar md:w-80 md:shrink-0 md:overflow-y-auto md:pb-12 md:[mask-image:linear-gradient(to_bottom,black_calc(100%-3rem),transparent)]">
+      <div className="md:no-scrollbar md:w-80 md:shrink-0 md:overflow-y-auto">
         <DesktopWidgets />
       </div>
+
+      <DomainPanel
+        folder={openFolder}
+        apps={openFolder ? appsOf(openFolder) : []}
+        onClose={() => setOpenFolderId(null)}
+        onOpenApp={(app) => {
+          setOpenFolderId(null)
+          openApp(app.id)
+        }}
+        onOpenFolder={() => {
+          const id = openFolderId
+          setOpenFolderId(null)
+          if (id) openApp('folder-browser', { folder: id })
+        }}
+        onCreate={() => {
+          setOpenFolderId(null)
+          openApp('application-studio', { new: String(Date.now()) })
+        }}
+      />
     </div>
   )
 }

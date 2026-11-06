@@ -118,8 +118,8 @@ export function diffBlueprints(a: ApplicationBlueprint, b: ApplicationBlueprint)
 export type Readiness = 'not-validated' | 'outdated' | 'blocked' | 'needs-attention' | 'accepted' | 'ready'
 
 export const readinessMeta: Record<Readiness, { label: string; tone: StatusTone; description: string }> = {
-  'not-validated': { label: 'Not validated', tone: 'neutral', description: 'Validation has not run on this version yet.' },
-  outdated: { label: 'Not validated', tone: 'neutral', description: 'The blueprint changed since the last validation run.' },
+  'not-validated': { label: 'Not checked', tone: 'neutral', description: 'Checks run automatically on Publish.' },
+  outdated: { label: 'Not checked', tone: 'neutral', description: 'The blueprint changed; checks run again automatically on Publish.' },
   blocked: { label: 'Blocked', tone: 'danger', description: 'At least one issue must be fixed before publishing.' },
   'needs-attention': { label: 'Needs attention', tone: 'warning', description: 'Some findings need your review: fix them or accept them as known gaps.' },
   accepted: { label: 'Accepted with known gaps', tone: 'info', description: 'Every check passed or was accepted by you as a known gap for this version.' },
@@ -159,7 +159,7 @@ export function sectionStatus(section: BlueprintSection, project: StudioProject)
     return project.progress.architect === 'complete' ? { label: 'Confirmed', tone: 'success' } : { label: 'Needs review', tone: 'warning' }
   }
   const readiness = readinessOf(project)
-  if (readiness === 'not-validated' || readiness === 'outdated') return { label: 'Not validated', tone: 'neutral' }
+  if (readiness === 'not-validated' || readiness === 'outdated') return { label: 'Not checked', tone: 'neutral' }
   if (section === 'overview') return { label: readinessMeta[readiness].label, tone: readinessMeta[readiness].tone }
   const cats = sectionCategories[section] ?? []
   const v = project.validation!

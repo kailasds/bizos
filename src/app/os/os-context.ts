@@ -6,9 +6,7 @@ import type { OsNotification } from '@/data/notifications.mock'
 export type WidgetId =
   | 'platform-health'
   | 'pending-approvals'
-  | 'active-applications'
   | 'active-executions'
-  | 'worker-activity'
   | 'recent-activity'
 
 export type WidgetPreferences = Record<WidgetId, boolean>

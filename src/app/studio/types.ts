@@ -139,7 +139,7 @@ export interface InterpretationItem {
 
 // ── Project state ─────────────────────────────────────────────────────────
 
-export const STAGES = ['discover', 'define', 'architect', 'compose', 'generate', 'validate', 'publish'] as const
+export const STAGES = ['discover', 'define', 'architect', 'compose', 'generate', 'publish'] as const
 export type StageId = (typeof STAGES)[number]
 
 /** Persisted per-stage progress. "Current" is derived from the active stage. */

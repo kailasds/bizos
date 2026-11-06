@@ -8,8 +8,8 @@ context.
 top of the Milestone 1 desktop foundation, the Milestone 2 Application Creation Workspace and the
 Milestone 3 intelligence experience.
 
-Application Studio lets a business user describe a problem and walk it through seven
-revisitable stages — Discover, Define, Architect, Compose, Generate, Preview, Publish — to a
+Application Studio lets a business user describe a problem and walk it through six
+revisitable stages — Discover, Define, Architect, Compose, Generate, Publish — to a
 published application that opens in its own OS window. All "intelligence" is deterministic
 mock logic over fixtures; there are no backend, LLM, agent or worker integrations.
 
@@ -91,7 +91,7 @@ Discover ──interpret()──▶ interpretation ──buildRequirements()─�
 Define   ──buildOptions()──▶ SolutionOption[] ──select──▶ Architect
 Compose  ──mapCapabilities()──▶ CapabilityMapping[] (+ approved worker compositions)
 Generate ──generateBlueprint()──▶ ApplicationBlueprint vX.Y.Z (+ patches, revision history)
-Validate ──validateBlueprint()──▶ findings (passed / needs review / blocked)
+Publish  ──validateBlueprint()──▶ findings (passed / needs review / blocked)
 Publish  ──registerGeneratedApp()──▶ registry → desktop, folder, launcher, window manager
 ```
 
@@ -123,16 +123,12 @@ apps, widget preferences. Settings → Demo data → Reset clears them.
 - The dock floats in the centre of the top bar (Framer Motion, floating-dock style): Desktop,
   Applications (launcher), Application Studio, Operations, Learning and System Explorer, then a
   divider and every open application in opening order. Tiles magnify near the pointer, names show
-  on hover, and the active item expands to show its name. *Ask AI*, notifications and settings sit
-  on the right.
-- Desktop: a Create application banner; domain groups with large tinted app tiles (three shown,
-  “Show all” animates the group open); platform features as cards; a “+” menu beside the dock
-  (new application, new transaction, add widget, find an application). No clock in the top bar.
-- Studio: stage title and primary actions in a fixed bar at the top; details collapsed by default;
-  a Build layers panel (Intent → Requirements → Architecture → Capability → Blueprint compiler →
-  Preview & readiness → Runtime) with live summaries; the AI Architect opens from its labelled
-  header button. Validate became **Preview**: the application preview with readiness checks that
-  run automatically, showing only items that need a decision.
+  on hover, and the active item expands to show its name. Notifications and settings sit on the right.
+- Desktop: each domain is a glass tile that opens a panel of its applications; platform tools are a
+  separate section; three glass widgets; a "+" menu beside the dock (new application, new
+  transaction, add widget, find an application).
+- Studio: a floating journey navigator, a floating AI Architect, a React Flow canvas for Compose and
+  automatic checks on Publish that show only items needing a decision.
 - Windows scale and fade in on open, shrink into their dock tab on minimize, return from it on
   restore, and fade out on close. Focus changes are not animated; `prefers-reduced-motion` disables
   the motion.
