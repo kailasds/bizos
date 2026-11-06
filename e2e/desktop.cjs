@@ -103,6 +103,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   }
   await page.getByRole('button', { name: /^Insurance, folder/ }).click();
   await page.getByRole('button', { name: 'Open Insurance in Folders' }).click();
+  await page.getByRole('dialog').waitFor({ state: 'hidden' }); // the folder finishes collapsing first
   await page.waitForTimeout(300);
   check('folder browser open', await page.locator('section[aria-label="Folders"]').isVisible());
   check('dock shows folders', await page.getByRole('navigation', { name: 'Dock' }).getByRole('button', { name: /Folders/ }).count() === 1);

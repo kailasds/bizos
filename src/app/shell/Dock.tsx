@@ -1,6 +1,6 @@
 import { useRef, type ReactNode } from 'react'
 import { AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring, useTransform, type MotionValue } from 'framer-motion'
-import { Activity, Blocks, Compass, LayoutGrid, Lightbulb, Monitor, type LucideIcon } from 'lucide-react'
+import { Activity, Blocks, Compass, House, LayoutGrid, Lightbulb, type LucideIcon } from 'lucide-react'
 import { useOs } from '@/app/os/use-os'
 import { getApp } from '@/app/registry/applicationRegistry'
 import type { AppDefinition, AppId } from '@/app/registry/types'
@@ -118,7 +118,7 @@ export function Dock() {
       onMouseLeave={() => mouseX.set(Infinity)}
       className="pointer-events-auto flex h-14 max-w-full min-w-0 items-center gap-2 overflow-x-auto rounded-full border border-white/20 bg-white/12 px-2 shadow-[inset_0_1px_0_oklch(1_0_0/0.18),0_6px_20px_-6px_oklch(0.15_0.03_250/0.45)] backdrop-blur-xl no-scrollbar"
     >
-      <DockItem mouseX={mouseX} label="Desktop" name="Desktop" active={onDesktop} pressed={onDesktop} icon={<Monitor aria-hidden className="size-[18px]" />} onClick={showDesktop} />
+      <DockItem mouseX={mouseX} label="Home" name="Home" active={onDesktop} pressed={onDesktop} icon={<House aria-hidden className="size-[18px]" />} onClick={showDesktop} />
       <DockItem
         mouseX={mouseX}
         label="Open launcher"

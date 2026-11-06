@@ -100,14 +100,14 @@ Recharts, React Flow (`@xyflow/react`), Plus Jakarta Sans. Alias `@/*` → `src/
 
 ### Desktop shell (`src/app/shell`, `src/app/windows`, `src/app/os`)
 - **Top bar (72px)** with a **floating dock** in the centre (Framer Motion, magnifying tiles,
-  names on hover, active item expands with its name). The dock items are: Desktop, Applications
+  names on hover, active item expands with its name). The dock items are: Home, Applications
   (launcher), Application Studio, Operations, Learning, System Explorer, then a divider, then
   every open app in opening order with run-state dots. On the right: notifications and settings.
   The global Ask AI / OS Assistant was removed at the product owner's request; the AI Architect
   inside Application Studio is the one AI surface. On the left: identity and the focused app. There is no bottom dock
   any more; it moved into the top bar.
-- **Desktop canvas:** each domain (Insurance, Healthcare, Banking) is one glass tile previewing its
-  apps; clicking opens a glass panel sized to them. **Platform tools** (Workflow Studio, System
+- **Desktop canvas:** each domain (Insurance, Healthcare, Banking) is one glass folder previewing its
+  apps; clicking expands it in place while the rest of the screen blurs. **Platform tools** (Workflow Studio, System
   Explorer, Operations, Learning) are a separate titled section. New apps start from the "+" menu. The
   wallpaper is a teal-to-warm-horizon image. It was restored after a brief "minimal wallpaper"
   experiment, at the product owner's request.

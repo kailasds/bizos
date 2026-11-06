@@ -100,7 +100,7 @@ function ApprovalsWidget() {
             </div>
           )}
           {next && (
-            <div className="mt-3 flex items-center gap-3 rounded-lg bg-muted px-3 py-2">
+            <div className="mt-3 flex items-center gap-3 rounded-xl border border-white/40 bg-white/35 px-3 py-2">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">
                   {next.id} · {formatCurrency(next.amount)}

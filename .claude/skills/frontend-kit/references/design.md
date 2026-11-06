@@ -291,12 +291,14 @@ to `.theme-studio`. **No black, dark violet or dark red fills:** they caused vis
 
 ## 11. Desktop home (product owner, Nov 2026)
 
-- **Domains** are single glass tiles previewing up to four app icons (`+n` beyond that). A tile opens a
-  glass panel sized to its apps (`DomainPanel`).
+- **Domains** are glass folders previewing up to four app icons (`+n` beyond that). A folder expands in
+  place from its own position (`ExpandedFolder`) while the rest of the screen blurs behind it.
+- **Soft app icon (`AppIcon variant="soft"`, `AppTile`):** tinted border, very dim tinted fill, coloured
+  duotone glyph. Used in folders; inside an open folder the icon and name share one container.
 - **Platform tools** (Workflow Studio, System Explorer, Operations, Learning) sit in their own titled
   section after a clear gap, ungrouped.
 - **`.widget-glass`:** the macOS-widget material for desktop tiles and widgets. Clearly translucent,
-  specular rim; opacity floor 0.54 and a darker `--muted-foreground` keep text readable over the
+  specular rim and sheen; near-black text and a darker `--muted-foreground` keep it readable over the
   wallpaper, with solid fallbacks for reduced transparency.
 - Three default widgets (Platform health, Approvals, Platform activity), no scrolling at normal sizes.
 

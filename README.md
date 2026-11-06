@@ -124,7 +124,7 @@ apps, widget preferences. Settings → Demo data → Reset clears them.
   Applications (launcher), Application Studio, Operations, Learning and System Explorer, then a
   divider and every open application in opening order. Tiles magnify near the pointer, names show
   on hover, and the active item expands to show its name. Notifications and settings sit on the right.
-- Desktop: each domain is a glass tile that opens a panel of its applications; platform tools are a
+- Desktop: each domain is a glass folder that expands in place to show its applications; platform tools are a
   separate section; three glass widgets; a "+" menu beside the dock (new application, new
   transaction, add widget, find an application).
 - Studio: a floating journey navigator, a floating AI Architect, a React Flow canvas for Compose and

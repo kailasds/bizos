@@ -42,7 +42,7 @@ export function TopBar() {
         <span className="hidden text-[15px] font-semibold whitespace-nowrap lg:inline">Enterprise AI OS</span>
         <span aria-hidden className="hidden h-4 w-px bg-white/25 xl:block" />
         <span className="hidden min-w-0 truncate text-glass-dark-foreground/85 xl:inline" aria-live="polite">
-          {focused ? getApp(focused.appId).name : 'Desktop'}
+          {focused ? getApp(focused.appId).name : 'Home'}
         </span>
       </div>
 
