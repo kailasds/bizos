@@ -1,7 +1,7 @@
 # Enterprise AI OS
 
 An AI-native enterprise operating environment: describe a business problem, get a working
-enterprise application. See [`context.md`](context.md) for the full product and architecture
+enterprise application. Start with [`HANDOFF.md`](HANDOFF.md) (current state and history); see [`context.md`](context.md) for the full product and architecture
 context.
 
 **Current state: Milestone 4 — Runtime, execution, governance, observability and learning**, on
