@@ -32,6 +32,8 @@ export interface OsContextValue {
   toggleMaximize: (id: string) => void
   setWindowBounds: (id: string, bounds: Bounds) => void
   closeAllWindows: () => void
+  /** Apps describe what a window holds (its title, and a key that deep links can match). */
+  setWindowContext: (id: string, title?: string, contextKey?: string) => void
   /** Minimizes every visible window to reveal the desktop. */
   showDesktop: () => void
   /** Recently opened applications, newest first (persisted). */

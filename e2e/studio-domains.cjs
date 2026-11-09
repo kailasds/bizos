@@ -15,7 +15,7 @@ const { chromium } = require('playwright');
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   let fails = 0;
   const check = (n, c) => { if (!c) fails++; console.log((c ? 'PASS ' : 'FAIL ') + n); };
-  const studio = page.locator('section[aria-label="Application Studio"]');
+  const studio = page.locator('section[aria-label^="Application Studio"]').last();
   const T = 15000;
   await page.goto(process.env.BASE_URL || 'http://localhost:4173');
   for (const [label, expectIssue] of [['Prior authorization', 'Healthcare domain pack is available with conditions'], ['SME lending', 'KYC Checker is available with conditions']]) {
@@ -61,6 +61,13 @@ const { chromium } = require('playwright');
     await studio.getByRole('tab').first().isVisible().catch(() => {});
     await page.screenshot({ path: `e2e/screenshots/b-${label.replace(/\s/g, '-')}.png` });
   }
+  // Multitasking: the second "create application" opened a new window; the first draft kept its own.
+  check('each draft keeps its own Studio window', (await page.locator('section[aria-label^="Application Studio"]').count()) === 2);
+  check('second window is named', (await page.locator('section[aria-label="Application Studio 2"]').count()) === 1);
+  await page.getByRole('navigation', { name: 'Dock' }).getByRole('button', { name: /^Application Studio/ }).hover();
+  await page.getByRole('button', { name: /^Show Application Studio — / }).first().waitFor({ timeout: 3000 }).catch(() => {});
+  check('dock previews both Studio windows', (await page.getByRole('button', { name: /^Show Application Studio — / }).count()) === 2);
+  await page.mouse.move(700, 700);
   // Edit in Studio from a published app: publish quickly is long; instead check All projects lists 2 drafts
   await studio.getByRole('button', { name: 'All projects' }).click();
   check('two drafts listed', await studio.getByRole('button', { name: 'Open', exact: true }).count() === 2);

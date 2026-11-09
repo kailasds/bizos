@@ -357,25 +357,28 @@
   --glass-a2: 0.42;
   --glass-a3: 0.48;
 }
-[data-wallpaper='dawn'] {
-  --wallpaper: url('/wallpapers/dawn.webp');
-  --background: oklch(0.86 0.03 230);
-}
-[data-wallpaper='aurora'] {
-  --wallpaper: url('/wallpapers/aurora.webp');
-  --background: oklch(0.25 0.06 245);
-  --wallpaper-ink: oklch(0.98 0.01 220 / 0.92);
-  --glass-a1: 0.66;
-  --glass-a2: 0.56;
-  --glass-a3: 0.6;
-}
-[data-wallpaper='brand'] {
-  --wallpaper: url('/wallpapers/brand.webp');
+[data-wallpaper='brand-blue'] {
+  --wallpaper: url('/wallpapers/brand-blue.webp');
   --background: oklch(0.45 0.12 245);
   --wallpaper-ink: oklch(0.98 0.01 220 / 0.92);
   --glass-a1: 0.62;
   --glass-a2: 0.5;
   --glass-a3: 0.56;
+}
+[data-wallpaper='brand-night'] {
+  --wallpaper: url('/wallpapers/brand-night.webp');
+  --background: oklch(0.22 0.05 250);
+  --wallpaper-ink: oklch(0.98 0.01 220 / 0.92);
+  --glass-a1: 0.68;
+  --glass-a2: 0.58;
+  --glass-a3: 0.62;
+}
+[data-wallpaper='brand-light'] {
+  --wallpaper: url('/wallpapers/brand-light.webp');
+  --background: oklch(0.95 0.015 230);
+  --glass-a1: 0.5;
+  --glass-a2: 0.38;
+  --glass-a3: 0.44;
 }
 
 /*
@@ -397,15 +400,6 @@
     inset 0 -1px 0 oklch(1 0 0 / 0.24),
     inset 0 0 22px oklch(1 0 0 / 0.14),
     0 18px 40px -18px oklch(0.22 0.04 225 / 0.5);
-}
-/* An open folder sits on an already blurred screen: a second live blur would only cost frames. */
-.widget-glass.folder-pane {
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-  background:
-    radial-gradient(120% 85% at 0% 0%, oklch(1 0 0 / 0.5) 0%, oklch(1 0 0 / 0) 60%),
-    linear-gradient(155deg, oklch(1 0 0 / 0.46) 0%, oklch(1 0 0 / 0.3) 58%, oklch(1 0 0 / 0.4) 100%);
-  will-change: width, height, left, top;
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .widget-glass { background: oklch(0.98 0.004 220 / 0.94); }
@@ -449,4 +443,16 @@
     --popover: oklch(0.99 0.003 220);
     --glass-dark: oklch(0.27 0.03 252);
   }
+}
+
+/* Dock: a soft ripple inside the tile of every app with an open window. */
+@keyframes dock-ripple {
+  0% { transform: scale(0.35); opacity: 0.55; }
+  70% { opacity: 0.12; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+.dock-ripple { animation: dock-ripple 2.6s cubic-bezier(0.2, 0.6, 0.35, 1) infinite; }
+.dock-ripple-slow { animation: dock-ripple 4.2s cubic-bezier(0.2, 0.6, 0.35, 1) infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .dock-ripple, .dock-ripple-slow { animation: none; transform: scale(1); opacity: 0.18; }
 }

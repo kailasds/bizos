@@ -1,4 +1,4 @@
-import { useRef, useState, type PointerEvent, type ReactNode } from 'react'
+import { startTransition, useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react'
 import { motion, useReducedMotion, type Variants } from 'framer-motion'
 import { Maximize2, Minimize2, Minus, X } from 'lucide-react'
 import { useOs } from '@/app/os/use-os'
@@ -45,6 +45,19 @@ function WindowControl({
   )
 }
 
+/**
+ * The app mounts just after the window's first frame, as a non-urgent update, so the opening
+ * animation starts at once instead of waiting for a heavy app to render.
+ */
+function MountAfterFirstFrame({ children }: { children: ReactNode }) {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => startTransition(() => setReady(true)))
+    return () => cancelAnimationFrame(id)
+  }, [])
+  return ready ? children : null
+}
+
 interface Gesture {
   mode: 'move' | 'resize'
   startX: number
@@ -80,58 +93,62 @@ export function WindowFrame({ win, app, title, focused, area, compact, children 
   }
 
   /**
-   * Genie geometry, measured when the animation starts so it follows the dock wherever it is:
-   * the edge nearest the dock pinches toward the tile, then the body is drawn up into it.
+   * Where the dock tile is, relative to the window's centre, and how small the window must get to
+   * fit it. Measured when the animation starts so it follows the dock wherever it is.
    */
-  const genie = () => {
-    const node = ref.current
-    const target = document.querySelector(`[data-dock-app="${win.appId}"]`)
-    const r = node?.getBoundingClientRect()
-    const d = target?.getBoundingClientRect()
+  const toDock = () => {
+    const r = ref.current?.getBoundingClientRect()
+    const d = document.querySelector(`[data-dock-app="${win.appId}"]`)?.getBoundingClientRect()
     if (!r || !d || r.width === 0) return null
-    const px = Math.min(96, Math.max(4, ((d.left + d.width / 2 - r.left) / r.width) * 100))
-    const dx = d.left + d.width / 2 - (r.left + (px / 100) * r.width)
-    const dy = d.top + d.height / 2 - r.top
-    // Set directly: animating transform-origin would blend from an unrelated value.
-    if (node) node.style.transformOrigin = `${px}% 0%`
-    const poly = (tl: number, tr: number, br: number, bl: number) => `polygon(${tl}% 0%, ${tr}% 0%, ${br}% 100%, ${bl}% 100%)`
     return {
-      clipPath: [poly(0, 100, 100, 0), poly(px - 9, px + 9, 100, 0), poly(px - 2, px + 2, px + 22, px - 22), poly(px - 0.5, px + 0.5, px + 0.5, px - 0.5)],
-      x: [0, 0, dx * 0.55, dx],
-      y: [0, 0, dy * 0.5, dy],
-      scaleY: [1, 1, 0.42, 0.02],
+      dx: d.left + d.width / 2 - (r.left + r.width / 2),
+      dy: d.top + d.height / 2 - (r.top + r.height / 2),
+      s: Math.max(0.04, d.width / r.width),
     }
   }
 
+  /*
+   * Only transform and opacity animate, so the compositor runs every frame even while the app is
+   * busy. The window narrows a little faster than it shortens and travels on an eased curve, which
+   * reads as being drawn into the tile rather than simply shrinking.
+   */
   const variants: Variants = {
     shown: (isRestoring: boolean) => {
-      const g = isRestoring && !reduce ? genie() : null
-      if (!g) {
-        return { x: 0, y: 0, scaleY: 1, scale: 1, opacity: 1, clipPath: 'none', visibility: 'visible', transition: reduce ? { duration: 0 } : { duration: 0.28, ease: [0.2, 0.8, 0.2, 1] } }
+      const t = isRestoring && !reduce ? toDock() : null
+      if (!t) {
+        return {
+          x: 0,
+          y: 0,
+          scale: 1,
+          scaleX: 1,
+          scaleY: 1,
+          opacity: 1,
+          visibility: 'visible',
+          transition: reduce ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 36, mass: 0.9, opacity: { duration: 0.18, ease: 'easeOut' } },
+        }
       }
       return {
         visibility: 'visible',
-        opacity: 1,
         scale: 1,
-        clipPath: [...g.clipPath].reverse(),
-        x: [...g.x].reverse(),
-        y: [...g.y].reverse(),
-        scaleY: [...g.scaleY].reverse(),
-        transition: { duration: 0.46, times: [0, 0.3, 0.65, 1], ease: 'easeOut' },
-        transitionEnd: { clipPath: 'none' },
+        x: [t.dx, t.dx * 0.22, 0],
+        y: [t.dy, t.dy * 0.1, 0],
+        scaleX: [t.s, 0.78, 1],
+        scaleY: [t.s, 0.9, 1],
+        opacity: [0, 1, 1],
+        transition: { duration: 0.44, times: [0, 0.5, 1], ease: [[0.2, 0.7, 0.35, 1], [0.3, 0.6, 0.3, 1]], opacity: { duration: 0.44, times: [0, 0.22, 1] } },
       }
     },
     minimized: () => {
-      const g = reduce ? null : genie()
-      if (!g) return { opacity: 0, transition: { duration: 0 }, transitionEnd: { visibility: 'hidden' } }
+      const t = reduce ? null : toDock()
+      if (!t) return { opacity: 0, transition: { duration: 0 }, transitionEnd: { visibility: 'hidden' } }
       return {
         scale: 1,
-        clipPath: g.clipPath,
-        x: g.x,
-        y: g.y,
-        scaleY: g.scaleY,
-        opacity: [1, 1, 1, 0],
-        transition: { duration: 0.52, times: [0, 0.32, 0.68, 1], ease: 'easeIn' },
+        x: [0, t.dx * 0.22, t.dx],
+        y: [0, t.dy * 0.1, t.dy],
+        scaleX: [1, 0.78, t.s],
+        scaleY: [1, 0.9, t.s],
+        opacity: [1, 1, 0],
+        transition: { duration: 0.46, times: [0, 0.5, 1], ease: [[0.5, 0, 0.75, 0.4], [0.4, 0, 0.2, 1]], opacity: { duration: 0.46, times: [0, 0.78, 1] } },
         transitionEnd: { visibility: 'hidden' },
       }
     },
@@ -189,7 +206,7 @@ export function WindowFrame({ win, app, title, focused, area, compact, children 
       custom={restoring}
       // The reverse genie plays once; afterwards the window is simply shown.
       onAnimationComplete={(definition) => definition === 'shown' && restoring && setRestoring(false)}
-      initial={reduce ? false : { opacity: 0, scale: 0.97 }}
+      initial={reduce ? false : { opacity: 0, scale: 0.94, y: -14 }}
       animate={minimized ? 'minimized' : 'shown'}
       exit={reduce ? { opacity: 0, transition: { duration: 0 } } : { opacity: 0, scale: 0.96, transition: { duration: 0.15, ease: 'easeIn' } }}
       onPointerDownCapture={() => focusWindow(win.id)}
@@ -221,28 +238,31 @@ export function WindowFrame({ win, app, title, focused, area, compact, children 
         <AppIcon app={app} size="xs" />
         <h2 className={cn('min-w-0 flex-1 truncate text-sm font-semibold', !focused && 'text-foreground/55')}>
           {title}
+          {win.title && <span className="font-normal text-muted-foreground"> · {win.title}</span>}
         </h2>
         {/* Window controls (design.md §7): filled dots, maximize · minimize · close, glyph on hover. */}
         <div className="group/controls flex items-center gap-0.5">
           {!compact && (
             <WindowControl
               tone="maximize"
-              label={win.status === 'maximized' ? `Restore ${app.name}` : `Maximize ${app.name}`}
+              label={win.status === 'maximized' ? `Restore ${title}` : `Maximize ${title}`}
               onClick={() => toggleMaximize(win.id)}
             >
               {win.status === 'maximized' ? <Minimize2 /> : <Maximize2 />}
             </WindowControl>
           )}
-          <WindowControl tone="minimize" label={`Minimize ${app.name}`} onClick={() => minimizeWindow(win.id)}>
+          <WindowControl tone="minimize" label={`Minimize ${title}`} onClick={() => minimizeWindow(win.id)}>
             <Minus />
           </WindowControl>
-          <WindowControl tone="close" label={`Close ${app.name}`} onClick={() => closeWindow(win.id)}>
+          <WindowControl tone="close" label={`Close ${title}`} onClick={() => closeWindow(win.id)}>
             <X />
           </WindowControl>
         </div>
       </header>
 
-      <div className="@container relative mx-1.5 mb-1.5 min-h-0 flex-1 overflow-hidden rounded-xl bg-card shadow-[0_0_0_1px_oklch(0.2_0.02_220/0.06)]">{children}</div>
+      <div className="@container relative mx-1.5 mb-1.5 min-h-0 flex-1 overflow-hidden rounded-xl bg-card shadow-[0_0_0_1px_oklch(0.2_0.02_220/0.06)]">
+        <MountAfterFirstFrame>{children}</MountAfterFirstFrame>
+      </div>
 
       {!maximized && (
         <div

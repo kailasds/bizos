@@ -114,9 +114,12 @@ Recharts, React Flow (`@xyflow/react`), Plus Jakarta Sans. Alias `@/*` → `src/
 - **Widgets** (`src/app/widgets`) are configurable in Settings, and each deep-links somewhere:
   Approvals, Application activity, Worker activity, Platform activity, and others.
 - **Window manager:** open, focus, minimize, maximize/restore, close, drag and resize, clamped to
-  the desktop. Minimize is a genie into the app's dock tile (restore reverses it); hovering a running
-  app's tile shows live window previews to pick from. Apps are single-instance today; previews list
-  every window an app has. Windows scale and fade on open, shrink into their dock tab on minimize, and fade
+  the desktop. Minimize scales the window into its dock tile on a curve (restore reverses it);
+  hovering a running app's tile shows live window previews to pick from. Most apps are single-window;
+  **Application Studio is multi-window**: "New application" reuses an empty Studio window or opens a new
+  one (`Application Studio 2`, …), so drafts in progress are never replaced. Each Studio window holds
+  its own draft (`StudioWindowScope`); windows report what they hold via `setWindowContext`, which deep
+  links (`openApp('application-studio', { project })`) use to find the right window. Windows scale and fade on open, shrink into their dock tab on minimize, and fade
   out on close. Focus changes are not animated. `prefers-reduced-motion` turns motion off.
 - **Launcher** (Cmd/Ctrl+K) searches apps and ranks name matches first. It can also start
   "Create application" and open System Explorer.
@@ -317,9 +320,10 @@ applied **only** through CSS variables in `src/index.css`.
 | `1e13ea1` | Merge | Merged `claude/peaceful-hopper-xg4v6p`: new home page and "+" menu kept; its Build layers panel and Preview step not taken (product owner's decision) |
 | `ceb09d2` | Home and Studio | Domain tiles and glass panel, Platform tools section, three glass widgets, Studio back on the OS colour theme, Validate step removed (checks run on Publish), new-application body centred |
 | `2452ee8` | Home | Home label, frosted widgets, soft folder icons, folders expand in place |
-| (latest) | Shell | Fixed-size dock (no shiver), lit running bar, window previews, genie minimize, soft dock icons, four wallpapers |
+| `c26dacc` | Shell | Fixed-size dock (no shiver), running bar, window previews, minimize into the dock, soft dock icons, wallpapers |
+| (latest) | Shell and Studio | Brand wallpapers with on-screen wordmark, folders open in place, red running bar and ripple, multi-window Studio, Studio header without its own minimize/folder buttons (All projects moved to the journey navigator), smoother window motion |
 
-Product-owner decisions to respect: Studio stays on the OS colour theme with no dark fills; no Validate step; no mock tags in the UI; reasoning hidden behind info tips;
+Product-owner decisions to respect: brand-only wallpapers; Studio is multi-window and has no in-app minimize; Studio stays on the OS colour theme with no dark fills; no Validate step; no mock tags in the UI; reasoning hidden behind info tips;
 the teal-horizon wallpaper; the dock in the top bar; minimal explanatory copy; counts, never
 invented rates.
 

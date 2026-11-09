@@ -20,7 +20,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   let fails = 0;
   const check = (name, cond) => { if (!cond) fails++; console.log((cond ? 'PASS ' : 'FAIL ') + name); };
   const shot = (n) => page.screenshot({ path: `${dir}/m3-${n}.png` });
-  const studio = page.locator('section[aria-label="Application Studio"]');
+  const studio = page.locator('section[aria-label^="Application Studio"]').last();
   const panel = studio.getByRole('complementary', { name: 'AI Architect' });
   const T = 15000;
   const text = () => studio.innerText();

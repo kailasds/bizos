@@ -5,7 +5,7 @@ This repository is the **Enterprise AI OS** frontend (built on the claude-react-
 ## Architecture rules
 
 - Application metadata lives in `src/app/registry/applicationRegistry.ts`; the id → component map is `applicationComponents.ts`. Add an app by registering it in both — never hardcode a window/modal per app.
-- Window state is a pure reducer (`src/app/windows/windowReducer.ts`); shell components talk to it only through `useOs()`.
+- Window state is a pure reducer (`src/app/windows/windowReducer.ts`); shell components talk to it only through `useOs()`. Windows are keyed by window id (`appId`, then `appId:n`); never assume one window per app. Application Studio opens a window per draft.
 - Mock data lives in `src/data/*.mock.ts` (one concern per file; `resources.mock.ts` is the only resource catalogue). The UI shows no mock/prototype tags (removed at the product owner's request); keep that data clearly separated in `src/data` instead.
 - Simulated intelligence lives in typed services under `src/app/services/mock/` — UI never hardcodes scenario logic. Services must stay deterministic, must not claim a model understood something, and must not invent metrics, percentages or validation findings.
 - The OS reads platform resources (agents, workers, connectors, domain packs); it is not their registry. Registry, activity and approvals views are derived from the registry store and Studio projects — never a second copy.

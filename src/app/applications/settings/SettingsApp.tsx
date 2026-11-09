@@ -52,6 +52,9 @@ function DesktopSettings() {
                 className={cn('group overflow-hidden rounded-xl border bg-card text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50', selected ? 'border-primary ring-2 ring-primary/40' : 'hover:border-foreground/25')}
               >
                 <span className="relative block aspect-[16/10] bg-cover bg-center" style={{ backgroundImage: `url(${w.thumb})` }}>
+                  {w.brand && (
+                    <span className={cn('absolute bottom-2 left-2 text-[11px] font-bold tracking-tight', w.brand.tone === 'light' ? 'text-white' : 'text-primary')}>{w.brand.wordmark}</span>
+                  )}
                   {selected && (
                     <span className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
                       <Check className="size-3.5" />

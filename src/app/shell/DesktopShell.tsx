@@ -6,6 +6,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { ApplicationLauncher } from './ApplicationLauncher'
 import { DesktopCanvas } from './DesktopCanvas'
 import { TopBar } from './TopBar'
+import { WallpaperBrand } from './WallpaperBrand'
 
 /**
  * The persistent OS shell. Layers, bottom to top:
@@ -32,6 +33,7 @@ export function DesktopShell() {
         {/* Desktop area: everything below the top bar. */}
         <main className="relative flex-1">
           <div className="absolute inset-0">
+            <WallpaperBrand />
             <DesktopCanvas />
             <WindowManager />
           </div>

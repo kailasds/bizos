@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { AlertTriangle, Check, CloudOff, PanelLeftClose, PanelLeftOpen, Pencil } from 'lucide-react'
+import { AlertTriangle, Check, ChevronLeft, CloudOff, PanelLeftClose, PanelLeftOpen, Pencil } from 'lucide-react'
 import { stageOutcome } from '@/app/services/mock/thought-chain-service'
 import { StatusBadge } from '@/components/os/StatusBadge'
 import { Input } from '@/components/ui/input'
@@ -103,6 +103,7 @@ export function JourneyRail({
   collapsed,
   onToggleCollapsed,
   onSelect,
+  onAllProjects,
 }: {
   project: StudioProject | null
   active: StageId
@@ -111,6 +112,8 @@ export function JourneyRail({
   collapsed: boolean
   onToggleCollapsed?: () => void
   onSelect: (s: StageId) => void
+  /** Back to the list of drafts (absent when there are none). */
+  onAllProjects?: () => void
 }) {
   const reduce = useReducedMotion()
   const done = project ? STAGES.filter((s) => project.progress[s] === 'complete').length : 0
@@ -146,6 +149,28 @@ export function JourneyRail({
         full && 'w-[15.5rem] p-3',
       )}
     >
+      {onAllProjects && (full || bar) && (
+        <button
+          type="button"
+          onClick={onAllProjects}
+          aria-label="All projects"
+          className={cn('-mt-0.5 mb-1.5 flex w-fit items-center gap-0.5 rounded-md text-[11px] font-medium text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50', bar && 'hidden')}
+        >
+          <ChevronLeft aria-hidden className="size-3.5" />
+          All projects
+        </button>
+      )}
+      {onAllProjects && mode === 'icons' && (
+        <button
+          type="button"
+          onClick={onAllProjects}
+          aria-label="All projects"
+          title="All projects"
+          className="mb-1 flex size-8 items-center justify-center rounded-xl text-muted-foreground outline-none hover:bg-white/70 hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <ChevronLeft className="size-4" />
+        </button>
+      )}
       {/* Identity */}
       <div className={cn('flex items-center gap-2.5', full && 'mb-3', mode === 'icons' && 'mb-1 flex-col')}>
         <ProgressRing done={done} total={STAGES.length} current={currentIndex + 1} />

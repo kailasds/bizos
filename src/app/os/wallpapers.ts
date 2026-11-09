@@ -1,11 +1,20 @@
 /** Home-screen wallpapers. Each id maps to a `[data-wallpaper]` block in index.css. */
-export type WallpaperId = 'horizon' | 'dawn' | 'aurora' | 'brand'
+export type WallpaperId = 'horizon' | 'brand-blue' | 'brand-night' | 'brand-light'
 
-export const wallpapers: { id: WallpaperId; name: string; thumb: string }[] = [
-  { id: 'horizon', name: 'Horizon', thumb: '/wallpapers/horizon-thumb.webp' },
-  { id: 'dawn', name: 'Dawn', thumb: '/wallpapers/dawn-thumb.webp' },
-  { id: 'aurora', name: 'Aurora', thumb: '/wallpapers/aurora-thumb.webp' },
-  { id: 'brand', name: 'Enterprise AI OS', thumb: '/wallpapers/brand-thumb.webp' },
+export interface Wallpaper {
+  id: WallpaperId
+  name: string
+  thumb: string
+  /** The wordmark drawn over the artwork, kept in a safe area of the screen. */
+  brand?: { wordmark: string; tagline: string; tone: 'light' | 'dark' }
+}
+
+export const wallpapers: Wallpaper[] = [
+  { id: 'brand-blue', name: 'Signature', thumb: '/wallpapers/brand-blue-thumb.webp', brand: { wordmark: 'Enterprise AI OS', tagline: 'Describe a business problem. Get a working application.', tone: 'light' } },
+  { id: 'brand-night', name: 'Midnight', thumb: '/wallpapers/brand-night-thumb.webp', brand: { wordmark: 'BizOS', tagline: 'The business operating system', tone: 'light' } },
+  { id: 'brand-light', name: 'Daylight', thumb: '/wallpapers/brand-light-thumb.webp', brand: { wordmark: 'Enterprise AI OS', tagline: 'BizOS · the business operating system', tone: 'dark' } },
+  { id: 'horizon', name: 'Horizon (classic)', thumb: '/wallpapers/horizon-thumb.webp' },
 ]
 
 export const isWallpaperId = (v: unknown): v is WallpaperId => wallpapers.some((w) => w.id === v)
+export const wallpaperById = (id: WallpaperId) => wallpapers.find((w) => w.id === id)!

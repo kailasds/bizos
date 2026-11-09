@@ -70,30 +70,26 @@ function WindowSnapshot({ windowId }: { windowId: string }) {
 }
 
 function WindowPreviews({ app, wins, onPick, onClose }: { app: AppDefinition; wins: WindowState[]; onPick: (id: string) => void; onClose: (id: string) => void }) {
-  const { focusedId } = useOs()
   return (
     <div className="space-y-2">
       <p className="px-1 text-xs font-semibold">{app.name}</p>
       <ul className="flex gap-2">
         {wins.map((w, i) => {
-          const status = w.status === 'minimized' ? 'Minimized' : w.id === focusedId ? 'Active' : 'Open'
+          const name = w.title ?? (wins.length > 1 ? `Window ${i + 1}` : null)
           return (
             <li key={w.id} className="group/preview relative">
               <button
                 type="button"
                 onClick={() => onPick(w.id)}
-                aria-label={`Show ${app.name}${wins.length > 1 ? ` window ${i + 1}` : ''} · ${status}`}
+                aria-label={`Show ${app.name}${name ? ` — ${name}` : ''}`}
                 className="flex flex-col gap-1.5 rounded-xl p-1.5 text-left outline-none hover:bg-white/45 focus-visible:ring-3 focus-visible:ring-ring/60"
               >
                 <WindowSnapshot windowId={w.id} />
-                <span className="flex items-center gap-1.5 px-0.5 text-[11px]">
-                  <span className={cn('size-1.5 rounded-full', status === 'Minimized' ? 'bg-foreground/35' : 'bg-primary')} />
-                  <span className="font-medium">{status}</span>
-                </span>
+                {name && <span className="max-w-[232px] truncate px-0.5 text-[11px] font-medium">{name}</span>}
               </button>
               <button
                 type="button"
-                aria-label={`Close window · ${app.name}${wins.length > 1 ? ` ${i + 1}` : ''}`}
+                aria-label={`Close window · ${app.name}${name ? ` — ${name}` : ''}`}
                 onClick={() => onClose(w.id)}
                 className="absolute top-0 right-0 flex size-6 items-center justify-center rounded-full bg-white text-foreground opacity-0 shadow outline-none group-focus-within/preview:opacity-100 group-hover/preview:opacity-100 focus-visible:ring-3 focus-visible:ring-ring/60"
               >
@@ -149,7 +145,12 @@ function DockItem({ label, name, active, state = 'closed', icon, dockApp, presse
         active ? 'bg-white px-3.5 text-foreground shadow-[0_2px_8px_oklch(0.15_0.03_250/0.25)]' : running ? 'bg-white/22 text-white ring-1 ring-white/35 hover:bg-white/30' : 'bg-white/10 text-white hover:bg-white/20',
       )}
     >
-      <span ref={scope} className="flex items-center justify-center">
+      {running && !active && (
+        <span aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-full">
+          <span className={cn('absolute inset-0 rounded-full border-2 border-white/80 bg-white/15', state === 'minimized' ? 'dock-ripple-slow' : 'dock-ripple')} />
+        </span>
+      )}
+      <span ref={scope} className="relative flex items-center justify-center">
         {icon}
       </span>
       {active && <span className="pr-0.5 text-sm font-semibold whitespace-nowrap">{name}</span>}
@@ -158,7 +159,7 @@ function DockItem({ label, name, active, state = 'closed', icon, dockApp, presse
           aria-hidden
           className={cn(
             'absolute -bottom-[7px] left-1/2 h-[3px] -translate-x-1/2 rounded-full transition-[width,background-color] duration-200',
-            state === 'minimized' ? 'w-2.5 bg-white/50' : 'w-5 bg-white shadow-[0_0_8px_oklch(1_0_0/0.9)]',
+            state === 'minimized' ? 'w-2.5 bg-danger/70' : 'w-5 bg-danger shadow-[0_0_8px_var(--danger)]',
           )}
         />
       )}

@@ -21,7 +21,7 @@ const BASE = process.env.BASE_URL || 'http://localhost:4173';
   let fails = 0;
   const check = (name, cond) => { if (!cond) fails++; console.log((cond ? 'PASS ' : 'FAIL ') + name); };
   const shot = (n) => page.screenshot({ path: `${dir}/ev-${n}.png` });
-  const studio = page.locator('section[aria-label="Application Studio"]');
+  const studio = page.locator('section[aria-label^="Application Studio"]').last();
   const panel = studio.getByRole('complementary', { name: 'AI Architect' });
   const T = 15000;
   const text = () => studio.innerText();
@@ -52,7 +52,7 @@ const BASE = process.env.BASE_URL || 'http://localhost:4173';
   check('guidance expands to doing / why / next', /Doing\n/.test(expanded) && /Why\n/.test(expanded) && /Next\n/.test(expanded) && (await guidanceToggle.getAttribute('aria-expanded')) === 'true');
   await guidanceToggle.click();
   await studio.getByRole('button', { name: 'Close AI Architect' }).click(); // it floats over the content
-  check('studio header does not repeat the window title inside a project', !(await studio.locator('header', { has: page.getByRole('button', { name: 'All projects' }) }).innerText()).includes('Application Studio'));
+  check('studio has no duplicate window controls', (await studio.getByRole('button', { name: 'Back to desktop' }).count()) === 0 && (await studio.getByRole('navigation', { name: 'Studio stages' }).getByRole('button', { name: 'All projects' }).count()) === 1);
   await studio.getByRole('group', { name: 'Who should approve settlements that need a human decision?' }).getByRole('button', { name: 'Claims managers' }).click();
   await studio.getByRole('button', { name: /Confirm understanding/ }).click();
   await studio.getByRole('button', { name: 'Confirm requirements' }).click();
@@ -113,7 +113,7 @@ const BASE = process.env.BASE_URL || 'http://localhost:4173';
   check('removed field highlighted as a removal', (await removed.count()) >= 1 && (await removed.allInnerTexts()).some((t) => t.includes('Investigation notes')));
 
   // ── Registry sort by status
-  await studio.getByRole('button', { name: 'Back to desktop' }).first().click();
+  await page.getByRole('button', { name: /^Minimize Application Studio/ }).first().click(); // the window's own control
   await page.getByRole('navigation', { name: 'Dock' }).getByRole('button', { name: 'System Explorer' }).click();
   const explorer = page.locator('section[aria-label="System Explorer"]');
   await explorer.getByRole('button', { name: 'Applications' }).click();

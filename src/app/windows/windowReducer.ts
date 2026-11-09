@@ -10,8 +10,13 @@ export interface Bounds {
 export type WindowStatus = 'normal' | 'maximized' | 'minimized'
 
 export interface WindowState {
-  /** Window identity. Applications are single-instance, so this equals the app id. */
+  /** Window identity: the app id for an app's first window, `appId:n` for later ones. */
   id: string
+  /** 1 for an app's first window, 2 for its second, and so on (shown in its name). */
+  instance: number
+  /** What the window is showing, set by the app (e.g. the draft a Studio window holds). */
+  title?: string
+  contextKey?: string
   appId: AppId
   params: WindowParams
   bounds: Bounds
@@ -28,7 +33,8 @@ export interface WindowManagerState {
 }
 
 export type WindowAction =
-  | { type: 'open'; appId: AppId; params?: WindowParams; area: Size; size: Size; maximized?: boolean }
+  | { type: 'open'; appId: AppId; params?: WindowParams; area: Size; size: Size; maximized?: boolean; target?: string; fresh?: boolean }
+  | { type: 'setContext'; id: string; title?: string; contextKey?: string }
   | { type: 'close'; id: string }
   | { type: 'focus'; id: string }
   | { type: 'minimize'; id: string }
@@ -88,7 +94,7 @@ function update(
 export function windowReducer(state: WindowManagerState, action: WindowAction): WindowManagerState {
   switch (action.type) {
     case 'open': {
-      const existing = state.windows.find((w) => w.appId === action.appId)
+      const existing = action.target ? state.windows.find((w) => w.id === action.target) : action.fresh ? undefined : state.windows.find((w) => w.appId === action.appId)
       if (existing) {
         return update(state, existing.id, (w, z) => ({
           ...w,
@@ -97,8 +103,11 @@ export function windowReducer(state: WindowManagerState, action: WindowAction): 
           z,
         }))
       }
+      const siblings = state.windows.filter((w) => w.appId === action.appId)
+      const instance = siblings.reduce((n, w) => Math.max(n, w.instance), 0) + 1
       const window: WindowState = {
-        id: action.appId,
+        id: siblings.some((w) => w.id === action.appId) || instance > 1 ? `${action.appId}:${instance}` : action.appId,
+        instance,
         appId: action.appId,
         params: action.params ?? {},
         bounds: initialBounds(state, action.area, action.size),
@@ -137,6 +146,8 @@ export function windowReducer(state: WindowManagerState, action: WindowAction): 
         const next = w.status === 'maximized' ? 'normal' : 'maximized'
         return { ...w, status: next, restoreStatus: next, z }
       })
+    case 'setContext':
+      return update(state, action.id, (w) => (w.title === action.title && w.contextKey === action.contextKey ? w : { ...w, title: action.title, contextKey: action.contextKey }), false)
     case 'setBounds':
       return update(state, action.id, (w) => ({ ...w, bounds: action.bounds }), false)
     case 'closeAll':

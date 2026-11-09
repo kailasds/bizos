@@ -19,7 +19,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   let fails = 0;
   const check = (name, cond) => { if (!cond) fails++; console.log((cond ? 'PASS ' : 'FAIL ') + name); };
   const shot = (n) => page.screenshot({ path: `${dir}/${n}.png` });
-  const studio = page.locator('section[aria-label="Application Studio"]');
+  const studio = page.locator('section[aria-label^="Application Studio"]').last();
   const T = 15000;
 
   await page.goto(process.env.BASE_URL || 'http://localhost:4173');
@@ -144,7 +144,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await studio.waitFor({ state: 'hidden' }); // minimize animates into the dock
   check('studio minimized', !(await studio.isVisible()));
   await page.getByRole('button', { name: /^Insurance, folder, 4 applications/ }).click();
-  const icon = page.getByRole('dialog').getByRole('button', { name: 'Claims Processing Hub, application' });
+  const icon = page.getByRole('region', { name: / applications$/ }).getByRole('button', { name: 'Claims Processing Hub, application' });
   check('new app inside its domain', await icon.isVisible());
   await icon.click();
   const appWin = page.locator('section[aria-label="Claims Processing Hub"]');
@@ -185,7 +185,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   await page.reload();
   await page.waitForTimeout(500);
   await page.getByRole('button', { name: /^Insurance, folder, 4 applications/ }).click();
-  check('generated app persists after reload', await page.getByRole('dialog').getByRole('button', { name: 'Claims Processing Hub, application' }).isVisible());
+  check('generated app persists after reload', await page.getByRole('region', { name: / applications$/ }).getByRole('button', { name: 'Claims Processing Hub, application' }).isVisible());
   await page.keyboard.press('Escape');
   await page.getByRole('navigation', { name: 'Dock' }).getByRole('button', { name: 'Application Studio' }).click();
   await studio.getByText('Review and publish').waitFor({ timeout: T }).catch(() => {});

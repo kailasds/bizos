@@ -56,7 +56,7 @@ const BASE = process.env.BASE_URL || 'http://localhost:4173';
 
   // ── Step 1: submit a high-value claim in Claims Intelligence
   await page.getByRole('button', { name: /^Insurance, folder/ }).click();
-  await page.getByRole('dialog').getByRole('button', { name: /^Claims Intelligence, application/ }).click();
+  await page.getByRole('region', { name: / applications$/ }).getByRole('button', { name: /^Claims Intelligence, application/ }).click();
   await claims.waitFor({ timeout: T });
   const claimId = await submitPreset('High-value motor claim');
   check('execution created for the claim', /^CLM-24-\d+$/.test(claimId));

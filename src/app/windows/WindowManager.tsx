@@ -47,7 +47,7 @@ export function WindowManager() {
             key={win.id}
             win={win}
             app={getApp(win.appId)}
-            title={getApp(win.appId).name}
+            title={win.instance > 1 ? `${getApp(win.appId).name} ${win.instance}` : getApp(win.appId).name}
             focused={win.id === focusedId}
             area={desktopArea}
             compact={compact}

@@ -1,7 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { AppProps } from '@/app/registry/types'
+import { useOs } from '@/app/os/use-os'
 import { useParamsChange } from '@/app/windows/use-params-change'
+import { StudioWindowScope } from './StudioWindowScope'
 import { ArchitectOrb, ArchitectPanel } from './components/ArchitectPanel'
 import { JourneyRail, type RailMode } from './components/JourneyRail'
 import { StudioHeader } from './components/StudioHeader'
@@ -37,8 +39,23 @@ function useRailMode(collapsed: boolean) {
  * the journey navigator, window actions and AI Architect float above it as liquid glass.
  * Params: `new` starts a new application; `project` reopens a draft.
  */
-export function ApplicationStudioApp({ windowId, params }: AppProps) {
+export function ApplicationStudioApp(props: AppProps) {
+  const { state } = useStudio()
+  // A window opened for new work starts empty; one opened from the dock resumes the last draft.
+  const [initial] = useState(() => (props.params.project ? props.params.project : props.params.new ? null : state.activeProjectId))
+  return (
+    <StudioWindowScope initialProjectId={initial}>
+      <StudioWindow {...props} />
+    </StudioWindowScope>
+  )
+}
+
+function StudioWindow({ windowId, params }: AppProps) {
   const { state, project, dispatch } = useStudio()
+  const { setWindowContext } = useOs()
+  useEffect(() => {
+    setWindowContext(windowId, project?.name, project?.id)
+  }, [windowId, project?.name, project?.id, setWindowContext])
   const [mode, setMode] = useState<'home' | 'new'>(params.new ? 'new' : 'home')
   const [panelOpen, setPanelOpen] = useState(false)
   const [railCollapsed, setRailCollapsed] = useState(false)
@@ -92,14 +109,7 @@ export function ApplicationStudioApp({ windowId, params }: AppProps) {
       <span aria-hidden className="studio-drift top-[-15%] left-[-8%] size-[34rem] bg-[radial-gradient(closest-side,oklch(0.82_0.06_225/0.5),transparent)]" />
       <span aria-hidden className="studio-drift right-[-6%] bottom-[-20%] size-[38rem] bg-[radial-gradient(closest-side,oklch(0.9_0.05_60/0.55),transparent)] [animation-delay:-12s]" />
 
-      <StudioHeader
-        windowId={windowId}
-        home={showHome}
-        onAllProjects={() => {
-          setMode('home')
-          dispatch({ type: 'project/close' })
-        }}
-      />
+      <StudioHeader home={showHome} />
       {showHome ? (
         <main className="relative h-full">
           <StudioHome
@@ -125,6 +135,14 @@ export function ApplicationStudioApp({ windowId, params }: AppProps) {
             collapsed={railCollapsed}
             onToggleCollapsed={wide ? () => setRailCollapsed((v) => !v) : undefined}
             onSelect={(s) => project && goTo(s)}
+            onAllProjects={
+              state.projects.length > 0
+                ? () => {
+                    setMode('home')
+                    dispatch({ type: 'project/close' })
+                  }
+                : undefined
+            }
           />
           <ArchitectOrb open={panelOpen} onToggle={() => setPanelOpen((v) => !v)} />
           <AnimatePresence>{panelOpen && <ArchitectPanel key="architect" stage={stage} onClose={() => setPanelOpen(false)} onFocusOption={setFocusOptionId} />}</AnimatePresence>

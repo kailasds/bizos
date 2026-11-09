@@ -21,8 +21,8 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
 
   // open claims from desktop icon
   await page.getByRole('button', { name: /^Insurance, folder/ }).click();
-  check('domain panel opens', await page.getByRole('dialog').getByRole('button', { name: 'Document AI, application' }).isVisible());
-  await page.getByRole('dialog').getByRole('button', { name: 'Claims Intelligence, application' }).click();
+  check('domain panel opens', await page.getByRole('region', { name: / applications$/ }).getByRole('button', { name: 'Document AI, application' }).isVisible());
+  await page.getByRole('region', { name: / applications$/ }).getByRole('button', { name: 'Claims Intelligence, application' }).click();
   await page.waitForTimeout(300);
   check('claims window open', await page.locator('section[aria-label="Claims Intelligence"]').isVisible());
   // open document ai (closed apps are not in the dock; it lists open apps)
@@ -104,7 +104,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   }
   await page.getByRole('button', { name: /^Insurance, folder/ }).click();
   await page.getByRole('button', { name: 'Open Insurance in Folders' }).click();
-  await page.getByRole('dialog').waitFor({ state: 'hidden' }); // the folder finishes collapsing first
+  await page.getByRole('region', { name: / applications$/ }).waitFor({ state: 'hidden' }); // the folder finishes closing first
   await page.waitForTimeout(300);
   check('folder browser open', await page.locator('section[aria-label="Folders"]').isVisible());
   check('dock shows folders', await page.getByRole('navigation', { name: 'Dock' }).getByRole('button', { name: /Folders/ }).count() === 1);
