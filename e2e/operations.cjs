@@ -82,6 +82,7 @@ const BASE = process.env.BASE_URL || 'http://localhost:4173';
   // ── Step 5: centralized approval queue
   await claims.getByRole('button', { name: 'Review approval' }).click();
   await ops.waitFor({ timeout: T });
+  await ops.getByText('Business context').first().waitFor({ timeout: T }); // the app appears once its window has opened
   const approval = await ops.innerText();
   check('approval shows business context and reasons', approval.includes('Business context') && approval.includes('£10,000 approval threshold') && approval.includes('high risk'));
   check('recommendation shown', approval.includes('Recommendation') && approval.includes('Approve the claim'));

@@ -39,7 +39,7 @@ export function TopBar() {
         <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-white text-primary shadow-sm">
           <Hexagon className="size-4" />
         </span>
-        <span className="hidden text-[15px] font-semibold whitespace-nowrap lg:inline">Enterprise AI OS</span>
+        <span className="hidden text-[15px] font-semibold whitespace-nowrap lg:inline">TCS BiOS</span>
         <span aria-hidden className="hidden h-4 w-px bg-white/25 xl:block" />
         <span className="hidden min-w-0 truncate text-glass-dark-foreground/85 xl:inline" aria-live="polite">
           {focused ? getApp(focused.appId).name : 'Home'}

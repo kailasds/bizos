@@ -18,7 +18,7 @@ export type ResourceOwner =
   | 'AI Workers Platform'
   | 'Integration infrastructure'
   | 'Domain Intelligence Kernel'
-  | 'Enterprise AI OS'
+  | 'TCS BiOS'
 
 export interface SpecItem {
   id: string

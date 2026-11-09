@@ -10,9 +10,9 @@ export interface Wallpaper {
 }
 
 export const wallpapers: Wallpaper[] = [
-  { id: 'brand-blue', name: 'Signature', thumb: '/wallpapers/brand-blue-thumb.webp', brand: { wordmark: 'Enterprise AI OS', tagline: 'Describe a business problem. Get a working application.', tone: 'light' } },
-  { id: 'brand-night', name: 'Midnight', thumb: '/wallpapers/brand-night-thumb.webp', brand: { wordmark: 'BizOS', tagline: 'The business operating system', tone: 'light' } },
-  { id: 'brand-light', name: 'Daylight', thumb: '/wallpapers/brand-light-thumb.webp', brand: { wordmark: 'Enterprise AI OS', tagline: 'BizOS · the business operating system', tone: 'dark' } },
+  { id: 'brand-blue', name: 'Signature', thumb: '/wallpapers/brand-blue-thumb.webp', brand: { wordmark: 'TCS BiOS', tagline: 'Describe a business problem. Get a working application.', tone: 'light' } },
+  { id: 'brand-night', name: 'Midnight', thumb: '/wallpapers/brand-night-thumb.webp', brand: { wordmark: 'TCS BiOS', tagline: 'The business operating system', tone: 'light' } },
+  { id: 'brand-light', name: 'Daylight', thumb: '/wallpapers/brand-light-thumb.webp', brand: { wordmark: 'TCS BiOS', tagline: 'Business operating system', tone: 'dark' } },
   { id: 'horizon', name: 'Horizon (classic)', thumb: '/wallpapers/horizon-thumb.webp' },
 ]
 

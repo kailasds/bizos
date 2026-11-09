@@ -108,6 +108,8 @@ interface ItemProps {
   name: string
   active: boolean
   state?: RunState
+  /** One entry per open window (true = minimized). */
+  windowsOpen?: boolean[]
   icon: ReactNode
   dockApp?: AppId
   pressed?: boolean
@@ -119,7 +121,7 @@ interface ItemProps {
 type TriggerProps = Omit<ComponentPropsWithRef<'button'>, 'onClick'>
 
 /** Extra props come from tooltip/hover-card triggers (pointer handlers, ref, data-state) and must reach the button. */
-function DockItem({ label, name, active, state = 'closed', icon, dockApp, pressed, expanded, onClick, ...trigger }: ItemProps & TriggerProps) {
+function DockItem({ label, name, active, state = 'closed', windowsOpen = [], icon, dockApp, pressed, expanded, onClick, ...trigger }: ItemProps & TriggerProps) {
   const reduce = useReducedMotion()
   const [scope, animate] = useAnimate<HTMLSpanElement>()
   const previous = useRef(state)
@@ -155,13 +157,13 @@ function DockItem({ label, name, active, state = 'closed', icon, dockApp, presse
       </span>
       {active && <span className="pr-0.5 text-sm font-semibold whitespace-nowrap">{name}</span>}
       {running && (
-        <span
-          aria-hidden
-          className={cn(
-            'absolute -bottom-[7px] left-1/2 h-[3px] -translate-x-1/2 rounded-full transition-[width,background-color] duration-200',
-            state === 'minimized' ? 'w-2.5 bg-danger/70' : 'w-5 bg-danger shadow-[0_0_8px_var(--danger)]',
-          )}
-        />
+        <span aria-hidden className="absolute -bottom-[7px] left-1/2 flex -translate-x-1/2 items-center gap-1">
+          {windowsOpen.length > 1
+            ? windowsOpen.slice(0, 4).map((min, i) => <span key={i} className={cn('size-[5px] rounded-full', min ? 'bg-danger/60' : 'bg-danger shadow-[0_0_6px_var(--danger)]')} />)
+            : (
+                <span className={cn('h-[3px] rounded-full transition-[width,background-color] duration-200', state === 'minimized' ? 'w-2.5 bg-danger/60' : 'w-5 bg-danger shadow-[0_0_8px_var(--danger)]')} />
+              )}
+        </span>
       )}
     </button>
   )
@@ -171,10 +173,12 @@ function DockItem({ label, name, active, state = 'closed', icon, dockApp, presse
 function DockEntry({ appId, item }: { appId?: AppId; item: ItemProps }) {
   const { windows, focusWindow, closeWindow } = useOs()
   const wins = appId ? windows.filter((w) => w.appId === appId) : []
+  const windowsOpen = wins.map((w) => w.status === 'minimized')
+  const count = wins.length > 1 ? ` · ${wins.length} windows` : ''
   // A click acts on the app, so its preview steps aside until the pointer leaves the tile.
   const [open, setOpen] = useState(false)
   const [suppressed, setSuppressed] = useState(false)
-  const tile = <DockItem {...item} />
+  const tile = <DockItem {...item} label={item.label + count} windowsOpen={windowsOpen} />
   // Slot merges trigger props into its child, so the child must be DockItem itself (it spreads them).
   if (appId && wins.length > 0) {
     return (
@@ -187,7 +191,7 @@ function DockEntry({ appId, item }: { appId?: AppId; item: ItemProps }) {
           }}
           onPointerLeave={() => setSuppressed(false)}
         >
-          <DockItem {...item} />
+          <DockItem {...item} label={item.label + count} windowsOpen={windowsOpen} />
         </HoverCardPrimitive.Trigger>
         <HoverCardPrimitive.Portal>
           <HoverCardPrimitive.Content side="bottom" sideOffset={12} collisionPadding={12} className="widget-glass z-50 rounded-2xl p-2 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95">

@@ -17,7 +17,7 @@ export interface PlatformService {
 }
 
 export const platformServices: PlatformService[] = [
-  { id: 'runtime', name: 'Application Runtime', owner: 'Enterprise AI OS', state: 'operational', note: 'All published applications reachable.' },
+  { id: 'runtime', name: 'Application Runtime', owner: 'TCS BiOS', state: 'operational', note: 'All published applications reachable.' },
   { id: 'acp', name: 'Agent Control Plane', owner: 'Agent Control Plane', state: 'operational', note: '12 agents registered.' },
   { id: 'awp', name: 'AI Workers Platform', owner: 'AI Workers Platform', state: 'degraded', note: 'Worker composition queue is slower than usual.' },
   { id: 'connectors', name: 'Enterprise connectors', owner: 'Integration infrastructure', state: 'operational', note: '5 of 5 connectors responding.' },

@@ -1,4 +1,4 @@
-# HANDOFF — Enterprise AI OS (frontend prototype)
+# HANDOFF — TCS BiOS (frontend prototype)
 
 **Purpose of this file:** everything a new contributor (or a new AI thread) needs to continue
 development without the previous conversation history. Read this first, then `CLAUDE.md`
@@ -13,6 +13,9 @@ development without the previous conversation history. Read this first, then `CL
 ---
 
 ## 1. What the product is
+
+> **Name:** the product is **TCS BiOS** (short for *Business Operating System*). It was called
+> Enterprise AI OS earlier; older notes and `context.md` still use that name.
 
 **Enterprise AI OS** is an *AI-native enterprise operating environment*. The promise:
 
@@ -321,7 +324,8 @@ applied **only** through CSS variables in `src/index.css`.
 | `ceb09d2` | Home and Studio | Domain tiles and glass panel, Platform tools section, three glass widgets, Studio back on the OS colour theme, Validate step removed (checks run on Publish), new-application body centred |
 | `2452ee8` | Home | Home label, frosted widgets, soft folder icons, folders expand in place |
 | `c26dacc` | Shell | Fixed-size dock (no shiver), running bar, window previews, minimize into the dock, soft dock icons, wallpapers |
-| (latest) | Shell and Studio | Brand wallpapers with on-screen wordmark, folders open in place, red running bar and ripple, multi-window Studio, Studio header without its own minimize/folder buttons (All projects moved to the journey navigator), smoother window motion |
+| `098668e` | Shell and Studio | Brand wallpapers with on-screen wordmark, folders open in place, red running bar and ripple, multi-window Studio, Studio header without its own minimize/folder buttons (All projects moved to the journey navigator), smoother window motion |
+| (latest) | Brand and motion | Renamed to TCS BiOS (app, wallpapers, page title, favicon); genie minimize restored; restore and open without jank (app mounts after the window opens, blur paused while moving); one dot per window on the dock |
 
 Product-owner decisions to respect: brand-only wallpapers; Studio is multi-window and has no in-app minimize; Studio stays on the OS colour theme with no dark fills; no Validate step; no mock tags in the UI; reasoning hidden behind info tips;
 the teal-horizon wallpaper; the dock in the top bar; minimal explanatory copy; counts, never

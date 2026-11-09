@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This repository is the **Enterprise AI OS** frontend (built on the claude-react-starter foundation). Read `HANDOFF.md` first (project state, history, code map, next steps), then `context.md` before product, UX or architecture work — it is the shared product context. Current scope: desktop shell, Application Studio, the intelligence experience (Milestone 3) and the simulated operational runtime (Milestone 4: executions, approvals, audit, outcomes, learning) — mock data and deterministic mock intelligence only (no backend, LLM, agent or worker integrations).
+This repository is the **TCS BiOS** (Business Operating System; formerly Enterprise AI OS) frontend (built on the claude-react-starter foundation). Read `HANDOFF.md` first (project state, history, code map, next steps), then `context.md` before product, UX or architecture work — it is the shared product context. Current scope: desktop shell, Application Studio, the intelligence experience (Milestone 3) and the simulated operational runtime (Milestone 4: executions, approvals, audit, outcomes, learning) — mock data and deterministic mock intelligence only (no backend, LLM, agent or worker integrations).
 
 ## Architecture rules
 

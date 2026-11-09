@@ -18,7 +18,13 @@ export function WallpaperBrand() {
         <Hexagon className="size-1/2" strokeWidth={2.4} />
       </span>
       <span className="min-w-0">
-        <span className={cn('block truncate text-[clamp(2rem,4.2vw,4.5rem)] leading-[1.05] font-bold tracking-tight', light ? 'text-white/92 [text-shadow:0_2px_24px_oklch(0.2_0.06_250/0.45)]' : 'text-primary')}>{brand.wordmark}</span>
+        <span className={cn('block truncate text-[clamp(2rem,4.2vw,4.5rem)] leading-[1.05] tracking-tight', light ? 'text-white/92 [text-shadow:0_2px_24px_oklch(0.2_0.06_250/0.45)]' : 'text-primary')}>
+          {brand.wordmark.split(' ').map((word, i, all) => (
+            <span key={word} className={i < all.length - 1 ? 'mr-[0.25em] font-medium opacity-80' : 'font-bold'}>
+              {word}
+            </span>
+          ))}
+        </span>
         <span className={cn('mt-[0.4vw] block truncate text-[clamp(0.85rem,1.25vw,1.35rem)]', light ? 'text-white/70' : 'text-foreground/60')}>{brand.tagline}</span>
       </span>
     </div>

@@ -212,7 +212,7 @@ export function PublishStage({ windowId, goTo }: { windowId: string; goTo: (stag
                 ['Resources', resources.map((r) => `${r.name} ${r.version}${r.origin === 'created' ? ' (new)' : ''}`).join(', ')],
                 ['Workflow', bp.workflow.nodes.map((n) => n.name).join(' → ')],
                 ['Screens', bp.experience.pages.map((p) => p.title).join(' · ')],
-                ['Deployment', `Enterprise AI OS desktop · ${folder?.name} folder`],
+                ['Deployment', `TCS BiOS desktop · ${folder?.name} folder`],
               ] as const
             ).map(([k, v]) => (
               <div key={k}>

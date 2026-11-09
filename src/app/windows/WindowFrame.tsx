@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react'
 import { motion, useReducedMotion, type Variants } from 'framer-motion'
 import { Maximize2, Minimize2, Minus, X } from 'lucide-react'
 import { useOs } from '@/app/os/use-os'
@@ -45,19 +45,6 @@ function WindowControl({
   )
 }
 
-/**
- * The app mounts just after the window's first frame, as a non-urgent update, so the opening
- * animation starts at once instead of waiting for a heavy app to render.
- */
-function MountAfterFirstFrame({ children }: { children: ReactNode }) {
-  const [ready, setReady] = useState(false)
-  useEffect(() => {
-    const id = requestAnimationFrame(() => startTransition(() => setReady(true)))
-    return () => cancelAnimationFrame(id)
-  }, [])
-  return ready ? children : null
-}
-
 interface Gesture {
   mode: 'move' | 'resize'
   startX: number
@@ -92,30 +79,58 @@ export function WindowFrame({ win, app, title, focused, area, compact, children 
     setRestoring(previous && !minimized)
   }
 
-  /**
-   * Where the dock tile is, relative to the window's centre, and how small the window must get to
-   * fit it. Measured when the animation starts so it follows the dock wherever it is.
-   */
-  const toDock = () => {
-    const r = ref.current?.getBoundingClientRect()
+  /** The dock tile's centre relative to the window, and the scale that fits the window into it. */
+  const dockGeometry = () => {
+    const node = ref.current
+    const r = node?.getBoundingClientRect()
     const d = document.querySelector(`[data-dock-app="${win.appId}"]`)?.getBoundingClientRect()
-    if (!r || !d || r.width === 0) return null
+    if (!node || !r || !d || r.width === 0) return null
+    return { node, r, d }
+  }
+
+  /**
+   * Minimize: a genie. The edge nearest the dock pinches toward the tile, then the body is drawn up
+   * into it. Measured when the animation starts so it follows the dock wherever it is.
+   */
+  const genie = () => {
+    const g = dockGeometry()
+    if (!g) return null
+    const { node, r, d } = g
+    const px = Math.min(96, Math.max(4, ((d.left + d.width / 2 - r.left) / r.width) * 100))
+    const dx = d.left + d.width / 2 - (r.left + (px / 100) * r.width)
+    const dy = d.top + d.height / 2 - r.top
+    // Set directly: animating transform-origin would blend from an unrelated value.
+    node.style.transformOrigin = `${px}% 0%`
+    const poly = (tl: number, tr: number, br: number, bl: number) => `polygon(${tl}% 0%, ${tr}% 0%, ${br}% 100%, ${bl}% 100%)`
     return {
-      dx: d.left + d.width / 2 - (r.left + r.width / 2),
-      dy: d.top + d.height / 2 - (r.top + r.height / 2),
-      s: Math.max(0.04, d.width / r.width),
+      clipPath: [poly(0, 100, 100, 0), poly(px - 9, px + 9, 100, 0), poly(px - 2, px + 2, px + 22, px - 22), poly(px - 0.5, px + 0.5, px + 0.5, px - 0.5)],
+      x: [0, 0, dx * 0.55, dx],
+      y: [0, 0, dy * 0.5, dy],
+      scaleY: [1, 1, 0.42, 0.02],
     }
   }
 
-  /*
-   * Only transform and opacity animate, so the compositor runs every frame even while the app is
-   * busy. The window narrows a little faster than it shortens and travels on an eased curve, which
-   * reads as being drawn into the tile rather than simply shrinking.
-   */
+  /** Restore: transform and opacity only (compositor-driven), growing back out of the tile. */
+  const fromDock = () => {
+    const g = dockGeometry()
+    if (!g) return null
+    const { node, r, d } = g
+    node.style.transformOrigin = '50% 50%'
+    node.style.clipPath = 'none' // the genie leaves a collapsed clip; it also limits where clicks land
+    return { dx: d.left + d.width / 2 - (r.left + r.width / 2), dy: d.top + d.height / 2 - (r.top + r.height / 2), s: Math.max(0.05, d.width / r.width) }
+  }
+
+  const easeOut = [0.16, 1, 0.3, 1] as const
+  const fullClip = 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)'
+
   const variants: Variants = {
     shown: (isRestoring: boolean) => {
-      const t = isRestoring && !reduce ? toDock() : null
+      const t = isRestoring && !reduce ? fromDock() : null
       if (!t) {
+        if (ref.current) {
+          ref.current.style.transformOrigin = '50% 50%'
+          ref.current.style.clipPath = 'none'
+        }
         return {
           x: 0,
           y: 0,
@@ -124,35 +139,57 @@ export function WindowFrame({ win, app, title, focused, area, compact, children 
           scaleY: 1,
           opacity: 1,
           visibility: 'visible',
-          transition: reduce ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 36, mass: 0.9, opacity: { duration: 0.18, ease: 'easeOut' } },
+          // Taking over the clip value cancels any genie clip still pending, then it is cleared.
+          clipPath: fullClip,
+          transition: reduce ? { duration: 0 } : { duration: 0.26, ease: easeOut, clipPath: { duration: 0 } },
+          transitionEnd: { clipPath: 'none' },
         }
       }
       return {
         visibility: 'visible',
         scale: 1,
-        x: [t.dx, t.dx * 0.22, 0],
-        y: [t.dy, t.dy * 0.1, 0],
-        scaleX: [t.s, 0.78, 1],
-        scaleY: [t.s, 0.9, 1],
-        opacity: [0, 1, 1],
-        transition: { duration: 0.44, times: [0, 0.5, 1], ease: [[0.2, 0.7, 0.35, 1], [0.3, 0.6, 0.3, 1]], opacity: { duration: 0.44, times: [0, 0.22, 1] } },
+        x: [t.dx, 0],
+        y: [t.dy, 0],
+        scaleX: [t.s, 1],
+        scaleY: [t.s * 0.6, 1],
+        opacity: [0, 1],
+        clipPath: fullClip,
+        transition: { duration: 0.38, ease: easeOut, opacity: { duration: 0.16, ease: 'easeOut' }, clipPath: { duration: 0 } },
+        transitionEnd: { clipPath: 'none' },
       }
     },
     minimized: () => {
-      const t = reduce ? null : toDock()
-      if (!t) return { opacity: 0, transition: { duration: 0 }, transitionEnd: { visibility: 'hidden' } }
+      const g = reduce ? null : genie()
+      if (!g) return { opacity: 0, transition: { duration: 0 }, transitionEnd: { visibility: 'hidden' } }
       return {
         scale: 1,
-        x: [0, t.dx * 0.22, t.dx],
-        y: [0, t.dy * 0.1, t.dy],
-        scaleX: [1, 0.78, t.s],
-        scaleY: [1, 0.9, t.s],
-        opacity: [1, 1, 0],
-        transition: { duration: 0.46, times: [0, 0.5, 1], ease: [[0.5, 0, 0.75, 0.4], [0.4, 0, 0.2, 1]], opacity: { duration: 0.46, times: [0, 0.78, 1] } },
+        scaleX: 1,
+        clipPath: g.clipPath,
+        x: g.x,
+        y: g.y,
+        scaleY: g.scaleY,
+        opacity: [1, 1, 1, 0],
+        transition: { duration: 0.52, times: [0, 0.32, 0.68, 1], ease: 'easeIn' },
         transitionEnd: { visibility: 'hidden' },
       }
     },
   }
+
+  /*
+   * While a window moves, its frosted glass would be re-blurred on every frame; it switches to a
+   * solid pane for the duration of the animation (set on the node, so React doesn't re-render).
+   */
+  const setMoving = (moving: boolean) => {
+    if (ref.current) ref.current.dataset.moving = moving ? 'true' : 'false'
+  }
+
+  // The app mounts once the opening animation has finished, so nothing heavy competes with it.
+  const [contentReady, setContentReady] = useState(Boolean(reduce))
+  useEffect(() => {
+    if (contentReady) return
+    const id = window.setTimeout(() => setContentReady(true), 420) // fallback if the animation is skipped
+    return () => window.clearTimeout(id)
+  }, [contentReady])
 
   const maximized = compact || win.status === 'maximized'
   const bounds = live ?? clampBounds(win.bounds, area)
@@ -205,8 +242,15 @@ export function WindowFrame({ win, app, title, focused, area, compact, children 
       variants={variants}
       custom={restoring}
       // The reverse genie plays once; afterwards the window is simply shown.
-      onAnimationComplete={(definition) => definition === 'shown' && restoring && setRestoring(false)}
-      initial={reduce ? false : { opacity: 0, scale: 0.94, y: -14 }}
+      onAnimationStart={() => setMoving(true)}
+      onAnimationComplete={(definition) => {
+        setMoving(false)
+        if (definition === 'shown') {
+          if (restoring) setRestoring(false)
+          if (!contentReady) setContentReady(true)
+        }
+      }}
+      initial={reduce ? false : { opacity: 0, scale: 0.965, y: 10 }}
       animate={minimized ? 'minimized' : 'shown'}
       exit={reduce ? { opacity: 0, transition: { duration: 0 } } : { opacity: 0, scale: 0.96, transition: { duration: 0.15, ease: 'easeIn' } }}
       onPointerDownCapture={() => focusWindow(win.id)}
@@ -261,7 +305,11 @@ export function WindowFrame({ win, app, title, focused, area, compact, children 
       </header>
 
       <div className="@container relative mx-1.5 mb-1.5 min-h-0 flex-1 overflow-hidden rounded-xl bg-card shadow-[0_0_0_1px_oklch(0.2_0.02_220/0.06)]">
-        <MountAfterFirstFrame>{children}</MountAfterFirstFrame>
+        {contentReady && (
+          <motion.div className="h-full" initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.14, ease: 'easeOut' }}>
+            {children}
+          </motion.div>
+        )}
       </div>
 
       {!maximized && (

@@ -157,9 +157,9 @@ export const platformResources: PlatformResource[] = [
     technical: { endpoint: 'mock://awp/workers/WRK-investigation', contract: { inputs: ['Claim record'], outputs: ['Case file'] }, lastValidated: '—' },
   },
 
-  // ── Services (Enterprise AI OS) ──────────────────────────────────────
+  // ── Services (TCS BiOS) ──────────────────────────────────────
   {
-    id: 'SVC-approvals', name: 'Approval Service', kind: 'service', owner: 'Enterprise AI OS', version: '1.2.0',
+    id: 'SVC-approvals', name: 'Approval Service', kind: 'service', owner: 'TCS BiOS', version: '1.2.0',
     capabilityIds: ['human-task'], domains: 'all', availability: 'available',
     note: 'Human task inbox with approval, referral and audit trail.',
     purpose: 'Puts decisions in front of the right person, records what they decided and why.',
@@ -168,7 +168,7 @@ export const platformResources: PlatformResource[] = [
     technical: { endpoint: 'mock://os/services/approvals', contract: { inputs: ['Decision request'], outputs: ['Decision'] }, lastValidated: '2026-11-03' },
   },
   {
-    id: 'SVC-routing', name: 'Decision Rules Service', kind: 'service', owner: 'Enterprise AI OS', version: '1.0.0',
+    id: 'SVC-routing', name: 'Decision Rules Service', kind: 'service', owner: 'TCS BiOS', version: '1.0.0',
     capabilityIds: ['risk-routing', 'claim-decision', 'credit-decision'], domains: 'all', availability: 'available',
     note: 'Deterministic rules decide routing and straightforward decisions.',
     purpose: 'Applies the business’s own rules to decide where a case goes next, or to decide straightforward cases.',
@@ -178,7 +178,7 @@ export const platformResources: PlatformResource[] = [
     technical: { endpoint: 'mock://os/services/rules', contract: { inputs: ['Case facts'], outputs: ['Route or decision', 'Rule applied'] }, lastValidated: '2026-11-03' },
   },
   {
-    id: 'SVC-notify', name: 'Notification Service', kind: 'service', owner: 'Enterprise AI OS', version: '1.0.0',
+    id: 'SVC-notify', name: 'Notification Service', kind: 'service', owner: 'TCS BiOS', version: '1.0.0',
     capabilityIds: ['decision-notification'], domains: 'all', availability: 'available',
     note: 'Sends status updates and decisions to customers and staff.',
     purpose: 'Sends decisions and status updates to customers, providers and staff through approved channels.',
@@ -187,7 +187,7 @@ export const platformResources: PlatformResource[] = [
     technical: { endpoint: 'mock://os/services/notify', contract: { inputs: ['Message'], outputs: ['Delivery record'] }, lastValidated: '2026-11-01' },
   },
   {
-    id: 'SVC-observability', name: 'Outcome Monitoring', kind: 'service', owner: 'Enterprise AI OS', version: '0.3.0',
+    id: 'SVC-observability', name: 'Outcome Monitoring', kind: 'service', owner: 'TCS BiOS', version: '0.3.0',
     capabilityIds: ['outcome-monitoring'], domains: 'all', availability: 'available',
     note: 'Tracks workflow outcomes and human interventions per application.',
     purpose: 'Shows how cases are flowing, where people step in and where work gets stuck.',

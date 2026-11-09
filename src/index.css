@@ -47,7 +47,7 @@
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
 
-    /* Enterprise AI OS tokens (see .claude/skills/frontend-kit/references/design.md) */
+    /* TCS BiOS tokens (see .claude/skills/frontend-kit/references/design.md) */
     --color-chrome: var(--chrome);
     --color-success: var(--success);
     --color-success-soft: var(--success-soft);
@@ -443,6 +443,13 @@
     --popover: oklch(0.99 0.003 220);
     --glass-dark: oklch(0.27 0.03 252);
   }
+}
+
+/* A window in motion drops its live blur for a solid pane, so every frame stays cheap. */
+section[data-moving='true'] {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background-color: oklch(0.97 0.006 220 / 0.97);
 }
 
 /* Dock: a soft ripple inside the tile of every app with an open window. */

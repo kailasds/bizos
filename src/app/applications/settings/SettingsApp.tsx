@@ -112,7 +112,7 @@ function DesktopSettings() {
 function About() {
   return (
     <div className="max-w-lg space-y-4 text-sm">
-      <h3 className="text-lg font-semibold">Enterprise AI OS</h3>
+      <h3 className="text-lg font-semibold">TCS BiOS</h3>
       <dl className="grid grid-cols-[8rem_1fr] gap-y-2">
         <dt className="text-muted-foreground">Release</dt>
         <dd>Milestone 4 · Runtime and learning</dd>

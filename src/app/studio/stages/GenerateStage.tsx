@@ -637,11 +637,11 @@ function Deployment({ project }: { project: StudioProject }) {
       <dl className="grid gap-x-6 gap-y-3 studio-card rounded-[20px] p-4 text-sm @3xl:grid-cols-2">
         <div>
           <dt className="text-xs text-muted-foreground">Destination</dt>
-          <dd>Enterprise AI OS desktop · {bp.deployment.folder} folder</dd>
+          <dd>TCS BiOS desktop · {bp.deployment.folder} folder</dd>
         </div>
         <div>
           <dt className="text-xs text-muted-foreground">Runtime</dt>
-          <dd>Enterprise AI OS runtime</dd>
+          <dd>TCS BiOS runtime</dd>
         </div>
         <div>
           <dt className="text-xs text-muted-foreground">Application id</dt>
