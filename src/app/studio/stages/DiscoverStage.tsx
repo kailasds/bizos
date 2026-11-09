@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ArrowRight, Check, CornerDownRight, Database, FileText, HeartPulse, Landmark, Pencil, Plus, Puzzle, Quote, Scale, ShieldCheck, Sparkles, Target, Trash2, Undo2, Users, Workflow, X, type LucideIcon } from 'lucide-react'
 import { InfoTip } from '@/components/os/InfoTip'
@@ -16,6 +16,8 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { getScenario, studioScenarios } from '@/data/studio-scenarios.mock'
 import { cn } from '@/lib/utils'
+import { DictationButton } from '../components/Dictation'
+import { useDictation } from '../hooks/use-dictation'
 import { StageFrame } from '../components/StageFrame'
 import { ctaClass, IconTile, SectionLabel, type ThinkingProps } from '../components/StudioParts'
 import { useSimulation } from '../hooks/use-simulation'
@@ -67,11 +69,34 @@ function DescribeForm({
   const suggested = suggestDomain(prompt)
   const domain = chosen ?? suggested ?? 'insurance'
 
+  // Voice dictation (simulated): the selected domain's example request arrives at speaking pace.
+  const promptRef = useRef(prompt)
+  const domainRef = useRef(domain)
+  useEffect(() => {
+    promptRef.current = prompt
+    domainRef.current = domain
+  }, [prompt, domain])
+  const dictation = useDictation({
+    script: useCallback(() => studioScenarios.find((s) => s.domain === domainRef.current)?.examplePrompt ?? studioScenarios[0].examplePrompt, []),
+    getBase: useCallback(() => promptRef.current, []),
+    onText: useCallback((text: string) => {
+      setPrompt(text)
+      setError(null)
+      const el = inputRef.current
+      if (el) {
+        el.setSelectionRange(text.length, text.length)
+        el.scrollTop = el.scrollHeight
+      }
+    }, []),
+    onDone: useCallback(() => inputRef.current?.focus({ preventScroll: true }), []),
+  })
+
   useEffect(() => {
     onThinking(sim.running ? { title: 'Understanding your request…', label: 'Discovery progress', steps: understandingSteps, current: sim.step } : null)
   }, [sim.running, sim.step, onThinking])
 
   const start = () => {
+    if (dictation.active) dictation.stop()
     if (prompt.trim().length < MIN_PROMPT_LENGTH) {
       setError(`Add a little more detail — at least ${MIN_PROMPT_LENGTH} characters.`)
       return
@@ -146,7 +171,7 @@ function DescribeForm({
           </ul>
         </section>
 
-        <div className="liquid-glass rounded-[26px] p-2 focus-within:ring-3 focus-within:ring-ring/40">
+        <div className={cn('liquid-glass rounded-[26px] p-2 transition-shadow duration-300 focus-within:ring-3 focus-within:ring-ring/40', dictation.active && 'ring-3 ring-primary/35')}>
           <label htmlFor="studio-prompt" className="sr-only">
             What should the application help your teams achieve?
           </label>
@@ -155,12 +180,13 @@ function DescribeForm({
             ref={inputRef}
             value={prompt}
             onChange={(e) => {
+              if (dictation.active) dictation.stop() // typing takes over from dictation
               setPrompt(e.target.value)
               if (error) setError(null)
             }}
             aria-invalid={Boolean(error)}
             aria-describedby={error ? 'studio-prompt-error' : undefined}
-            placeholder="What should the application help your teams achieve?"
+            placeholder={dictation.active ? 'Listening… describe the business problem' : 'What should the application help your teams achieve?'}
             className="min-h-16 resize-none border-0 bg-transparent px-3 py-2 text-base shadow-none focus-visible:ring-0 md:text-[15px] dark:bg-transparent"
           />
           {error && (
@@ -193,7 +219,15 @@ function DescribeForm({
                 )
               })}
             </div>
-            <div className="ml-auto flex gap-1.5">
+            <div className="ml-auto flex items-center gap-1.5">
+              <DictationButton
+                phase={dictation.phase}
+                onStart={() => {
+                  inputRef.current?.focus({ preventScroll: true })
+                  dictation.start()
+                }}
+                onStop={dictation.stop}
+              />
               {onCancel && (
                 <Button variant="ghost" className="rounded-full" onClick={onCancel}>
                   Cancel

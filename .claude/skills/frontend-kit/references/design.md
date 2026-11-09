@@ -284,6 +284,7 @@ to `.theme-studio`. **No black, dark violet or dark red fills:** they caused vis
 - **Headline:** grey lead line plus a `--primary` line, only on Discover and the project list.
 - **Actors:** person amber, AI blue, system teal (the `--tint-*` colours via `--actor-*`,
   `actor-meta.ts`), everywhere a step is drawn.
+- **Dictation:** the mic in the Discover prompt widens into a primary pill ("Listening…" then "Hearing you") with a live waveform and a soft pulse; the prompt bar gets a primary ring; text arrives character by character at speaking pace. Typing, the button or Esc stops it.
 - **Text budget:** 1–2 lines per block. Prefer a tile, count, diagram or chip; put the rest behind
   `InfoTip` or an expander.
 - **Motion:** states only — thinking links lighting up, the active level sliding, flow edges running

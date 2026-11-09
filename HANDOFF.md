@@ -151,7 +151,7 @@ and rendered by `GeneratedAppHost`.
 
 | Stage | What happens | Service |
 |---|---|---|
-| **Discover** | Composer with domain chips and example cards. The "Understanding" artifact has a summary, evidence quotes taken from the user's own words, six groups (objective, people, process, information, rules, capabilities), accept/reject suggestions and clarifying questions. Text that matches no scenario gets an honest fallback, never pretend understanding. | `services/mock/intent-service.ts` (keyword match against 3 scripted scenarios; `MIN_PROMPT_LENGTH = 24`) |
+| **Discover** | Composer with domain chips, example cards and a mic button for simulated voice dictation (`hooks/use-dictation.ts`, `components/Dictation.tsx`). The "Understanding" artifact has a summary, evidence quotes taken from the user's own words, six groups (objective, people, process, information, rules, capabilities), accept/reject suggestions and clarifying questions. Text that matches no scenario gets an honest fallback, never pretend understanding. | `services/mock/intent-service.ts` (keyword match against 3 scripted scenarios; `MIN_PROMPT_LENGTH = 24`) |
 | **Define** | Structured, **versioned** RequirementSpec (users, capabilities, inputs, outputs, constraints, success criteria). Edit, add, remove, per-item clarification. | — |
 | **Architect** | 2–3 alternative **operating models** per domain (Insurance: Assisted Claims Processing / AI-Driven Claims Automation / Intelligent Claims Operations), swimlane workflow, step inspector, compare-all table. Shows facts (e.g. "people on N of M steps"), never scores. | `architecture-service.ts` (`buildOptions`, `approachInsights`) |
 | **Compose** | Capability → resource coverage map: Selected / Available / Requires configuration / Missing. Searchable catalogue, resource detail sheet. Approval-gated **simulated worker composition**: Healthcare fails on the first attempt by design, then succeeds on retry. | `capability-analysis-service.ts`, `data/resources.mock.ts` |
@@ -325,7 +325,8 @@ applied **only** through CSS variables in `src/index.css`.
 | `2452ee8` | Home | Home label, frosted widgets, soft folder icons, folders expand in place |
 | `c26dacc` | Shell | Fixed-size dock (no shiver), running bar, window previews, minimize into the dock, soft dock icons, wallpapers |
 | `098668e` | Shell and Studio | Brand wallpapers with on-screen wordmark, folders open in place, red running bar and ripple, multi-window Studio, Studio header without its own minimize/folder buttons (All projects moved to the journey navigator), smoother window motion |
-| (latest) | Brand and motion | Renamed to TCS BiOS (app, wallpapers, page title, favicon); genie minimize restored; restore and open without jank (app mounts after the window opens, blur paused while moving); one dot per window on the dock |
+| `5ee389d` | Brand and motion | Renamed to TCS BiOS (app, wallpapers, page title, favicon); genie minimize restored; restore and open without jank (app mounts after the window opens, blur paused while moving); one dot per window on the dock |
+| (latest) | Studio | Voice dictation in the new-application prompt (simulated: the selected domain's example request arrives at speaking pace; no microphone is used) |
 
 Product-owner decisions to respect: brand-only wallpapers; Studio is multi-window and has no in-app minimize; Studio stays on the OS colour theme with no dark fills; no Validate step; no mock tags in the UI; reasoning hidden behind info tips;
 the teal-horizon wallpaper; the dock in the top bar; minimal explanatory copy; counts, never
