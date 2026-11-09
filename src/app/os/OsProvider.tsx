@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useReducer, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState, type ReactNode } from 'react'
 import { getApp } from '@/app/registry/applicationRegistry'
 import type { AppId, Size, WindowParams } from '@/app/registry/types'
 import {
@@ -9,9 +9,20 @@ import {
 } from '@/app/windows/windowReducer'
 import { initialNotifications, type OsNotification } from '@/data/notifications.mock'
 import { OsContext, type OsContextValue, type RecentApp, type WidgetId, type WidgetPreferences } from './os-context'
+import { isWallpaperId, type WallpaperId } from './wallpapers'
 
 const PREFS_KEY = 'enterprise-ai-os:widgets:v1'
 const RECENTS_KEY = 'enterprise-ai-os:recent-apps:v1'
+const WALLPAPER_KEY = 'enterprise-ai-os:wallpaper:v1'
+
+function loadWallpaper(): WallpaperId {
+  try {
+    const raw = window.localStorage.getItem(WALLPAPER_KEY)
+    return isWallpaperId(raw) ? raw : 'horizon'
+  } catch {
+    return 'horizon'
+  }
+}
 
 function loadRecents(): RecentApp[] {
   try {
@@ -55,6 +66,20 @@ export function OsProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<OsNotification[]>(initialNotifications)
   const [recentApps, setRecentApps] = useState<RecentApp[]>(loadRecents)
   const [widgetPreferences, setWidgetPreferences] = useState<WidgetPreferences>(loadPreferences)
+  const [wallpaper, setWallpaperState] = useState<WallpaperId>(loadWallpaper)
+
+  // The wallpaper lives on <html> (it paints behind everything) and sets the glass tuning for it.
+  useEffect(() => {
+    document.documentElement.dataset.wallpaper = wallpaper
+  }, [wallpaper])
+  const setWallpaper = useCallback((id: WallpaperId) => {
+    setWallpaperState(id)
+    try {
+      window.localStorage.setItem(WALLPAPER_KEY, id)
+    } catch {
+      // Storage unavailable — the choice lasts for this session.
+    }
+  }, [])
 
   const { windows } = windowState
   const focusedId = topWindowId(windows)
@@ -165,6 +190,8 @@ export function OsProvider({ children }: { children: ReactNode }) {
       widgetPreferences,
       setWidgetVisible,
       resetPreferences,
+      wallpaper,
+      setWallpaper,
     }),
     [
       windows,
@@ -192,6 +219,8 @@ export function OsProvider({ children }: { children: ReactNode }) {
       widgetPreferences,
       setWidgetVisible,
       resetPreferences,
+      wallpaper,
+      setWallpaper,
     ],
   )
 

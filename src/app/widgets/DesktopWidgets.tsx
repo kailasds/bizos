@@ -230,8 +230,8 @@ export function DesktopWidgets() {
   return (
     <aside aria-label="System overview" className="flex flex-col gap-2.5">
       <div className="flex items-center gap-2 px-1">
-        <h2 className="text-sm font-semibold whitespace-nowrap">System overview</h2>
-        <Button size="xs" variant="ghost" className="ml-auto text-foreground/80 hover:bg-white/45" onClick={() => openApp('settings', { section: 'desktop' })}>
+        <h2 className="text-sm font-semibold whitespace-nowrap text-[var(--wallpaper-ink)]">System overview</h2>
+        <Button size="xs" variant="ghost" className="ml-auto text-[var(--wallpaper-ink)] hover:bg-white/25" onClick={() => openApp('settings', { section: 'desktop' })}>
           <LayoutDashboard />
           Customize
         </Button>

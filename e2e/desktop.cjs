@@ -44,6 +44,7 @@ const dir = process.argv[2] || 'e2e/screenshots'; require('fs').mkdirSync(dir, {
   check('dock shows minimized', await page.getByRole('button', { name: 'Claims Intelligence · Minimized' }).count() === 1);
   // restore via dock
   await page.getByRole('button', { name: 'Claims Intelligence · Minimized' }).click();
+  await page.locator('section[aria-label="Claims Intelligence"]').waitFor({ timeout: 3000 }).catch(() => {}); // restore plays out of the dock
   check('claims restored', await page.locator('section[aria-label="Claims Intelligence"]').isVisible());
   // dock click on focused -> minimize
   await page.getByRole('button', { name: 'Claims Intelligence · Active' }).click();

@@ -174,7 +174,7 @@ function ToolCard({ app, onOpen }: { app: AppDefinition; onOpen: () => void }) {
 /** Newly published applications lead, so a fresh app shows in the domain's preview. */
 const newestFirst = (list: AppDefinition[]) => [...list].sort((a, b) => (b.generated?.publishedAt ?? '').localeCompare(a.generated?.publishedAt ?? ''))
 
-const sectionTitle = 'px-1 text-sm font-semibold text-foreground/85'
+const sectionTitle = 'px-1 text-sm font-semibold text-[var(--wallpaper-ink)]'
 
 export function DesktopCanvas() {
   const { openApp } = useOs()

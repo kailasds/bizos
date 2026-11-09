@@ -71,31 +71,67 @@ export function WindowFrame({ win, app, title, focused, area, compact, children 
   const reduce = useReducedMotion()
   const minimized = win.status === 'minimized'
 
+  // Restore plays the genie backwards only when the window is coming back from the dock.
+  const [previous, setPrevious] = useState(minimized)
+  const [restoring, setRestoring] = useState(false)
+  if (previous !== minimized) {
+    setPrevious(minimized)
+    setRestoring(previous && !minimized)
+  }
+
   /**
-   * Window transitions. Minimize shrinks the window into its dock tab (measured when the
-   * animation starts, so it follows the dock wherever it is); restore plays the reverse from
-   * there. Focus changes are not animated. Framer Motion retargets mid-flight, so rapid clicks
-   * never stack animations.
+   * Genie geometry, measured when the animation starts so it follows the dock wherever it is:
+   * the edge nearest the dock pinches toward the tile, then the body is drawn up into it.
    */
+  const genie = () => {
+    const node = ref.current
+    const target = document.querySelector(`[data-dock-app="${win.appId}"]`)
+    const r = node?.getBoundingClientRect()
+    const d = target?.getBoundingClientRect()
+    if (!r || !d || r.width === 0) return null
+    const px = Math.min(96, Math.max(4, ((d.left + d.width / 2 - r.left) / r.width) * 100))
+    const dx = d.left + d.width / 2 - (r.left + (px / 100) * r.width)
+    const dy = d.top + d.height / 2 - r.top
+    // Set directly: animating transform-origin would blend from an unrelated value.
+    if (node) node.style.transformOrigin = `${px}% 0%`
+    const poly = (tl: number, tr: number, br: number, bl: number) => `polygon(${tl}% 0%, ${tr}% 0%, ${br}% 100%, ${bl}% 100%)`
+    return {
+      clipPath: [poly(0, 100, 100, 0), poly(px - 9, px + 9, 100, 0), poly(px - 2, px + 2, px + 22, px - 22), poly(px - 0.5, px + 0.5, px + 0.5, px - 0.5)],
+      x: [0, 0, dx * 0.55, dx],
+      y: [0, 0, dy * 0.5, dy],
+      scaleY: [1, 1, 0.42, 0.02],
+    }
+  }
+
   const variants: Variants = {
-    shown: { x: 0, y: 0, scale: 1, opacity: 1, visibility: 'visible', transition: reduce ? { duration: 0 } : { duration: 0.28, ease: [0.2, 0.8, 0.2, 1] } },
-    minimized: () => {
-      const node = ref.current
-      const target = document.querySelector(`[data-dock-app="${win.appId}"]`)
-      let x = 0
-      let y = -240
-      if (node) {
-        const r = node.getBoundingClientRect()
-        const d = target?.getBoundingClientRect()
-        x = d ? d.left + d.width / 2 - (r.left + r.width / 2) : 0
-        y = d ? d.top + d.height / 2 - (r.top + r.height / 2) : -(r.top + r.height / 2)
+    shown: (isRestoring: boolean) => {
+      const g = isRestoring && !reduce ? genie() : null
+      if (!g) {
+        return { x: 0, y: 0, scaleY: 1, scale: 1, opacity: 1, clipPath: 'none', visibility: 'visible', transition: reduce ? { duration: 0 } : { duration: 0.28, ease: [0.2, 0.8, 0.2, 1] } }
       }
       return {
-        x,
-        y,
-        scale: 0.12,
-        opacity: 0,
-        transition: reduce ? { duration: 0 } : { duration: 0.3, ease: [0.4, 0, 0.7, 0.2], opacity: { duration: 0.26, delay: 0.04, ease: 'easeIn' } },
+        visibility: 'visible',
+        opacity: 1,
+        scale: 1,
+        clipPath: [...g.clipPath].reverse(),
+        x: [...g.x].reverse(),
+        y: [...g.y].reverse(),
+        scaleY: [...g.scaleY].reverse(),
+        transition: { duration: 0.46, times: [0, 0.3, 0.65, 1], ease: 'easeOut' },
+        transitionEnd: { clipPath: 'none' },
+      }
+    },
+    minimized: () => {
+      const g = reduce ? null : genie()
+      if (!g) return { opacity: 0, transition: { duration: 0 }, transitionEnd: { visibility: 'hidden' } }
+      return {
+        scale: 1,
+        clipPath: g.clipPath,
+        x: g.x,
+        y: g.y,
+        scaleY: g.scaleY,
+        opacity: [1, 1, 1, 0],
+        transition: { duration: 0.52, times: [0, 0.32, 0.68, 1], ease: 'easeIn' },
         transitionEnd: { visibility: 'hidden' },
       }
     },
@@ -148,7 +184,11 @@ export function WindowFrame({ win, app, title, focused, area, compact, children 
       inert={minimized}
       data-focused={focused}
       data-status={win.status}
+      data-window-id={win.id}
       variants={variants}
+      custom={restoring}
+      // The reverse genie plays once; afterwards the window is simply shown.
+      onAnimationComplete={(definition) => definition === 'shown' && restoring && setRestoring(false)}
       initial={reduce ? false : { opacity: 0, scale: 0.97 }}
       animate={minimized ? 'minimized' : 'shown'}
       exit={reduce ? { opacity: 0, transition: { duration: 0 } } : { opacity: 0, scale: 0.96, transition: { duration: 0.15, ease: 'easeIn' } }}

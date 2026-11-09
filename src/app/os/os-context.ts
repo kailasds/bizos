@@ -1,3 +1,4 @@
+import type { WallpaperId } from './wallpapers'
 import { createContext } from 'react'
 import type { AppId, Size, WindowParams } from '@/app/registry/types'
 import type { Bounds, WindowState } from '@/app/windows/windowReducer'
@@ -55,6 +56,8 @@ export interface OsContextValue {
   widgetPreferences: WidgetPreferences
   setWidgetVisible: (id: WidgetId, visible: boolean) => void
   resetPreferences: () => void
+  wallpaper: WallpaperId
+  setWallpaper: (id: WallpaperId) => void
 }
 
 export const OsContext = createContext<OsContextValue | null>(null)

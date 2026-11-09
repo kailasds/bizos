@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { Database, Info, LayoutDashboard, RotateCcw } from 'lucide-react'
+import { Check, Database, Info, LayoutDashboard, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import { useOs } from '@/app/os/use-os'
 import { useParamsChange } from '@/app/windows/use-params-change'
 import type { AppProps } from '@/app/registry/types'
 import { widgetOrder } from '@/app/widgets/widgetCatalog'
+import { wallpapers } from '@/app/os/wallpapers'
+import { cn } from '@/lib/utils'
 import { SidebarNav } from '@/components/os/SidebarNav'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -32,9 +34,36 @@ const sections = [
 ]
 
 function DesktopSettings() {
-  const { widgetPreferences, setWidgetVisible, resetPreferences, closeAllWindows } = useOs()
+  const { widgetPreferences, setWidgetVisible, resetPreferences, closeAllWindows, wallpaper, setWallpaper } = useOs()
   return (
     <div className="max-w-lg space-y-8">
+      <section>
+        <h3 className="text-lg font-semibold">Wallpaper</h3>
+        <div role="radiogroup" aria-label="Wallpaper" className="mt-4 grid grid-cols-2 gap-3">
+          {wallpapers.map((w) => {
+            const selected = w.id === wallpaper
+            return (
+              <button
+                key={w.id}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => setWallpaper(w.id)}
+                className={cn('group overflow-hidden rounded-xl border bg-card text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50', selected ? 'border-primary ring-2 ring-primary/40' : 'hover:border-foreground/25')}
+              >
+                <span className="relative block aspect-[16/10] bg-cover bg-center" style={{ backgroundImage: `url(${w.thumb})` }}>
+                  {selected && (
+                    <span className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+                      <Check className="size-3.5" />
+                    </span>
+                  )}
+                </span>
+                <span className="block px-3 py-2 text-sm font-medium">{w.name}</span>
+              </button>
+            )
+          })}
+        </div>
+      </section>
       <section>
         <h3 className="text-lg font-semibold">Widgets</h3>
         <ul className="mt-4 divide-y rounded-lg border">

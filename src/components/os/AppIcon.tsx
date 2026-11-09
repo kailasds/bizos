@@ -42,7 +42,7 @@ const softTintHover: Record<AppTint, string> = {
   coral: 'hover:bg-[color-mix(in_oklab,var(--tint-coral)_24%,oklch(1_0_0/0.6))]',
   graphite: 'hover:bg-[color-mix(in_oklab,var(--tint-graphite)_20%,oklch(1_0_0/0.6))]',
 }
-const softGlyph = 'fill-current/25 stroke-[2.25]'
+const softGlyph = 'stroke-[2.25] [&_rect]:fill-current/25 [&_circle]:fill-current/25 [&_path[d$=z]]:fill-current/25 [&_path[d$=Z]]:fill-current/25'
 
 /** Application identity: solid tinted squircle with a white lucide glyph. */
 export function AppIcon({ app, size = 'md', variant = 'solid', className }: { app: AppDefinition; size?: IconSize; variant?: 'solid' | 'soft'; className?: string }) {

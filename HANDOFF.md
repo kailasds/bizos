@@ -114,7 +114,9 @@ Recharts, React Flow (`@xyflow/react`), Plus Jakarta Sans. Alias `@/*` → `src/
 - **Widgets** (`src/app/widgets`) are configurable in Settings, and each deep-links somewhere:
   Approvals, Application activity, Worker activity, Platform activity, and others.
 - **Window manager:** open, focus, minimize, maximize/restore, close, drag and resize, clamped to
-  the desktop. Windows scale and fade on open, shrink into their dock tab on minimize, and fade
+  the desktop. Minimize is a genie into the app's dock tile (restore reverses it); hovering a running
+  app's tile shows live window previews to pick from. Apps are single-instance today; previews list
+  every window an app has. Windows scale and fade on open, shrink into their dock tab on minimize, and fade
   out on close. Focus changes are not animated. `prefers-reduced-motion` turns motion off.
 - **Launcher** (Cmd/Ctrl+K) searches apps and ranks name matches first. It can also start
   "Create application" and open System Explorer.
@@ -313,7 +315,9 @@ applied **only** through CSS variables in `src/index.css`.
 | `3564586` | Revert | Restored the teal-to-warm-horizon wallpaper (product owner's request) |
 | `640f092` | Studio UX | Floating journey navigator and AI Architect, visual chain of thought, Compose as a React Flow canvas, pictorial stages, global Ask AI removed |
 | `1e13ea1` | Merge | Merged `claude/peaceful-hopper-xg4v6p`: new home page and "+" menu kept; its Build layers panel and Preview step not taken (product owner's decision) |
-| (latest) | Home and Studio | Domain tiles and glass panel, Platform tools section, three glass widgets, Studio back on the OS colour theme, Validate step removed (checks run on Publish), new-application body centred |
+| `ceb09d2` | Home and Studio | Domain tiles and glass panel, Platform tools section, three glass widgets, Studio back on the OS colour theme, Validate step removed (checks run on Publish), new-application body centred |
+| `2452ee8` | Home | Home label, frosted widgets, soft folder icons, folders expand in place |
+| (latest) | Shell | Fixed-size dock (no shiver), lit running bar, window previews, genie minimize, soft dock icons, four wallpapers |
 
 Product-owner decisions to respect: Studio stays on the OS colour theme with no dark fills; no Validate step; no mock tags in the UI; reasoning hidden behind info tips;
 the teal-horizon wallpaper; the dock in the top bar; minimal explanatory copy; counts, never

@@ -1,4 +1,4 @@
-import { FilePlus2, LayoutDashboard, Plus, ScanSearch, Send } from 'lucide-react'
+import { FilePlus2, Image, LayoutDashboard, Plus, ScanSearch, Send } from 'lucide-react'
 import { useOs } from '@/app/os/use-os'
 import {
   DropdownMenu,
@@ -36,6 +36,10 @@ export function QuickCreate() {
         <DropdownMenuItem onSelect={() => openApp('settings', { section: 'desktop' })}>
           <LayoutDashboard />
           Add widget
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => openApp('settings', { section: 'desktop' })}>
+          <Image />
+          Change wallpaper
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => setLauncherOpen(true)}>
